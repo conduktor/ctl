@@ -15,7 +15,7 @@ var filePath *string
 // applyCmd represents the apply command
 var applyCmd = &cobra.Command{
 	Use:   "apply",
-	Short: "upsert a resource on kubernetes",
+	Short: "upsert a resource on Conduktor",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		resources, error := resource.FromFile(*filePath)
