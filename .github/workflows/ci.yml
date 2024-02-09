@@ -1,0 +1,14 @@
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled]
+jobs:
+  test:
+    runs-on: cdk-large
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version: 1.22.0
+      - name: go test
+        run: go test ./...
+
