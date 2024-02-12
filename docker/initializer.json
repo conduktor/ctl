@@ -1,0 +1,18 @@
+[
+  {
+    "httpRequest": {
+      "method": "Put",
+      "path": "/api/Topic",
+      "headers": {
+        "Authentication": "Bearer yo"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "{}",
+      "headers": {
+        "Content-Type": ["application/json"]
+      }
+    }
+  }
+]
