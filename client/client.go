@@ -24,7 +24,7 @@ func Make(token string, baseUrl string) Client {
 func MakeFromEnv() Client {
 	token := os.Getenv("CDK_TOKEN")
 	if token == "" {
-		fmt.Fprintln(os.Stderr, "Please seat CDK_TOKEN")
+		fmt.Fprintln(os.Stderr, "Please set CDK_TOKEN")
 		os.Exit(1)
 	}
 	baseUrl := os.Getenv("CDK_BASE_URL")
