@@ -29,7 +29,7 @@ func MakeFromEnv() Client {
 	}
 	baseUrl := os.Getenv("CDK_BASE_URL")
 	if baseUrl == "" {
-		fmt.Fprintln(os.Stderr, "Please seat CDK_BASE_URL")
+		fmt.Fprintln(os.Stderr, "Please set CDK_BASE_URL")
 		os.Exit(2)
 	}
 
