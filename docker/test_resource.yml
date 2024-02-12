@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: Topic
 metadata:
-  name: abc.myTopic
+  name: abcd.topic
 spec:
   replicationFactor: 1
   partitions: 3

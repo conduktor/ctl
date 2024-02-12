@@ -2,7 +2,7 @@ on:
   pull_request:
     types: [opened, reopened, synchronize, labeled]
 jobs:
-  test:
+  unit-test:
     runs-on: cdk-large
     steps:
       - uses: actions/checkout@v3
@@ -11,4 +11,10 @@ jobs:
           go-version: 1.22.0
       - name: go test
         run: go test ./...
+  integration-test:
+    runs-on: cdk-large
+    steps:
+      - uses: actions/checkout@v3
+      - name: run test
+        run: ./test_final_exec.sh
 

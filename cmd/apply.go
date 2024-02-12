@@ -1,10 +1,8 @@
-/*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
 	"fmt"
+	"github.com/conduktor/ctl/client"
 	"github.com/conduktor/ctl/resource"
 	"github.com/spf13/cobra"
 	"os"
@@ -23,7 +21,16 @@ var applyCmd = &cobra.Command{
 			fmt.Fprintf(os.Stderr, "%s\n", error)
 			os.Exit(1)
 		}
-		fmt.Println(resources)
+		client := client.MakeFromEnv()
+		for _, resource := range resources {
+			err := client.Apply(&resource)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Could not apply resource %s/%s: %s\n", resource.Kind, resource.Name, err)
+				os.Exit(1)
+			} else {
+				fmt.Printf("%s/%s: ok\n", resource.Kind, resource.Name)
+			}
+		}
 	},
 }
 
