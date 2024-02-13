@@ -3,7 +3,7 @@ on:
     types: [opened, reopened, synchronize, labeled]
 jobs:
   unit-test:
-    runs-on: cdk-large
+    runs-on: cdk-standard
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v4
@@ -12,7 +12,7 @@ jobs:
       - name: go test
         run: go test ./...
   integration-test:
-    runs-on: cdk-large
+    runs-on: cdk-standard
     steps:
       - uses: actions/checkout@v3
       - name: run test
