@@ -65,6 +65,8 @@ jobs:
             org.opencontainers.image.documentation=${{ env.LABEL_IMAGE_DOCUMENTATION }}
             org.opencontainers.image.vendor=${{ env.LABEL_IMAGE_VENDOR }}
             org.opencontainers.image.url=${{ env.LABEL_IMAGE_URL }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ github.event.release.tag_name || github.ref_name }}
       - uses: actions/checkout@v3
       - name: Build ${{ env.IMAGE_NAME }} for ${{ steps.buildx.outputs.platforms }}
         id: build
@@ -79,3 +81,6 @@ jobs:
           cache-from: type=registry,ref=${{env.HARBOR_IMAGE}}:main
           cache-to: type=inline,mode=min
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          build-args: |
+            hash=${{ github.sha }}
+            version=${{ github.event.release.tag_name || github.ref_name }}
