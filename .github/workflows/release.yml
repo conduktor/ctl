@@ -1,0 +1,92 @@
+name: Release
+run-name: Release ${{ github.event.release.tag_name }} by ${{ github.actor }}
+
+on:
+  release:
+    types: [published]
+jobs:
+  tags:
+    name: List tags to be created
+    runs-on: cdk-standard
+    outputs:
+      image_tags: ${{ steps.image_tag.outputs.tags }}
+      version: ${{ steps.image_tag.outputs.version }}
+      is_latest: ${{ steps.image_tag.outputs.is_latest }}
+    steps:
+      - name: Debug tags
+        shell: bash
+        run: |
+          echo "----------------------------"
+          echo "GITHUB_REF : ${GITHUB_REF}"
+          echo "GITHUB_REF_NAME: ${GITHUB_REF_NAME}"
+          echo "GITHUB_REF_TYPE : ${GITHUB_REF_TYPE}"
+          echo "----------------------------"
+          echo "Release event : "
+          echo "    name :${{ github.event.release.name }}"
+          echo "    tag_name :${{ github.event.release.tag_name }}"
+          echo "    target_commitish:${{ github.event.release.target_commitish }}"
+          echo "    draft:${{ github.event.release.draft }}"
+
+      - name: Parse version from tag
+        id: version
+        uses: release-kit/semver@v2
+        with:
+          string: '${{ github.event.release.tag_name }}'
+
+      - name: Set release tag
+        if: ${{ github.event.release }}
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          latest_release_version=$(gh release view -R ${{ github.repository }} --json tagName -q .tagName)
+          echo "Latest release is ${latest_release}"
+          is_latest=$(test "${{ github.event.release.tag_name }}" == "${latest_release_version}" && echo true || echo false)
+          
+          echo "RELEASE_TAG=${{ steps.version.outputs.full  }}" >> $GITHUB_ENV
+          echo "IS_LATEST=${is_latest}" >> $GITHUB_ENV
+
+      - name: Image tag
+        id: image_tag
+        shell: bash
+        run: |
+          TAGS=""
+          TAGS="${TAGS}type=raw,value=${{ steps.version.outputs.full }}\n"
+          TAGS="${TAGS}type=semver,pattern={{version}}\n"
+          TAGS="${TAGS}type=raw,value=latest,enable=${{ env.IS_LATEST }}\n"
+          
+          delimiter="$(openssl rand -hex 8)"
+          echo -e "tags<<${delimiter}\n${TAGS}\n${delimiter}" >> "${GITHUB_OUTPUT}"
+          
+          echo -e "version=${{ steps.version.outputs.full }}" >> "${GITHUB_OUTPUT}"
+          echo -e "is_latest=${{ env.IS_LATEST }}" >> "${GITHUB_OUTPUT}"
+
+          echo "Outputs ${GITHUB_OUTPUT}"
+          echo "-------"
+          cat "${GITHUB_OUTPUT}"
+          echo "-------"
+  unit-test:
+    runs-on: cdk-standard
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version: 1.22.0
+      - name: go test
+        run: go test ./...
+  integration-test:
+    runs-on: cdk-standard
+    steps:
+      - uses: actions/checkout@v3
+      - name: run test
+        run: ./test_final_exec.sh
+
+  build-docker:
+    name: Build and publish conduktorctl images
+    uses: ./.github/workflows/build-docker.yml
+    secrets: inherit
+    needs: [tags, unit-test, integration-test]
+    with:
+      release: true
+      push: true
+      image_tags: ${{ needs.tags.outputs.image_tags  }}

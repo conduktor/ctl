@@ -1,9 +1,12 @@
 on:
+  push:
+    branches:
+      - main
   pull_request:
     types: [opened, reopened, synchronize, labeled]
 jobs:
   unit-test:
-    runs-on: cdk-large
+    runs-on: cdk-standard
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v4
@@ -12,9 +15,20 @@ jobs:
       - name: go test
         run: go test ./...
   integration-test:
-    runs-on: cdk-large
+    runs-on: cdk-standard
     steps:
       - uses: actions/checkout@v3
       - name: run test
         run: ./test_final_exec.sh
-
+  build-docker:
+    name: Build and publish conduktorctl images
+    uses: ./.github/workflows/build-docker.yml
+    secrets: inherit
+    needs: [unit-test, integration-test]
+    with:
+      release: false
+      push: ${{ github.ref_name == 'main' }}
+      image_tags: |
+       type=sha
+       type=ref,event=branch
+       type=ref,event=pr
