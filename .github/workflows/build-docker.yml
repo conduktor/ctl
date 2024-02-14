@@ -1,4 +1,4 @@
-name: CI Platform / Build Docker Images
+name: Build Docker Images
 
 on:
   workflow_call:
@@ -12,55 +12,21 @@ on:
         type: boolean
         description: (bool) Whether this is a release or not
         default: false
-      amd64_artifact_name:
-        description: "(string) AMD64 Artifact name"
-        type: string
-        required: true
-      arm64_artifact_name:
-        description: "(string) ARM64 Artifact name"
-        type: string
-        required: true
-    outputs:
-      all_conduktor_tags:
-        description: (json string) All conduktor ctl image tags built (in format repo/namespace/image:tag)
-        value: ${{ jobs.build-platform-docker.outputs.all_tags }}
-      ghcr_conduktor_tags:
-        description: (json string) All conduktor ctl  GHCR image tags (in format ghcr.io/namespace/image:tag)
-        value: ${{ jobs.build-platform-docker.outputs.ghcr_tags }}
-      ghcr_conduktor_digest:
-        description: (string) Only the first conduktor ctl GHCR image digest (in format ghcr.io/namespace/image@sha256:digest)
-        value: ${{ jobs.build-platform-docker.outputs.ghcr_digest }}
-      harbor_conduktor_tags:
-        description: (json string) Only the first conduktor image tags (in format harbor.cdkt.dev/namespace/image:tag)
-        value: ${{ jobs.build-platform-docker.outputs.harbor_tags }}
-      harbor_conduktor_digest:
-        description: (string) Only the first conduktor image digest (in format harbor.cdkt.dev/namespace/image@sha256:digest)
-        value: ${{ jobs.build-platform-docker.outputs.harbor_digest }}
 env:
-  GHCR_REGISTRY: "ghcr.io"
-  HARBOR_REGISTRY: "harbor.cdkt.dev"
   NAMESPACE: "conduktor"
   LABEL_IMAGE_AUTHORS: "Conduktor <support@conduktor.io>"
   LABEL_IMAGE_DOCUMENTATION: "https://docs.conduktor.io/conduktor"
   LABEL_IMAGE_VENDOR: "Conduktor.io"
 
 jobs:
-
-  build-platform-docker:
+  build-docker:
     name: Build Platform Docker
-    runs-on: [cdk-standard]
-    outputs:
-      all_tags: ${{ toJson(steps.docker_meta.outputs.tags) }}
-      ghcr_tags: ${{ toJson(steps.output_image_tag.outputs.ghcr_tags) }}
-      ghcr_digest: ${{ steps.output_image_tag.outputs.ghcr_digest }}
-      harbor_tags: ${{ toJson(steps.output_image_tag.outputs.harbor_tags) }}
-      harbor_digest: ${{ steps.output_image_tag.outputs.harbor_digest }}
+    runs-on: [cdk-large]
     permissions:
       id-token: write
       contents: read
     env:
-      PLATFORM_IMAGE: "conduktorctl"
-      GHCR_IMAGE: "ghcr.io/conduktor/conduktorctl"
+      IMAGE_NAME: "conduktorctl"
       HARBOR_IMAGE: "harbor.cdkt.dev/conduktor/conduktorctl"
       LABEL_IMAGE_TITLE: "Conduktor ctl"
       LABEL_IMAGE_DESCRIPTION: "Conduktor command line tools"
@@ -81,11 +47,10 @@ jobs:
 
       - name: Docker multi registries configuration
         id: docker_meta
-        uses: conduktor/conduktor-actions/docker-multi-registries@v1.1
+        uses: conduktor/conduktor-actions/docker-multi-registries@v3.0.0
         with:
           image-name: |
-            ${{ env.PLATFORM_IMAGE }}
-            conduktor-console
+            ${{ env.IMAGE_NAME }}
           namespace: ${{ env.NAMESPACE }}
           tags: ${{ inputs.image_tags }}
           labels: |
@@ -95,24 +60,13 @@ jobs:
             org.opencontainers.image.documentation=${{ env.LABEL_IMAGE_DOCUMENTATION }}
             org.opencontainers.image.vendor=${{ env.LABEL_IMAGE_VENDOR }}
             org.opencontainers.image.url=${{ env.LABEL_IMAGE_URL }}
-      - name: Buildx builder
-        id: buildx
-        shell: bash
-        run: |
-          # Purge existing builder before creating a new one to avoid conflicts
-          docker buildx rm conduktorctl || true
-          docker buildx create --driver docker-container --name conduktorctl --platform "linux/amd64,linux/arm64" --use
-          echo "name=conduktorctl" >> "${GITHUB_OUTPUT}"
-          echo "platforms=linux/amd64,linux/arm64" >> "${GITHUB_OUTPUT}"
-
-      - name: Build ${{ env.PLATFORM_IMAGE }} for ${{ steps.buildx.outputs.platforms }}
+      - uses: actions/checkout@v3
+      - name: Build ${{ env.IMAGE_NAME }} for ${{ steps.buildx.outputs.platforms }}
         id: build
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: ${{ steps.buildx.outputs.platforms }}
-          builder: ${{ steps.buildx.outputs.name }}
-          pull: true
+          platforms: linux/amd64,linux/arm64
           push: true
           file: docker/Dockerfile
           tags: ${{ steps.docker_meta.outputs.tags }}
@@ -120,34 +74,3 @@ jobs:
           cache-from: type=registry,ref=${{env.HARBOR_IMAGE}}:main
           cache-to: type=inline,mode=min
           github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Output conduktorctl image
-        id: output_image_tag
-        shell: bash
-        run: |
-          # multi-line output tips https://github.com/orgs/community/discussions/26288#discussioncomment-3876281
-          
-          ghcr_tags=$(echo "${{ steps.docker_meta.outputs.tags }}" | grep "ghcr.io" || true)
-          if [[ -z "${ghcr_tags}" ]]; then
-            echo -e "ghcr_tags=" >> "${GITHUB_OUTPUT}"
-            echo -e "ghcr_digest=" >> "${GITHUB_OUTPUT}"
-          else
-            delimiter1="$(openssl rand -hex 8)"
-            echo -e "ghcr_tags<<${delimiter1}\n${ghcr_tags}\n${delimiter1}" >> "${GITHUB_OUTPUT}"
-            echo "ghcr_digest=${{env.GHCR_IMAGE}}@${{ steps.build.outputs.digest }}" >> "${GITHUB_OUTPUT}"
-          fi
-          
-          harbor_tags=$(echo "${{ steps.docker_meta.outputs.tags }}" | grep "harbor.cdkt.dev" || true)
-          if [[ -z "${harbor_tags}" ]]; then
-            echo -e "harbor_tags=" >> "${GITHUB_OUTPUT}"
-            echo -e "harbor_digest=" >> "${GITHUB_OUTPUT}"
-          else
-            delimiter2="$(openssl rand -hex 8)"
-            echo -e "harbor_tags<<${delimiter2}\n${harbor_tags}\n${delimiter2}" >> "${GITHUB_OUTPUT}"
-            echo "harbor_digest=${{env.HARBOR_IMAGE}}@${{ steps.build.outputs.digest }}" >> "${GITHUB_OUTPUT}"
-          fi
-          
-          echo "Outputs ${GITHUB_OUTPUT}"
-          echo "-------"
-          cat "${GITHUB_OUTPUT}"
-          echo "-------"

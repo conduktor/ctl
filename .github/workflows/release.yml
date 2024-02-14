@@ -1,5 +1,5 @@
 name: Release
-run-name: ${{ github.event.release.prerelease == true && 'Pre-' || '' }}Release ${{ github.event.release.tag_name }} by ${{ github.actor }}
+run-name: Release ${{ github.event.release.tag_name }} by ${{ github.actor }}
 
 on:
   release:
@@ -12,7 +12,6 @@ jobs:
       image_tags: ${{ steps.image_tag.outputs.tags }}
       version: ${{ steps.image_tag.outputs.version }}
       is_latest: ${{ steps.image_tag.outputs.is_latest }}
-      is_prerelease: ${{ steps.image_tag.outputs.is_prerelease }}
     steps:
       - name: Debug tags
         shell: bash
@@ -26,7 +25,6 @@ jobs:
           echo "    name :${{ github.event.release.name }}"
           echo "    tag_name :${{ github.event.release.tag_name }}"
           echo "    target_commitish:${{ github.event.release.target_commitish }}"
-          echo "    prerelease:${{ github.event.release.prerelease }}"
           echo "    draft:${{ github.event.release.draft }}"
 
       - name: Parse version from tag
@@ -48,21 +46,6 @@ jobs:
           echo "RELEASE_TAG=${{ steps.version.outputs.full  }}" >> $GITHUB_ENV
           echo "IS_LATEST=${is_latest}" >> $GITHUB_ENV
 
-      - name: Pre-release check
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "Check consistency between pre-release Github flag and git tag name"
-          if [[ ${{ github.event.release.prerelease }} == true && "${{ steps.version.outputs.prerelease }}" == "" ]]; then
-            echo "Empty pre-release tag need a git tag like major.minor.patch-<pre_release_name>"
-            exit 1
-          fi
-          if [[ ${{ github.event.release.prerelease }} == false && "${{ steps.version.outputs.prerelease }}" != "" ]]; then
-            echo "Invalid pre-release tag ${{ steps.version.outputs.full }} not flagged as pre-release on Github Release page"
-            exit 1
-          fi
-
       - name: Image tag
         id: image_tag
         shell: bash
@@ -77,7 +60,6 @@ jobs:
           
           echo -e "version=${{ steps.version.outputs.full }}" >> "${GITHUB_OUTPUT}"
           echo -e "is_latest=${{ env.IS_LATEST }}" >> "${GITHUB_OUTPUT}"
-          echo -e "is_prerelease=${{ github.event.release.prerelease }}" >> "${GITHUB_OUTPUT}"
 
           echo "Outputs ${GITHUB_OUTPUT}"
           echo "-------"
@@ -100,47 +82,10 @@ jobs:
         run: ./test_final_exec.sh
 
   build-docker:
-    name: Build and publish platform images
+    name: Build and publish conduktorctl images
     uses: ./.github/workflows/build-docker.yml
     secrets: inherit
-    needs: [tags, build-cli, e2e]
+    needs: [tags, unit-test, integration-test]
     with:
       release: true
       image_tags: ${{ needs.tags.outputs.image_tags  }}
-      amd64_artifact_name: ${{ needs.build-cli.outputs.amd64_artifact_name }}
-      arm64_artifact_name: ${{ needs.build-cli.outputs.arm64_artifact_name }}
-
-  create_maintance_branches:
-    if: ${{ github.event.release.prerelease == false }}
-    needs: [ tags, build-docker ]
-    runs-on: cdk-standard
-    env:
-      GITHUB_TOKEN: ${{ secrets.CONDUKTORBOT_GHCR_RW }}
-    steps:
-      - name: Parse version from string
-        id: parsed_version
-        uses: release-kit/semver@v2
-        with:
-          string: "${{ needs.tags.outputs.version }}"
-
-      - name: Maintenance Branch Name
-        id: maintenance_branch_name
-        shell: bash
-        run: |
-          maintenance_branch_name="patch/${{ steps.parsed_version.outputs.major }}.${{ steps.parsed_version.outputs.minor }}"
-          echo "MAINTENANCE_BRANCH_NAME=${maintenance_branch_name}" >> $GITHUB_ENV
-          echo "MAINTENANCE_TAG_NAME=release-${{ needs.tags.outputs.version }}" >> $GITHUB_ENV
-
-      - uses: actions/checkout@v4
-
-      - name: Extract dependencies refs
-        id: dependencies_refs
-        uses: ./.github/actions/get-dependencies-refs
-
-      - name: Platform-build maintenance branch
-        uses: ./.github/actions/create-patch-branch
-        with:
-          repository: ${{ github.repository }}
-          remote_ref: ${{ github.ref }}
-          branch_name: ${{ env.MAINTENANCE_BRANCH_NAME }}
-          token: ${{ secrets.CONDUKTORBOT_GHCR_RW }}
