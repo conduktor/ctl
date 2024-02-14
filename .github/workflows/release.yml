@@ -88,4 +88,5 @@ jobs:
     needs: [tags, unit-test, integration-test]
     with:
       release: true
+      push: true
       image_tags: ${{ needs.tags.outputs.image_tags  }}

@@ -12,6 +12,11 @@ on:
         type: boolean
         description: (bool) Whether this is a release or not
         default: false
+      push:
+        required: false
+        type: boolean
+        description: (bool) Whether we should push the image or not
+        default: true
 env:
   NAMESPACE: "conduktor"
   LABEL_IMAGE_AUTHORS: "Conduktor <support@conduktor.io>"
@@ -21,7 +26,7 @@ env:
 jobs:
   build-docker:
     name: Build Platform Docker
-    runs-on: [cdk-large]
+    runs-on: [cdk-standard]
     permissions:
       id-token: write
       contents: read
@@ -67,7 +72,7 @@ jobs:
         with:
           context: .
           platforms: linux/amd64,linux/arm64
-          push: true
+          push: ${{ inputs.push }}
           file: docker/Dockerfile
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}

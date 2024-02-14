@@ -1,4 +1,7 @@
 on:
+  push:
+    branches:
+      - main
   pull_request:
     types: [opened, reopened, synchronize, labeled]
 jobs:
@@ -24,6 +27,7 @@ jobs:
     needs: [unit-test, integration-test]
     with:
       release: false
+      push: ${{ github.ref_name == 'main' }}
       image_tags: |
        type=sha
        type=ref,event=branch
