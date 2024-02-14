@@ -82,8 +82,21 @@ jobs:
         run: ./test_final_exec.sh
   build-exec:
     needs: [unit-test, integration-test]
-    name: Build exec
-    uses: ./.github/workflows/build-exec.yml
+    steps:
+      - uses: actions/checkout@v4
+      - uses: wangyoucao577/go-release-action@v1.48
+        strategy:
+          matrix:
+            # build and publish in parallel: linux/386, linux/amd64, linux/arm64, windows/386, windows/amd64, darwin/amd64, darwin/arm64
+            goos: [linux, windows, darwin]
+            goarch: [amd64, arm64]
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          goos: ${{ matrix.goos }}
+          goarch: ${{ matrix.goarch }}
+          goversion: "1.22.0"
+          project_path: "./"
+          binary_name: "conduktor"
   build-docker:
     name: Build and publish conduktorctl images
     uses: ./.github/workflows/build-docker.yml
