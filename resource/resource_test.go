@@ -8,14 +8,14 @@ func TestFromByteForOneResourceWithValidResource(t *testing.T) {
 	yamlByte := []byte(`
 # comment
 ---
-apiVersion: v1
+version: v1
 kind: Topic
 metadata:
   name: abc.myTopic
 spec:
   replicationFactor: 1
 ---
-apiVersion: v2
+version: v2
 kind: ConsumerGroup
 metadata:
   name: cg1
@@ -31,10 +31,10 @@ metadata:
 
 	result1 := results[0]
 	expected1 := Resource{
-		ApiVersion: "v1",
-		Kind:       "Topic",
-		Name:       "abc.myTopic",
-		Json:       []byte(`{"apiVersion":"v1","kind":"Topic","metadata":{"name":"abc.myTopic"},"spec":{"replicationFactor":1}}`),
+		Version: "v1",
+		Kind:    "Topic",
+		Name:    "abc.myTopic",
+		Json:    []byte(`{"kind":"Topic","metadata":{"name":"abc.myTopic"},"spec":{"replicationFactor":1},"version":"v1"}`),
 	}
 
 	if result1.Name != expected1.Name {
@@ -45,22 +45,22 @@ metadata:
 		t.Errorf("Expected name %s got %s", expected1.Kind, result1.Kind)
 	}
 
-	if result1.ApiVersion != expected1.ApiVersion {
-		t.Errorf("Expected name %s got %s", expected1.ApiVersion, result1.ApiVersion)
+	if result1.Version != expected1.Version {
+		t.Errorf("Expected name %s got %s", expected1.Version, result1.Version)
 	}
 
 	expectedJsonString1 := string(expected1.Json)
 	resultJsonString1 := string(result1.Json)
 	if expectedJsonString1 != resultJsonString1 {
-		t.Errorf("Expected json %s got %s", expectedJsonString1, resultJsonString1)
+		t.Errorf("\nExpected json:\n%s got:\n%s", expectedJsonString1, resultJsonString1)
 	}
 
 	result2 := results[1]
 	expected2 := Resource{
-		ApiVersion: "v2",
-		Kind:       "ConsumerGroup",
-		Name:       "cg1",
-		Json:       []byte(`{"apiVersion":"v2","kind":"ConsumerGroup","metadata":{"name":"cg1"}}`),
+		Version: "v2",
+		Kind:    "ConsumerGroup",
+		Name:    "cg1",
+		Json:    []byte(`{"kind":"ConsumerGroup","metadata":{"name":"cg1"},"version":"v2"}`),
 	}
 
 	if result2.Name != expected2.Name {
@@ -71,14 +71,14 @@ metadata:
 		t.Errorf("Expected name %s got %s", expected2.Kind, result2.Kind)
 	}
 
-	if result2.ApiVersion != expected2.ApiVersion {
-		t.Errorf("Expected name %s got %s", expected2.ApiVersion, result2.ApiVersion)
+	if result2.Version != expected2.Version {
+		t.Errorf("Expected name %s got %s", expected2.Version, result2.Version)
 	}
 
 	expectedJsonString2 := string(expected2.Json)
 	resultJsonString2 := string(result2.Json)
 	if expectedJsonString2 != resultJsonString2 {
-		t.Errorf("Expected json %s got %s", expectedJsonString2, resultJsonString2)
+		t.Errorf("\nExpected json:\n%s got:\n%s", expectedJsonString2, resultJsonString2)
 	}
 }
 

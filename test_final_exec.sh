@@ -12,9 +12,12 @@ function cleanup {
 trap cleanup EXIT
 main() {
 	cd "$SCRIPTDIR"
+	docker compose -f docker/docker-compose.yml build
 	docker compose -f docker/docker-compose.yml up -d mock
 	sleep 1
 	docker compose -f docker/docker-compose.yml run conduktor apply -f /test_resource.yml
+	docker compose -f docker/docker-compose.yml run conduktor get Topic yolo
+	docker compose -f docker/docker-compose.yml run conduktor delete Topic yolo -d
 }
 
 main "$@"

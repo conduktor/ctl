@@ -11,20 +11,20 @@ import (
 )
 
 type Resource struct {
-	Json       []byte
-	Kind       string
-	Name       string
-	ApiVersion string
+	Json    []byte
+	Kind    string
+	Name    string
+	Version string
 }
 
 func (r Resource) String() string {
-	return fmt.Sprintf(`version: %s, kind: %s, name: %s, json: '%s'`, r.ApiVersion, r.Kind, r.Name, string(r.Json))
+	return fmt.Sprintf(`version: %s, kind: %s, name: %s, json: '%s'`, r.Version, r.Kind, r.Name, string(r.Json))
 }
 
 type yamlRoot struct {
-	ApiVersion string
-	Kind       string
-	Metadata   metadata
+	Version  string
+	Kind     string
+	Metadata metadata
 }
 
 type metadata struct {
@@ -77,5 +77,5 @@ func yamlByteToResource(data []byte) (Resource, error) {
 		return Resource{}, nil
 	}
 
-	return Resource{Json: jsonByte, Kind: yamlRoot.Kind, Name: yamlRoot.Metadata.Name, ApiVersion: yamlRoot.ApiVersion}, nil
+	return Resource{Json: jsonByte, Kind: yamlRoot.Kind, Name: yamlRoot.Metadata.Name, Version: yamlRoot.Version}, nil
 }

@@ -1,0 +1,20 @@
+# topics.yml
+---
+version: v1
+kind: application
+metadata:
+  name: yo 
+spec:
+  title: yo
+  description: yo
+  owner: me
+---
+version: v1
+kind: application
+metadata:
+  name: ya 
+spec:
+  title: ya
+  description: ya
+  owner: me
+

@@ -21,7 +21,7 @@ var applyCmd = &cobra.Command{
 			fmt.Fprintf(os.Stderr, "%s\n", error)
 			os.Exit(1)
 		}
-		client := client.MakeFromEnv()
+		client := client.MakeFromEnv(*debug)
 		for _, resource := range resources {
 			err := client.Apply(&resource)
 			if err != nil {
