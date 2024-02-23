@@ -31,5 +31,5 @@ func Execute() {
 }
 
 func init() {
-	debug = rootCmd.PersistentFlags().BoolP("debug", "d", false, "Show rest query")
+	debug = rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Show more information for debugging")
 }
