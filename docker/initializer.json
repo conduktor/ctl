@@ -4,7 +4,55 @@
       "method": "Put",
       "path": "/api/Topic",
       "headers": {
-        "Authentication": "Bearer yo"
+        "Authorization": "Bearer yo"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "{}",
+      "headers": {
+        "Content-Type": ["application/json"]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Get",
+      "path": "/api/Topic",
+      "headers": {
+        "Authorization": "Bearer yo"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "[{}]",
+      "headers": {
+        "Content-Type": ["application/json"]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Get",
+      "path": "/api/Topic/yolo",
+      "headers": {
+        "Authorization": "Bearer yo"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "{}",
+      "headers": {
+        "Content-Type": ["application/json"]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Delete",
+      "path": "/api/Topic/yolo",
+      "headers": {
+        "Authorization": "Bearer yo"
       }
     },
     "httpResponse": {

@@ -8,6 +8,8 @@ import (
 	"os"
 )
 
+var debug *bool
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "conduktor",
@@ -25,7 +27,9 @@ func Execute() {
 	if err != nil {
 		os.Exit(1)
 	}
+
 }
 
 func init() {
+	debug = rootCmd.PersistentFlags().BoolP("debug", "d", false, "Show rest query")
 }
