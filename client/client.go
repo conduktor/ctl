@@ -38,13 +38,20 @@ func MakeFromEnv(debug bool) Client {
 	return Make(token, baseUrl, debug)
 }
 
-func (client *Client) Apply(resource *resource.Resource) error {
+func (client *Client) Apply(resource *resource.Resource) (string, error) {
 	url := client.baseUrl + "/" + resource.Kind
 	resp, err := client.client.R().SetBody(resource.Json).Put(url)
 	if resp.IsError() {
-		return fmt.Errorf("Error applying resource %s/%s, got status code: %d:\n %s", resource.Kind, resource.Name, resp.StatusCode(), string(resp.Body()))
+		return "", fmt.Errorf("Error applying resource %s/%s, got status code: %d:\n %s", resource.Kind, resource.Name, resp.StatusCode(), string(resp.Body()))
 	}
-	return err
+	bodyBytes := resp.Body()
+	var upsertResult string
+	err = json.Unmarshal(bodyBytes, &upsertResult)
+	//in case backend format change (not json string anymore). Let not fail the client for that
+	if err != nil {
+		return resp.String(), nil
+	}
+	return upsertResult, nil
 }
 
 func printResponseAsYaml(bytes []byte) error {

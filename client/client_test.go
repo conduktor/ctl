@@ -14,7 +14,7 @@ func TestApplyShouldWork(t *testing.T) {
 	httpmock.ActivateNonDefault(
 		client.client.GetClient(),
 	)
-	responder, err := httpmock.NewJsonResponder(200, "")
+	responder, err := httpmock.NewJsonResponder(200, `NotChanged`)
 	if err != nil {
 		panic(err)
 	}
@@ -35,9 +35,12 @@ func TestApplyShouldWork(t *testing.T) {
 		responder,
 	)
 
-	err = client.Apply(&topic)
+	body, err := client.Apply(&topic)
 	if err != nil {
 		t.Error(err)
+	}
+	if body != "NotChanged" {
+		t.Errorf("Bad result expected NotChanged got: %s", body)
 	}
 }
 
@@ -70,7 +73,7 @@ func TestApplyShouldFailIfNo2xx(t *testing.T) {
 		responder,
 	)
 
-	err = client.Apply(&topic)
+	_, err = client.Apply(&topic)
 	if err == nil {
 		t.Failed()
 	}
