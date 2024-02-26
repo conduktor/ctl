@@ -23,12 +23,12 @@ var applyCmd = &cobra.Command{
 		}
 		client := client.MakeFromEnv(*debug)
 		for _, resource := range resources {
-			err := client.Apply(&resource)
+			upsertResult, err := client.Apply(&resource)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Could not apply resource %s/%s: %s\n", resource.Kind, resource.Name, err)
 				os.Exit(1)
 			} else {
-				fmt.Printf("%s/%s: ok\n", resource.Kind, resource.Name)
+				fmt.Printf("%s/%s: %s\n", resource.Kind, resource.Name, upsertResult)
 			}
 		}
 	},

@@ -9,7 +9,7 @@
     },
     "httpResponse": {
       "statusCode": 200,
-      "body": "{}",
+      "body": "\"Created\"",
       "headers": {
         "Content-Type": ["application/json"]
       }
