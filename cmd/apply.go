@@ -16,9 +16,21 @@ var applyCmd = &cobra.Command{
 	Short: "upsert a resource on Conduktor",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		resources, error := resource.FromFile(*filePath)
-		if error != nil {
-			fmt.Fprintf(os.Stderr, "%s\n", error)
+		var resources []resource.Resource
+		var err error
+
+		directory, err := isDirectory(*filePath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s\n", err)
+			os.Exit(1)
+		}
+		if directory {
+			resources, err = resource.FromFolder(*filePath)
+		} else {
+			resources, err = resource.FromFile(*filePath)
+		}
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s\n", err)
 			os.Exit(1)
 		}
 		client := client.MakeFromEnv(*debug)
@@ -42,4 +54,13 @@ func init() {
 		PersistentFlags().StringP("file", "f", "", "Specify the file to apply")
 
 	applyCmd.MarkPersistentFlagRequired("file")
+}
+
+func isDirectory(path string) (bool, error) {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return false, err
+	}
+
+	return fileInfo.IsDir(), err
 }

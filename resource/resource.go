@@ -8,6 +8,8 @@ import (
 	yaml "gopkg.in/yaml.v3"
 	"io"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 type Resource struct {
@@ -38,6 +40,25 @@ func FromFile(path string) ([]Resource, error) {
 	}
 
 	return FromByte(data)
+}
+
+func FromFolder(path string) ([]Resource, error) {
+	dirEntry, err := os.ReadDir(path)
+	if err != nil {
+		return nil, err
+	}
+	var result = make([]Resource, 0, 0)
+	for _, entry := range dirEntry {
+		if !entry.IsDir() && (strings.HasSuffix(entry.Name(), ".yml") || strings.HasSuffix(entry.Name(), ".yaml")) {
+			resources, err := FromFile(filepath.Join(path, entry.Name()))
+			result = append(result, resources...)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	return result, nil
 }
 
 func FromByte(data []byte) ([]Resource, error) {
