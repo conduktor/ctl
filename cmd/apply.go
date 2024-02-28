@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-var filePath *string
+var filePath *[]string
 
 // applyCmd represents the apply command
 var applyCmd = &cobra.Command{
@@ -16,22 +16,14 @@ var applyCmd = &cobra.Command{
 	Short: "upsert a resource on Conduktor",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		var resources []resource.Resource
-		var err error
-
-		directory, err := isDirectory(*filePath)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s\n", err)
-			os.Exit(1)
-		}
-		if directory {
-			resources, err = resource.FromFolder(*filePath)
-		} else {
-			resources, err = resource.FromFile(*filePath)
-		}
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s\n", err)
-			os.Exit(1)
+		var resources []resource.Resource = make([]resource.Resource, 0)
+		for _, path := range *filePath {
+			r, err := resourceForPath(path)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "%s\n", err)
+				os.Exit(1)
+			}
+			resources = append(resources, r...)
 		}
 		client := client.MakeFromEnv(*debug)
 		for _, resource := range resources {
@@ -46,12 +38,25 @@ var applyCmd = &cobra.Command{
 	},
 }
 
+func resourceForPath(path string) ([]resource.Resource, error) {
+	directory, err := isDirectory(path)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		os.Exit(1)
+	}
+	if directory {
+		return resource.FromFolder(path)
+	} else {
+		return resource.FromFile(path)
+	}
+}
+
 func init() {
 	rootCmd.AddCommand(applyCmd)
 
 	// Here you will define your flags and configuration settings.
 	filePath = applyCmd.
-		PersistentFlags().StringP("file", "f", "", "Specify the file to apply")
+		PersistentFlags().StringArrayP("file", "f", make([]string, 0, 0), "Specify the file to apply")
 
 	applyCmd.MarkPersistentFlagRequired("file")
 }
