@@ -56,7 +56,7 @@ func init() {
 
 	// Here you will define your flags and configuration settings.
 	filePath = applyCmd.
-		PersistentFlags().StringArrayP("file", "f", make([]string, 0, 0), "Specify the file to apply")
+		PersistentFlags().StringArrayP("file", "f", make([]string, 0, 0), "Specify the files to apply")
 
 	applyCmd.MarkPersistentFlagRequired("file")
 }
