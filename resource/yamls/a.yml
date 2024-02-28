@@ -1,0 +1,14 @@
+---
+version: v1
+kind: a
+metadata:
+  name: a 
+spec:
+  data: data
+---
+version: v1
+kind: a
+metadata:
+  name: b 
+spec:
+  data: data2

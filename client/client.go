@@ -41,6 +41,9 @@ func MakeFromEnv(debug bool) Client {
 func (client *Client) Apply(resource *resource.Resource) (string, error) {
 	url := client.baseUrl + "/" + resource.Kind
 	resp, err := client.client.R().SetBody(resource.Json).Put(url)
+	if err != nil {
+		return "", err
+	}
 	if resp.IsError() {
 		return "", fmt.Errorf("Error applying resource %s/%s, got status code: %d:\n %s", resource.Kind, resource.Name, resp.StatusCode(), string(resp.Body()))
 	}
