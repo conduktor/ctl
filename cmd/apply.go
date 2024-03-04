@@ -60,7 +60,7 @@ func init() {
 		PersistentFlags().StringArrayP("file", "f", make([]string, 0, 0), "Specify the files to apply")
 
 	dryRun = applyCmd.
-		PersistentFlags().Bool("dry-mode", false, "Don't really apply change but check on backend the effect if applied")
+		PersistentFlags().Bool("dry-run", false, "Don't really apply change but check on backend the effect if applied")
 
 	applyCmd.MarkPersistentFlagRequired("file")
 }
