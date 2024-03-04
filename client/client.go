@@ -38,9 +38,17 @@ func MakeFromEnv(debug bool) Client {
 	return Make(token, baseUrl, debug)
 }
 
-func (client *Client) Apply(resource *resource.Resource) (string, error) {
+type UpsertResponse struct {
+	UpsertResult string
+}
+
+func (client *Client) Apply(resource *resource.Resource, dryMode bool) (string, error) {
 	url := client.baseUrl + "/" + resource.Kind
-	resp, err := client.client.R().SetBody(resource.Json).Put(url)
+	builder := client.client.R().SetBody(resource.Json)
+	if dryMode {
+		builder = builder.SetQueryParam("dryMode", "true")
+	}
+	resp, err := builder.Put(url)
 	if err != nil {
 		return "", err
 	}
@@ -48,13 +56,22 @@ func (client *Client) Apply(resource *resource.Resource) (string, error) {
 		return "", fmt.Errorf("Error applying resource %s/%s, got status code: %d:\n %s", resource.Kind, resource.Name, resp.StatusCode(), string(resp.Body()))
 	}
 	bodyBytes := resp.Body()
-	var upsertResult string
-	err = json.Unmarshal(bodyBytes, &upsertResult)
+	var upsertResponse UpsertResponse
+	err = json.Unmarshal(bodyBytes, &upsertResponse)
 	//in case backend format change (not json string anymore). Let not fail the client for that
 	if err != nil {
 		return resp.String(), nil
 	}
-	return upsertResult, nil
+	if dryMode && upsertResponse.UpsertResult == "Created" {
+		return "To be created", nil
+	}
+	if dryMode && upsertResponse.UpsertResult == "Updated" {
+		return "To be updated", nil
+	}
+	if dryMode && upsertResponse.UpsertResult == "NotChanged" {
+		return "Nothing to do", nil
+	}
+	return upsertResponse.UpsertResult, nil
 }
 
 func printResponseAsYaml(bytes []byte) error {

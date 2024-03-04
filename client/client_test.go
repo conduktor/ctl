@@ -14,10 +14,7 @@ func TestApplyShouldWork(t *testing.T) {
 	httpmock.ActivateNonDefault(
 		client.client.GetClient(),
 	)
-	responder, err := httpmock.NewJsonResponder(200, `NotChanged`)
-	if err != nil {
-		panic(err)
-	}
+	responder := httpmock.NewStringResponder(200, `{"upsertResult": "NotChanged"}`)
 
 	topic := resource.Resource{
 		Json:    []byte(`{"yolo": "data"}`),
@@ -35,11 +32,46 @@ func TestApplyShouldWork(t *testing.T) {
 		responder,
 	)
 
-	body, err := client.Apply(&topic)
+	body, err := client.Apply(&topic, false)
 	if err != nil {
 		t.Error(err)
 	}
 	if body != "NotChanged" {
+		t.Errorf("Bad result expected NotChanged got: %s", body)
+	}
+}
+
+func TestApplyWithDryModeShouldWork(t *testing.T) {
+	defer httpmock.Reset()
+	baseUrl := "http://baseUrl/api"
+	token := "aToken"
+	client := Make(token, baseUrl, false)
+	httpmock.ActivateNonDefault(
+		client.client.GetClient(),
+	)
+	responder := httpmock.NewStringResponder(200, `{"upsertResult": "NotChanged"}`)
+
+	topic := resource.Resource{
+		Json:    []byte(`{"yolo": "data"}`),
+		Kind:    "topic",
+		Name:    "toto",
+		Version: "v1",
+	}
+
+	httpmock.RegisterMatcherResponderWithQuery(
+		"PUT",
+		"http://baseUrl/api/topic",
+		"dryMode=true",
+		httpmock.HeaderIs("Authorization", "Bearer "+token).
+			And(httpmock.BodyContainsBytes(topic.Json)),
+		responder,
+	)
+
+	body, err := client.Apply(&topic, true)
+	if err != nil {
+		t.Error(err)
+	}
+	if body != "Nothing to do" {
 		t.Errorf("Bad result expected NotChanged got: %s", body)
 	}
 }
@@ -73,7 +105,7 @@ func TestApplyShouldFailIfNo2xx(t *testing.T) {
 		responder,
 	)
 
-	_, err = client.Apply(&topic)
+	_, err = client.Apply(&topic, false)
 	if err == nil {
 		t.Failed()
 	}
