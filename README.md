@@ -1,4 +1,13 @@
 ## Conduktor ctl
+How to download binary:
+```
+Look for assets of the last release:
+https://github.com/conduktor/ctl/releases
+```
+How to get the latest docker image:
+```
+docker pull harbor.cdkt.dev/conduktor/conduktorctl
+```
 
 How to build:
 ```
