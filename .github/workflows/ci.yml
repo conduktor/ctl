@@ -21,7 +21,7 @@ jobs:
       - name: run test
         run: ./test_final_exec.sh
   build-docker:
-    name: Build and publish conduktorctl images
+    name: Build and publish conduktor-ctl images
     uses: ./.github/workflows/build-docker.yml
     secrets: inherit
     needs: [unit-test, integration-test]

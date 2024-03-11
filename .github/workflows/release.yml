@@ -100,7 +100,7 @@ jobs:
           project_path: "./"
           binary_name: "conduktor"
   build-docker:
-    name: Build and publish conduktorctl images
+    name: Build and publish conduktor-ctl images
     uses: ./.github/workflows/build-docker.yml
     secrets: inherit
     needs: [tags, unit-test, integration-test]

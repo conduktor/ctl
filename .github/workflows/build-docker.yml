@@ -31,11 +31,11 @@ jobs:
       id-token: write
       contents: read
     env:
-      IMAGE_NAME: "conduktorctl"
-      HARBOR_IMAGE: "harbor.cdkt.dev/conduktor/conduktorctl"
+      IMAGE_NAME: "conduktor-ctl"
+      HARBOR_IMAGE: "harbor.cdkt.dev/conduktor/conduktor-ctl"
       LABEL_IMAGE_TITLE: "Conduktor ctl"
       LABEL_IMAGE_DESCRIPTION: "Conduktor command line tools"
-      LABEL_IMAGE_URL: "https://hub.docker.com/r/conduktor/conduktorctl"
+      LABEL_IMAGE_URL: "https://hub.docker.com/r/conduktor/conduktor-ctl"
     steps:
       - name: Set up Docker Buildx
         id: setup-buildx

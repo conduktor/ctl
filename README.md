@@ -6,7 +6,7 @@ https://github.com/conduktor/ctl/releases
 ```
 How to get the latest docker image:
 ```
-docker pull harbor.cdkt.dev/conduktor/conduktorctl
+docker pull harbor.cdkt.dev/conduktor/conduktor-ctl
 ```
 
 How to build:
