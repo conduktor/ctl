@@ -2,9 +2,10 @@ package printutils
 
 import (
 	"fmt"
-	yaml "gopkg.in/yaml.v3"
 	"io"
 	"slices"
+
+	yaml "gopkg.in/yaml.v3"
 )
 
 func printKeyYaml(w io.Writer, key string, data interface{}) error {
@@ -50,9 +51,9 @@ func printResource(w io.Writer, data interface{}) error {
 // take a interface that can be a resource or multiple resource
 // and print it as the content of a file we could use for an apply
 func PrintResourceLikeYamlFile(w io.Writer, data interface{}) error {
-	switch data.(type) {
+	switch dataType := data.(type) {
 	case []interface{}:
-		for _, d := range data.([]interface{}) {
+		for _, d := range dataType {
 			fmt.Fprintln(w, "---")
 			err := printResource(w, d)
 			if err != nil {
