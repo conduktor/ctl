@@ -19,7 +19,7 @@ func TestApplyShouldWork(t *testing.T) {
 
 	topic := resource.Resource{
 		Json:    []byte(`{"yolo": "data"}`),
-		Kind:    "topic",
+		Kind:    "Topic",
 		Name:    "toto",
 		Version: "v1",
 	}
@@ -54,7 +54,7 @@ func TestApplyWithDryModeShouldWork(t *testing.T) {
 
 	topic := resource.Resource{
 		Json:    []byte(`{"yolo": "data"}`),
-		Kind:    "topic",
+		Kind:    "Topic",
 		Name:    "toto",
 		Version: "v1",
 	}
@@ -92,7 +92,7 @@ func TestApplyShouldFailIfNo2xx(t *testing.T) {
 
 	topic := resource.Resource{
 		Json:    []byte(`{"yolo": "data"}`),
-		Kind:    "topic",
+		Kind:    "Topic",
 		Name:    "toto",
 		Version: "v1",
 	}
@@ -161,6 +161,33 @@ func TestGetShouldApplyCaseTransformation(t *testing.T) {
 	)
 
 	err = client.Get("ApplicationInstance")
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestGetShouldKeepCase(t *testing.T) {
+	defer httpmock.Reset()
+	baseUrl := "http://baseUrl/api"
+	token := "aToken"
+	client := Make(token, baseUrl, false)
+	httpmock.ActivateNonDefault(
+		client.client.GetClient(),
+	)
+	responder, err := httpmock.NewJsonResponder(200, "[]")
+	if err != nil {
+		panic(err)
+	}
+
+	httpmock.RegisterMatcherResponderWithQuery(
+		"GET",
+		"http://baseUrl/api/application-instance",
+		nil,
+		httpmock.HeaderIs("Authorization", "Bearer "+token),
+		responder,
+	)
+
+	err = client.Get("application-instance")
 	if err != nil {
 		t.Error(err)
 	}
