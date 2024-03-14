@@ -3,10 +3,12 @@ package client
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"strings"
+
 	"github.com/conduktor/ctl/printutils"
 	"github.com/conduktor/ctl/resource"
 	"github.com/go-resty/resty/v2"
-	"os"
 )
 
 type Client struct {
@@ -43,7 +45,7 @@ type UpsertResponse struct {
 }
 
 func (client *Client) Apply(resource *resource.Resource, dryMode bool) (string, error) {
-	url := client.baseUrl + "/" + resource.Kind
+	url := client.baseUrl + "/" + UpperCamelToKebab(resource.Kind)
 	builder := client.client.R().SetBody(resource.Json)
 	if dryMode {
 		builder = builder.SetQueryParam("dryMode", "true")
@@ -53,7 +55,7 @@ func (client *Client) Apply(resource *resource.Resource, dryMode bool) (string, 
 		return "", err
 	}
 	if resp.IsError() {
-		return "", fmt.Errorf("Error applying resource %s/%s, got status code: %d:\n %s", resource.Kind, resource.Name, resp.StatusCode(), string(resp.Body()))
+		return "", fmt.Errorf("error applying resource %s/%s, got status code: %d:\n %s", resource.Kind, resource.Name, resp.StatusCode(), string(resp.Body()))
 	}
 	bodyBytes := resp.Body()
 	var upsertResponse UpsertResponse
@@ -84,10 +86,10 @@ func printResponseAsYaml(bytes []byte) error {
 }
 
 func (client *Client) Get(kind string) error {
-	url := client.baseUrl + "/" + kind
+	url := client.baseUrl + "/" + UpperCamelToKebab(kind)
 	resp, err := client.client.R().Get(url)
 	if resp.IsError() {
-		return fmt.Errorf("Error listing resources of kind %s, got status code: %d:\n %s", kind, resp.StatusCode(), string(resp.Body()))
+		return fmt.Errorf("error listing resources of kind %s, got status code: %d:\n %s", kind, resp.StatusCode(), string(resp.Body()))
 	}
 	if err != nil {
 		return err
@@ -95,10 +97,10 @@ func (client *Client) Get(kind string) error {
 	return printResponseAsYaml(resp.Body())
 }
 func (client *Client) Describe(kind, name string) error {
-	url := client.baseUrl + "/" + kind + "/" + name
+	url := client.baseUrl + "/" + UpperCamelToKebab(kind) + "/" + name
 	resp, err := client.client.R().Get(url)
 	if resp.IsError() {
-		return fmt.Errorf("Error describing resources %s/%s, got status code: %d:\n %s", kind, name, resp.StatusCode(), string(resp.Body()))
+		return fmt.Errorf("error describing resources %s/%s, got status code: %d:\n %s", kind, name, resp.StatusCode(), string(resp.Body()))
 	}
 	if err != nil {
 		return err
@@ -107,13 +109,37 @@ func (client *Client) Describe(kind, name string) error {
 }
 
 func (client *Client) Delete(kind, name string) error {
-	url := client.baseUrl + "/" + kind + "/" + name
+	url := client.baseUrl + "/" + UpperCamelToKebab(kind) + "/" + name
 	resp, err := client.client.R().Delete(url)
 	if resp.IsError() {
-		return fmt.Errorf("Error deleting resources %s/%s, got status code: %d:\n %s", kind, name, resp.StatusCode(), string(resp.Body()))
+		return fmt.Errorf("error deleting resources %s/%s, got status code: %d:\n %s", kind, name, resp.StatusCode(), string(resp.Body()))
 	} else {
 		fmt.Printf("%s/%s deleted\n", kind, name)
 	}
 
 	return err
+}
+
+func UpperCamelToKebab(input string) string {
+	// Split the input string into words
+	words := make([]string, 0)
+	currentWord := ""
+	for _, char := range input {
+		if char >= 'A' && char <= 'Z' {
+			if currentWord != "" {
+				words = append(words, currentWord)
+			}
+			currentWord = string(char)
+		} else {
+			currentWord += string(char)
+		}
+	}
+	if currentWord != "" {
+		words = append(words, currentWord)
+	}
+
+	// Join the words with hyphens
+	kebabCase := strings.ToLower(strings.Join(words, "-"))
+
+	return kebabCase
 }
