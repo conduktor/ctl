@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	yamlJson "github.com/ghodss/yaml"
-	yaml "gopkg.in/yaml.v3"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
+
+	yamlJson "github.com/ghodss/yaml"
+	yaml "gopkg.in/yaml.v3"
 )
 
 type Resource struct {
