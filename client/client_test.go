@@ -11,7 +11,7 @@ func TestApplyShouldWork(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl/api"
 	token := "aToken"
-	client := Make(token, baseUrl, false)
+	client := Make(token, baseUrl, false, "", "")
 	httpmock.ActivateNonDefault(
 		client.client.GetClient(),
 	)
@@ -46,7 +46,7 @@ func TestApplyWithDryModeShouldWork(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl/api"
 	token := "aToken"
-	client := Make(token, baseUrl, false)
+	client := Make(token, baseUrl, false, "", "")
 	httpmock.ActivateNonDefault(
 		client.client.GetClient(),
 	)
@@ -81,7 +81,7 @@ func TestApplyShouldFailIfNo2xx(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl/api"
 	token := "aToken"
-	client := Make(token, baseUrl, false)
+	client := Make(token, baseUrl, false, "", "")
 	httpmock.ActivateNonDefault(
 		client.client.GetClient(),
 	)
@@ -116,7 +116,7 @@ func TestGetShouldWork(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl/api"
 	token := "aToken"
-	client := Make(token, baseUrl, false)
+	client := Make(token, baseUrl, false, "", "")
 	httpmock.ActivateNonDefault(
 		client.client.GetClient(),
 	)
@@ -143,7 +143,7 @@ func TestGetShouldApplyCaseTransformation(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl/api"
 	token := "aToken"
-	client := Make(token, baseUrl, false)
+	client := Make(token, baseUrl, false, "", "")
 	httpmock.ActivateNonDefault(
 		client.client.GetClient(),
 	)
@@ -170,7 +170,7 @@ func TestGetShouldKeepCase(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl/api"
 	token := "aToken"
-	client := Make(token, baseUrl, false)
+	client := Make(token, baseUrl, false, "", "")
 	httpmock.ActivateNonDefault(
 		client.client.GetClient(),
 	)
@@ -197,7 +197,7 @@ func TestGetShouldFailIfN2xx(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl/api"
 	token := "aToken"
-	client := Make(token, baseUrl, false)
+	client := Make(token, baseUrl, false, "", "")
 	httpmock.ActivateNonDefault(
 		client.client.GetClient(),
 	)
@@ -224,7 +224,7 @@ func TestDescribeShouldWork(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl/api"
 	token := "aToken"
-	client := Make(token, baseUrl, false)
+	client := Make(token, baseUrl, false, "", "")
 	httpmock.ActivateNonDefault(
 		client.client.GetClient(),
 	)
@@ -251,7 +251,7 @@ func TestDescribeShouldFailIfNo2xx(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl/api"
 	token := "aToken"
-	client := Make(token, baseUrl, false)
+	client := Make(token, baseUrl, false, "", "")
 	httpmock.ActivateNonDefault(
 		client.client.GetClient(),
 	)
@@ -278,7 +278,7 @@ func TestDeleteShouldWork(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl/api"
 	token := "aToken"
-	client := Make(token, baseUrl, false)
+	client := Make(token, baseUrl, false, "", "")
 	httpmock.ActivateNonDefault(
 		client.client.GetClient(),
 	)
@@ -304,7 +304,7 @@ func TestDeleteShouldFailOnNot2XX(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl/api"
 	token := "aToken"
-	client := Make(token, baseUrl, false)
+	client := Make(token, baseUrl, false, "", "")
 	httpmock.ActivateNonDefault(
 		client.client.GetClient(),
 	)

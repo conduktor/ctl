@@ -1,6 +1,7 @@
 package client
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -17,15 +18,16 @@ type Client struct {
 	client  *resty.Client
 }
 
-func Make(token string, baseUrl string, debug bool) Client {
+func Make(token string, baseUrl string, debug bool, key, cert string) Client {
+	certificate, _ := tls.LoadX509KeyPair(cert, key)
 	return Client{
 		token:   token,
 		baseUrl: baseUrl,
-		client:  resty.New().SetDebug(debug).SetHeader("Authorization", "Bearer "+token),
+		client:  resty.New().SetDebug(debug).SetHeader("Authorization", "Bearer "+token).SetCertificates(certificate),
 	}
 }
 
-func MakeFromEnv(debug bool) Client {
+func MakeFromEnv(debug bool, key, cert string) Client {
 	token := os.Getenv("CDK_TOKEN")
 	if token == "" {
 		fmt.Fprintln(os.Stderr, "Please set CDK_TOKEN")
@@ -36,8 +38,16 @@ func MakeFromEnv(debug bool) Client {
 		fmt.Fprintln(os.Stderr, "Please set CDK_BASE_URL")
 		os.Exit(2)
 	}
+	finalKey := key
+	finalCert := cert
+	if finalKey == "" {
+		finalKey = os.Getenv("CDK_KEY")
+	}
+	if finalCert == "" {
+		finalCert = os.Getenv("CDK_CERT")
+	}
 
-	return Make(token, baseUrl, debug)
+	return Make(token, baseUrl, debug, finalKey, finalCert)
 }
 
 type UpsertResponse struct {

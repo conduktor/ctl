@@ -11,10 +11,14 @@ import (
 var getCmd = &cobra.Command{
 	Use:   "get kind [name]",
 	Short: "get resource of a given kind",
-	Long:  ``,
-	Args:  cobra.MatchAll(cobra.MinimumNArgs(1), cobra.MaximumNArgs(2)),
+	Long: `If name not provided it will list all resource. For example:
+conduktor get application
+will list all applications. Whereas:
+conduktor get application myapp
+will describe the application myapp`,
+	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.MaximumNArgs(2)),
 	Run: func(cmd *cobra.Command, args []string) {
-		client := client.MakeFromEnv(*debug)
+		client := client.MakeFromEnv(*debug, *key, *cert)
 		var err error
 		if len(args) == 1 {
 			err = client.Get(args[0])

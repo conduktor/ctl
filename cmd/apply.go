@@ -26,7 +26,7 @@ var applyCmd = &cobra.Command{
 			}
 			resources = append(resources, r...)
 		}
-		client := client.MakeFromEnv(*debug)
+		client := client.MakeFromEnv(*debug, *key, *cert)
 		for _, resource := range resources {
 			upsertResult, err := client.Apply(&resource, *dryRun)
 			if err != nil {
