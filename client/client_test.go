@@ -72,7 +72,7 @@ func TestApplyWithDryModeShouldWork(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if body != "Nothing to do" {
+	if body != "NotChanged" {
 		t.Errorf("Bad result expected NotChanged got: %s", body)
 	}
 }

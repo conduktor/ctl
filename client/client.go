@@ -74,15 +74,6 @@ func (client *Client) Apply(resource *resource.Resource, dryMode bool) (string, 
 	if err != nil {
 		return resp.String(), nil
 	}
-	if dryMode && upsertResponse.UpsertResult == "Created" {
-		return "To be created", nil
-	}
-	if dryMode && upsertResponse.UpsertResult == "Updated" {
-		return "To be updated", nil
-	}
-	if dryMode && upsertResponse.UpsertResult == "NotChanged" {
-		return "Nothing to do", nil
-	}
 	return upsertResponse.UpsertResult, nil
 }
 
