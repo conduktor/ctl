@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/conduktor/ctl/client"
 	"github.com/conduktor/ctl/resource"
 	"github.com/spf13/cobra"
 	"os"
@@ -26,9 +25,8 @@ var applyCmd = &cobra.Command{
 			}
 			resources = append(resources, r...)
 		}
-		client := client.MakeFromEnv(*debug, *key, *cert)
 		for _, resource := range resources {
-			upsertResult, err := client.Apply(&resource, *dryRun)
+			upsertResult, err := apiClient.Apply(&resource, *dryRun)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Could not apply resource %s/%s: %s\n", resource.Kind, resource.Name, err)
 				os.Exit(1)
@@ -52,7 +50,7 @@ func resourceForPath(path string) ([]resource.Resource, error) {
 	}
 }
 
-func init() {
+func initApply() {
 	rootCmd.AddCommand(applyCmd)
 
 	// Here you will define your flags and configuration settings.
