@@ -18,7 +18,7 @@ How to run:
 ```
 read CDK_TOKEN
 export CDK_TOKEN
-export CDK_BASE_URL=http://localhost:8080/public/v1
+export CDK_BASE_URL=http://localhost:8080
 go run . 
 ```
 

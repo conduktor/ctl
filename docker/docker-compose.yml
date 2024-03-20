@@ -6,7 +6,7 @@ services:
       context: ..
     environment:
       CDK_TOKEN: yo
-      CDK_BASE_URL: http://mock:1080/api
+      CDK_BASE_URL: http://mock:1080
     volumes:
       - ./test_resource.yml:/test_resource.yml
   mock:

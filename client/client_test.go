@@ -9,7 +9,7 @@ import (
 
 func TestApplyShouldWork(t *testing.T) {
 	defer httpmock.Reset()
-	baseUrl := "http://baseUrl/api"
+	baseUrl := "http://baseUrl"
 	token := "aToken"
 	client := Make(token, baseUrl, false, "", "")
 	httpmock.ActivateNonDefault(
@@ -26,7 +26,7 @@ func TestApplyShouldWork(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"PUT",
-		"http://baseUrl/api/topic",
+		"http://baseUrl/public/v1/topic",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+token).
 			And(httpmock.BodyContainsBytes(topic.Json)),
@@ -44,7 +44,7 @@ func TestApplyShouldWork(t *testing.T) {
 
 func TestApplyWithDryModeShouldWork(t *testing.T) {
 	defer httpmock.Reset()
-	baseUrl := "http://baseUrl/api"
+	baseUrl := "http://baseUrl"
 	token := "aToken"
 	client := Make(token, baseUrl, false, "", "")
 	httpmock.ActivateNonDefault(
@@ -61,7 +61,7 @@ func TestApplyWithDryModeShouldWork(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"PUT",
-		"http://baseUrl/api/topic",
+		"http://baseUrl/public/v1/topic",
 		"dryMode=true",
 		httpmock.HeaderIs("Authorization", "Bearer "+token).
 			And(httpmock.BodyContainsBytes(topic.Json)),
@@ -79,7 +79,7 @@ func TestApplyWithDryModeShouldWork(t *testing.T) {
 
 func TestApplyShouldFailIfNo2xx(t *testing.T) {
 	defer httpmock.Reset()
-	baseUrl := "http://baseUrl/api"
+	baseUrl := "http://baseUrl"
 	token := "aToken"
 	client := Make(token, baseUrl, false, "", "")
 	httpmock.ActivateNonDefault(
@@ -99,7 +99,7 @@ func TestApplyShouldFailIfNo2xx(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"PUT",
-		"http://baseUrl/api/topic",
+		"http://baseUrl/public/v1/topic",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+token).
 			And(httpmock.BodyContainsBytes(topic.Json)),
@@ -114,7 +114,7 @@ func TestApplyShouldFailIfNo2xx(t *testing.T) {
 
 func TestGetShouldWork(t *testing.T) {
 	defer httpmock.Reset()
-	baseUrl := "http://baseUrl/api"
+	baseUrl := "http://baseUrl"
 	token := "aToken"
 	client := Make(token, baseUrl, false, "", "")
 	httpmock.ActivateNonDefault(
@@ -127,7 +127,7 @@ func TestGetShouldWork(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"GET",
-		"http://baseUrl/api/application",
+		"http://baseUrl/public/v1/application",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+token),
 		responder,
@@ -141,7 +141,7 @@ func TestGetShouldWork(t *testing.T) {
 
 func TestGetShouldApplyCaseTransformation(t *testing.T) {
 	defer httpmock.Reset()
-	baseUrl := "http://baseUrl/api"
+	baseUrl := "http://baseUrl"
 	token := "aToken"
 	client := Make(token, baseUrl, false, "", "")
 	httpmock.ActivateNonDefault(
@@ -154,7 +154,7 @@ func TestGetShouldApplyCaseTransformation(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"GET",
-		"http://baseUrl/api/application-instance",
+		"http://baseUrl/public/v1/application-instance",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+token),
 		responder,
@@ -168,7 +168,7 @@ func TestGetShouldApplyCaseTransformation(t *testing.T) {
 
 func TestGetShouldKeepCase(t *testing.T) {
 	defer httpmock.Reset()
-	baseUrl := "http://baseUrl/api"
+	baseUrl := "http://baseUrl"
 	token := "aToken"
 	client := Make(token, baseUrl, false, "", "")
 	httpmock.ActivateNonDefault(
@@ -181,7 +181,7 @@ func TestGetShouldKeepCase(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"GET",
-		"http://baseUrl/api/application-instance",
+		"http://baseUrl/public/v1/application-instance",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+token),
 		responder,
@@ -195,7 +195,7 @@ func TestGetShouldKeepCase(t *testing.T) {
 
 func TestGetShouldFailIfN2xx(t *testing.T) {
 	defer httpmock.Reset()
-	baseUrl := "http://baseUrl/api"
+	baseUrl := "http://baseUrl"
 	token := "aToken"
 	client := Make(token, baseUrl, false, "", "")
 	httpmock.ActivateNonDefault(
@@ -208,7 +208,7 @@ func TestGetShouldFailIfN2xx(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"GET",
-		"http://baseUrl/api/application",
+		"http://baseUrl/public/v1/application",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+token),
 		responder,
@@ -222,7 +222,7 @@ func TestGetShouldFailIfN2xx(t *testing.T) {
 
 func TestDescribeShouldWork(t *testing.T) {
 	defer httpmock.Reset()
-	baseUrl := "http://baseUrl/api"
+	baseUrl := "http://baseUrl"
 	token := "aToken"
 	client := Make(token, baseUrl, false, "", "")
 	httpmock.ActivateNonDefault(
@@ -235,7 +235,7 @@ func TestDescribeShouldWork(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"GET",
-		"http://baseUrl/api/application/yo",
+		"http://baseUrl/public/v1/application/yo",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+token),
 		responder,
@@ -262,7 +262,7 @@ func TestDescribeShouldFailIfNo2xx(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"GET",
-		"http://baseUrl/api/application/yo",
+		"http://baseUrl/public/v1/application/yo",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+token),
 		responder,
@@ -276,7 +276,7 @@ func TestDescribeShouldFailIfNo2xx(t *testing.T) {
 
 func TestDeleteShouldWork(t *testing.T) {
 	defer httpmock.Reset()
-	baseUrl := "http://baseUrl/api"
+	baseUrl := "http://baseUrl"
 	token := "aToken"
 	client := Make(token, baseUrl, false, "", "")
 	httpmock.ActivateNonDefault(
@@ -289,7 +289,7 @@ func TestDeleteShouldWork(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"DELETE",
-		"http://baseUrl/api/application/yo",
+		"http://baseUrl/public/v1/application/yo",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+token),
 		responder,
@@ -302,7 +302,7 @@ func TestDeleteShouldWork(t *testing.T) {
 }
 func TestDeleteShouldFailOnNot2XX(t *testing.T) {
 	defer httpmock.Reset()
-	baseUrl := "http://baseUrl/api"
+	baseUrl := "http://baseUrl"
 	token := "aToken"
 	client := Make(token, baseUrl, false, "", "")
 	httpmock.ActivateNonDefault(
@@ -315,7 +315,7 @@ func TestDeleteShouldFailOnNot2XX(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"DELETE",
-		"http://baseUrl/api/application/yo",
+		"http://baseUrl/public/v1/api/application/yo",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+token),
 		responder,
