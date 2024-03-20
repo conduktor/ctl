@@ -2,7 +2,7 @@
   {
     "httpRequest": {
       "method": "Put",
-      "path": "/api/Topic",
+      "path": "/public/v1/Topic",
       "headers": {
         "Authorization": "Bearer yo"
       }
@@ -18,7 +18,7 @@
   {
     "httpRequest": {
       "method": "Get",
-      "path": "/api/Topic",
+      "path": "/public/v1/Topic",
       "headers": {
         "Authorization": "Bearer yo"
       }
@@ -34,7 +34,7 @@
   {
     "httpRequest": {
       "method": "Get",
-      "path": "/api/Topic/yolo",
+      "path": "/public/v1/Topic/yolo",
       "headers": {
         "Authorization": "Bearer yo"
       }
@@ -50,7 +50,7 @@
   {
     "httpRequest": {
       "method": "Delete",
-      "path": "/api/Topic/yolo",
+      "path": "/public/v1/Topic/yolo",
       "headers": {
         "Authorization": "Bearer yo"
       }

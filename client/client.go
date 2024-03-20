@@ -22,7 +22,7 @@ func Make(token string, baseUrl string, debug bool, key, cert string) Client {
 	certificate, _ := tls.LoadX509KeyPair(cert, key)
 	return Client{
 		token:   token,
-		baseUrl: baseUrl,
+		baseUrl: baseUrl + "/public/v1",
 		client:  resty.New().SetDebug(debug).SetHeader("Authorization", "Bearer "+token).SetCertificates(certificate),
 	}
 }
