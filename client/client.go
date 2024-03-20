@@ -4,12 +4,12 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"os"
-	"strings"
-
 	"github.com/conduktor/ctl/printutils"
 	"github.com/conduktor/ctl/resource"
+	"github.com/conduktor/ctl/utils"
 	"github.com/go-resty/resty/v2"
+	"os"
+	"strings"
 )
 
 type Client struct {
@@ -18,16 +18,16 @@ type Client struct {
 	client  *resty.Client
 }
 
-func Make(token string, baseUrl string, debug bool, key, cert string) Client {
+func Make(token string, baseUrl string, debug bool, key, cert string) *Client {
 	certificate, _ := tls.LoadX509KeyPair(cert, key)
-	return Client{
+	return &Client{
 		token:   token,
-		baseUrl: baseUrl + "/public/v1",
+		baseUrl: baseUrl,
 		client:  resty.New().SetDebug(debug).SetHeader("Authorization", "Bearer "+token).SetCertificates(certificate),
 	}
 }
 
-func MakeFromEnv(debug bool, key, cert string) Client {
+func MakeFromEnv() *Client {
 	token := os.Getenv("CDK_TOKEN")
 	if token == "" {
 		fmt.Fprintln(os.Stderr, "Please set CDK_TOKEN")
@@ -38,16 +38,11 @@ func MakeFromEnv(debug bool, key, cert string) Client {
 		fmt.Fprintln(os.Stderr, "Please set CDK_BASE_URL")
 		os.Exit(2)
 	}
-	finalKey := key
-	finalCert := cert
-	if finalKey == "" {
-		finalKey = os.Getenv("CDK_KEY")
-	}
-	if finalCert == "" {
-		finalCert = os.Getenv("CDK_CERT")
-	}
+	debug := strings.ToLower(os.Getenv("CDK_DEBUG")) == "true"
+	key := os.Getenv("CDK_KEY")
+	cert := os.Getenv("CDK_CERT")
 
-	return Make(token, baseUrl, debug, finalKey, finalCert)
+	return Make(token, baseUrl, debug, key, cert)
 }
 
 type UpsertResponse struct {
@@ -64,8 +59,16 @@ func extractApiError(resp *resty.Response) string {
 	}
 }
 
+func (client *Client) publicV1Url() string {
+	return client.baseUrl + "/public/v1"
+}
+
+func (client *Client) ActivateDebug() {
+	client.client.SetDebug(true)
+}
+
 func (client *Client) Apply(resource *resource.Resource, dryMode bool) (string, error) {
-	url := client.baseUrl + "/" + UpperCamelToKebab(resource.Kind)
+	url := client.publicV1Url() + "/" + utils.UpperCamelToKebab(resource.Kind)
 	builder := client.client.R().SetBody(resource.Json)
 	if dryMode {
 		builder = builder.SetQueryParam("dryMode", "true")
@@ -73,8 +76,7 @@ func (client *Client) Apply(resource *resource.Resource, dryMode bool) (string, 
 	resp, err := builder.Put(url)
 	if err != nil {
 		return "", err
-	}
-	if resp.IsError() {
+	} else if resp.IsError() {
 		return "", fmt.Errorf(extractApiError(resp))
 	}
 	bodyBytes := resp.Body()
@@ -97,32 +99,33 @@ func printResponseAsYaml(bytes []byte) error {
 }
 
 func (client *Client) Get(kind string) error {
-	url := client.baseUrl + "/" + UpperCamelToKebab(kind)
+	url := client.publicV1Url() + "/" + utils.UpperCamelToKebab(kind)
 	resp, err := client.client.R().Get(url)
-	if resp.IsError() {
-		return fmt.Errorf(extractApiError(resp))
-	}
 	if err != nil {
 		return err
+	} else if resp.IsError() {
+		return fmt.Errorf(extractApiError(resp))
 	}
 	return printResponseAsYaml(resp.Body())
 }
+
 func (client *Client) Describe(kind, name string) error {
-	url := client.baseUrl + "/" + UpperCamelToKebab(kind) + "/" + name
+	url := client.publicV1Url() + "/" + utils.UpperCamelToKebab(kind) + "/" + name
 	resp, err := client.client.R().Get(url)
-	if resp.IsError() {
-		return fmt.Errorf("error describing resources %s/%s, got status code: %d:\n %s", kind, name, resp.StatusCode(), string(resp.Body()))
-	}
 	if err != nil {
 		return err
+	} else if resp.IsError() {
+		return fmt.Errorf("error describing resources %s/%s, got status code: %d:\n %s", kind, name, resp.StatusCode(), string(resp.Body()))
 	}
 	return printResponseAsYaml(resp.Body())
 }
 
 func (client *Client) Delete(kind, name string) error {
-	url := client.baseUrl + "/" + UpperCamelToKebab(kind) + "/" + name
+	url := client.publicV1Url() + "/" + utils.UpperCamelToKebab(kind) + "/" + name
 	resp, err := client.client.R().Delete(url)
-	if resp.IsError() {
+	if err != nil {
+		return err
+	} else if resp.IsError() {
 		return fmt.Errorf(extractApiError(resp))
 	} else {
 		fmt.Printf("%s/%s deleted\n", kind, name)
@@ -131,26 +134,13 @@ func (client *Client) Delete(kind, name string) error {
 	return err
 }
 
-func UpperCamelToKebab(input string) string {
-	// Split the input string into words
-	words := make([]string, 0)
-	currentWord := ""
-	for _, char := range input {
-		if char >= 'A' && char <= 'Z' {
-			if currentWord != "" {
-				words = append(words, currentWord)
-			}
-			currentWord = string(char)
-		} else {
-			currentWord += string(char)
-		}
+func (client *Client) GetOpenApi() ([]byte, error) {
+	url := client.baseUrl + "/public/docs/docs.yaml"
+	resp, err := client.client.R().Get(url)
+	if err != nil {
+		return nil, err
+	} else if resp.IsError() {
+		return nil, fmt.Errorf(resp.String())
 	}
-	if currentWord != "" {
-		words = append(words, currentWord)
-	}
-
-	// Join the words with hyphens
-	kebabCase := strings.ToLower(strings.Join(words, "-"))
-
-	return kebabCase
+	return resp.Body(), nil
 }

@@ -37,14 +37,6 @@ How to run integration test:
 First login to your teleport proxy, for example:
 ```
 tsh login --proxy=teleport-01.prd.tooling.cdkt.dev --auth=github
-```
-
-```
-conduktor get application --cert $(tsh apps config --format=cert) --key $(tsh apps config --format=key)
-```
-
-Or:
-```
 export CDK_CERT=$(tsh apps config --format=cert)
 export CDK_KEY=$(tsh apps config --format=key)
 conduktor get application
