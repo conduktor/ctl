@@ -9,6 +9,12 @@ import (
 var getCmd = &cobra.Command{
 	Use:   "get",
 	Short: "get resource of a given kind",
+	Args:  cobra.NoArgs,
+	Run: func(cmd *cobra.Command, args []string) {
+		// Root command does nothing
+		cmd.Help()
+		os.Exit(1)
+	},
 }
 
 var getCmdWhenNoSchema = &cobra.Command{
@@ -35,17 +41,17 @@ will describe the application myapp`,
 }
 
 func initGet() {
-	rootCmd.AddCommand(getCmd)
 	if schemaClient == nil {
-		getCmd.AddCommand(getCmdWhenNoSchema)
+		rootCmd.AddCommand(getCmdWhenNoSchema)
 		return
 	}
 	tags, err := schemaClient.GetKind()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Could not load kind from openapi: %s\n", err)
-		getCmd.AddCommand(getCmdWhenNoSchema)
+		rootCmd.AddCommand(getCmdWhenNoSchema)
 		return
 	}
+	rootCmd.AddCommand(getCmd)
 
 	for _, tag := range tags {
 		tagCmd := &cobra.Command{

@@ -135,7 +135,7 @@ func (client *Client) Delete(kind, name string) error {
 }
 
 func (client *Client) GetOpenApi() ([]byte, error) {
-	url := client.baseUrl + "public/docs/docs.yaml"
+	url := client.baseUrl + "/public/docs/docs.yaml"
 	resp, err := client.client.R().Get(url)
 	if err != nil {
 		return nil, err

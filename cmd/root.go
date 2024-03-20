@@ -28,6 +28,11 @@ You can also use the CDK_KEY,CDK_CERT instead of --key and --cert flags to use a
 			apiClient.ActivateDebug()
 		}
 	},
+	Run: func(cmd *cobra.Command, args []string) {
+		// Root command does nothing
+		cmd.Help()
+		os.Exit(1)
+	},
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
