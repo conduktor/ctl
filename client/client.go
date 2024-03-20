@@ -54,6 +54,16 @@ type UpsertResponse struct {
 	UpsertResult string
 }
 
+func extractApiError(resp *resty.Response) string {
+	var apiError ApiError
+	jsonError := json.Unmarshal(resp.Body(), &apiError)
+	if jsonError != nil {
+		return resp.String()
+	} else {
+		return apiError.String()
+	}
+}
+
 func (client *Client) Apply(resource *resource.Resource, dryMode bool) (string, error) {
 	url := client.baseUrl + "/" + UpperCamelToKebab(resource.Kind)
 	builder := client.client.R().SetBody(resource.Json)
@@ -65,7 +75,7 @@ func (client *Client) Apply(resource *resource.Resource, dryMode bool) (string, 
 		return "", err
 	}
 	if resp.IsError() {
-		return "", fmt.Errorf("error applying resource %s/%s, got status code: %d:\n %s", resource.Kind, resource.Name, resp.StatusCode(), string(resp.Body()))
+		return "", fmt.Errorf(extractApiError(resp))
 	}
 	bodyBytes := resp.Body()
 	var upsertResponse UpsertResponse
@@ -90,7 +100,7 @@ func (client *Client) Get(kind string) error {
 	url := client.baseUrl + "/" + UpperCamelToKebab(kind)
 	resp, err := client.client.R().Get(url)
 	if resp.IsError() {
-		return fmt.Errorf("error listing resources of kind %s, got status code: %d:\n %s", kind, resp.StatusCode(), string(resp.Body()))
+		return fmt.Errorf(extractApiError(resp))
 	}
 	if err != nil {
 		return err
@@ -113,7 +123,7 @@ func (client *Client) Delete(kind, name string) error {
 	url := client.baseUrl + "/" + UpperCamelToKebab(kind) + "/" + name
 	resp, err := client.client.R().Delete(url)
 	if resp.IsError() {
-		return fmt.Errorf("error deleting resources %s/%s, got status code: %d:\n %s", kind, name, resp.StatusCode(), string(resp.Body()))
+		return fmt.Errorf(extractApiError(resp))
 	} else {
 		fmt.Printf("%s/%s deleted\n", kind, name)
 	}
