@@ -64,7 +64,7 @@ func initGet() {
 				if len(args) == 0 {
 					err = apiClient.Get(tag)
 				} else if len(args) == 1 {
-					err = apiClient.Describe(tag, args[1])
+					err = apiClient.Describe(tag, args[0])
 				}
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "%s\n", err)
