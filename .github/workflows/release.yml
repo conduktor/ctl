@@ -58,6 +58,7 @@ jobs:
       LABEL_IMAGE_URL: "https://hub.docker.com/r/conduktor/conduktor-ctl"
       LABEL_IMAGE_DOCUMENTATION: "https://docs.conduktor.io/conduktor"
       LABEL_IMAGE_VENDOR: "Conduktor.io"
+      LABEL_IMAGE_LICENSE: "Apache-2.0"
       PLATFORMS: "linux/amd64,linux/arm64"
     steps:
       - uses: actions/checkout@v3
@@ -97,8 +98,8 @@ jobs:
             org.opencontainers.image.authors=${{ env.LABEL_IMAGE_AUTHORS }}
             org.opencontainers.image.documentation=${{ env.LABEL_IMAGE_DOCUMENTATION }}
             org.opencontainers.image.vendor=${{ env.LABEL_IMAGE_VENDOR }}
+            org.opencontainers.image.licenses=${{ env.LABEL_IMAGE_LICENSE }}
             org.opencontainers.image.url=${{ env.LABEL_IMAGE_URL }}
-            org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.version=${{ github.event.release.tag_name }}
 
       - name: Build ${{ env.IMAGE_NAME }}
