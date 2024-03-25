@@ -99,8 +99,6 @@ Enhancement suggestions are tracked as [GitHub issues](https://github.com/conduk
 - **Describe the current behavior** and **explain which behavior you expected to see instead** and why. At this point you can also tell which alternatives do not work for you.
 - **Explain why this enhancement would be useful** to most conduktor-ctl users. You may also want to point out the other projects that solved it better and which could serve as inspiration.
 
-<!-- You might want to create an issue template for enhancement suggestions that can be used as a guide and that defines the structure of the information to be included. If you do so, reference it here in the description. -->
-
 ### Your First Code Contribution
 
 To run the project locally, you will need Go 1.22+ installed and configured on your machine.
