@@ -18,7 +18,7 @@ Look for assets of the last release at https://github.com/conduktor/ctl/releases
 ### Using Docker image
 How to get the latest docker image:
 ```
-docker pull harbor.cdkt.dev/conduktor/conduktor-ctl
+docker pull conduktor/conduktor-ctl:latest
 ```
 
 ### From source 
