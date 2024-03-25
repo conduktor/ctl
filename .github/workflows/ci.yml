@@ -11,6 +11,14 @@ env:
   GO_VERSION: 1.22.0
 
 jobs:
+  update_release_draft:
+    runs-on: ubuntu-latest
+    if: ${{ github.ref == format('refs/heads/{0}', 'main') }}
+    steps:
+      - uses: release-drafter/release-drafter@v6.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   unit-test:
     runs-on: ubuntu-latest
     steps:
