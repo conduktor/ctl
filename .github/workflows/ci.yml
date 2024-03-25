@@ -10,6 +10,10 @@ on:
 env:
   GO_VERSION: 1.22.0
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != format('refs/heads/{0}', 'main') }}
+
 jobs:
   update_release_draft:
     runs-on: ubuntu-latest
