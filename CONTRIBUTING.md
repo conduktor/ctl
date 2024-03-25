@@ -102,9 +102,29 @@ Enhancement suggestions are tracked as [GitHub issues](https://github.com/conduk
 <!-- You might want to create an issue template for enhancement suggestions that can be used as a guide and that defines the structure of the information to be included. If you do so, reference it here in the description. -->
 
 ### Your First Code Contribution
-Check [README.md](#README.md) for instructions on how to build and run the project locally.
 
-Run the tests to make sure everything is working as expected before submitting a pull request.
+To run the project locally, you will need Go 1.22+ installed and configured on your machine.
+Here some useful commands to get you started:
+
+Build and run the project locally:
+```
+read CDK_TOKEN
+export CDK_TOKEN
+export CDK_BASE_URL=http://localhost:8080
+go run . 
+```
+
+Run unit tests:
+```
+go test ./...
+```
+
+Run integration tests:
+```
+./test_final_exec.sh
+```
+
+Don't forget to run the tests to make sure everything is working as expected before submitting a pull request.
 
 ## Styleguides
 ### Commit Messages
