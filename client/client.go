@@ -18,13 +18,23 @@ type Client struct {
 	client  *resty.Client
 }
 
-func Make(token string, baseUrl string, debug bool, key, cert string) *Client {
-	certificate, _ := tls.LoadX509KeyPair(cert, key)
+func Make(token string, baseUrl string, debug bool, key, cert string) (*Client, error) {
+	restyClient := resty.New().SetDebug(debug).SetHeader("Authorization", "Bearer "+token)
+	if (key == "" && cert != "") || (key != "" && cert == "") {
+		return nil, fmt.Errorf("key and cert must be provided together")
+	} else if key != "" && cert != "" {
+		certificate, err := tls.LoadX509KeyPair(cert, key)
+		restyClient.SetCertificates(certificate)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &Client{
 		token:   token,
 		baseUrl: baseUrl,
-		client:  resty.New().SetDebug(debug).SetHeader("Authorization", "Bearer "+token).SetCertificates(certificate),
-	}
+		client:  restyClient,
+	}, nil
 }
 
 func MakeFromEnv() *Client {
@@ -42,11 +52,24 @@ func MakeFromEnv() *Client {
 	key := os.Getenv("CDK_KEY")
 	cert := os.Getenv("CDK_CERT")
 
-	return Make(token, baseUrl, debug, key, cert)
+	client, err := Make(token, baseUrl, debug, key, cert)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Cannot create client: %s", err)
+		os.Exit(3)
+	}
+	insecure := strings.ToLower(os.Getenv("CDK_INSECURE")) == "true"
+	if insecure {
+		client.IgnoreUntrustedCertificate()
+	}
+	return client
 }
 
 type UpsertResponse struct {
 	UpsertResult string
+}
+
+func (c *Client) IgnoreUntrustedCertificate() {
+	c.client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 }
 
 func extractApiError(resp *resty.Response) string {

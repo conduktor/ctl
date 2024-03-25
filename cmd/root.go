@@ -22,20 +22,17 @@ var rootCmd = &cobra.Command{
 	Use:   "conduktor",
 	Short: "command line tools for conduktor",
 	Long: `You need to define the CDK_TOKEN and CDK_BASE_URL environment variables to use this tool.
-You can also use the CDK_KEY,CDK_CERT instead of --key and --cert flags to use a certificate for tls authentication.`,
+You can also use the CDK_KEY,CDK_CERT instead of --key and --cert flags to use a certificate for tls authentication.
+If you have an untrusted certificate you can use the CDK_INSECURE=true variable to disable tls verification`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		if *debug {
 			apiClient.ActivateDebug()
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		// Root command does nothing
 		cmd.Help()
 		os.Exit(1)
 	},
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) { },
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -45,7 +42,6 @@ func Execute() {
 	if err != nil {
 		os.Exit(1)
 	}
-
 }
 
 func init() {
