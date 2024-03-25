@@ -49,14 +49,14 @@ CDK_TOKEN=<admin-token>
 Usage:
   conduktor [command]
 Available Commands:
-  apply       upsert a resource on Conduktor
+  apply       Upsert a resource on Conduktor
   completion  Generate the autocompletion script for the specified shell
-  delete      delete resource of a given kind and name
-  get         get resource of a given kind
+  delete      Delete resource of a given kind and name
+  get         Get resource of a given kind
   help        Help about any command
-  version     display the version of conduktor
+  version     Display the version of conduktor
 Flags:
-  -h, --help      help for conduktor
+  -h, --help      Help for conduktor
   -v, --verbose   Show more information for debugging
 ````
 
