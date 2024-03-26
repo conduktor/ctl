@@ -1,0 +1,66 @@
+[
+  {
+    "httpRequest": {
+      "method": "Put",
+      "path": "/public/v1/Topic",
+      "headers": {
+        "Authorization": "Bearer yo"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "\"Created\"",
+      "headers": {
+        "Content-Type": ["application/json"]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Get",
+      "path": "/public/v1/Topic",
+      "headers": {
+        "Authorization": "Bearer yo"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "[{}]",
+      "headers": {
+        "Content-Type": ["application/json"]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Get",
+      "path": "/public/v1/Topic/yolo",
+      "headers": {
+        "Authorization": "Bearer yo"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "{}",
+      "headers": {
+        "Content-Type": ["application/json"]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Delete",
+      "path": "/public/v1/Topic/yolo",
+      "headers": {
+        "Authorization": "Bearer yo"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "{}",
+      "headers": {
+        "Content-Type": ["application/json"]
+      }
+    }
+  }
+]

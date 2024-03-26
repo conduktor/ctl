@@ -1,0 +1,77 @@
+name: Build and Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, reopened, synchronize, labeled]
+
+env:
+  GO_VERSION: 1.22.0
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != format('refs/heads/{0}', 'main') }}
+
+jobs:
+  update_release_draft:
+    runs-on: ubuntu-latest
+    if: ${{ github.ref == format('refs/heads/{0}', 'main') }}
+    steps:
+      - uses: release-drafter/release-drafter@v6.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  unit-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: go test
+        run: go test ./...
+
+  integration-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: run test
+        run: ./test_final_exec.sh
+
+  docker-test:
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: "conduktor-ctl"
+      PLATFORMS: "linux/amd64,linux/arm64"
+    steps:
+      - uses: actions/checkout@v3
+      - uses: docker/setup-buildx-action@v3
+        with:
+          platforms: ${{ env.PLATFORMS }}
+
+      - uses: docker/setup-qemu-action@v3
+        with:
+          platforms: ${{ env.PLATFORMS }}
+
+      - uses: docker/metadata-action@v4
+        id: docker_meta
+        with:
+          images: conduktor/${{ env.IMAGE_NAME }}
+          tags: type=sha
+      
+      - name: Build ${{ env.IMAGE_NAME }}
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: ${{ env.PLATFORMS }}
+          push: false
+          file: docker/Dockerfile
+          tags: ${{ steps.docker_meta.outputs.tags }}
+          labels: ${{ steps.docker_meta.outputs.labels }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          build-args: |
+            hash=${{ github.sha }}
+            version=${{ github.ref_name }}

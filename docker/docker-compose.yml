@@ -1,0 +1,17 @@
+version: '3'
+services:
+  conduktor:
+    build:
+      dockerfile: docker/Dockerfile
+      context: ..
+    environment:
+      CDK_TOKEN: yo
+      CDK_BASE_URL: http://mock:1080
+    volumes:
+      - ./test_resource.yml:/test_resource.yml
+  mock:
+    image: mockserver/mockserver:latest
+    volumes:
+      - ./initializer.json:/config/initializer.json
+    environment:
+      MOCKSERVER_INITIALIZATION_JSON_PATH: /config/initializer.json

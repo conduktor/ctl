@@ -1,0 +1,6 @@
+version: v1
+kind: other
+metadata:
+  name: other 
+spec:
+  data: other
