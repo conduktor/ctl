@@ -25,14 +25,18 @@ var applyCmd = &cobra.Command{
 			}
 			resources = append(resources, r...)
 		}
+		var allSuccess = true
 		for _, resource := range resources {
 			upsertResult, err := apiClient.Apply(&resource, *dryRun)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Could not apply resource %s/%s: %s\n", resource.Kind, resource.Name, err)
-				os.Exit(1)
+			    allSuccess = false
 			} else {
 				fmt.Printf("%s/%s: %s\n", resource.Kind, resource.Name, upsertResult)
 			}
+		}
+		if(!allSuccess) {
+		    os.Exit(1)
 		}
 	},
 }
