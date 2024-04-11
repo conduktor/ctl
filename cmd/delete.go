@@ -9,7 +9,7 @@ import (
 // applyCmd represents the apply command
 var deleteCmd = &cobra.Command{
 	Use:   "delete",
-	Short: "delete resource of a given kind and name",
+	Short: "Delete resource of a given kind and name",
 	Long:  ``,
 	Args:  cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {

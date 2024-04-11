@@ -20,7 +20,7 @@ var schemaClient *schema.Schema = nil
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "conduktor",
-	Short: "command line tools for conduktor",
+	Short: "Command line tools for conduktor",
 	Long: `You need to define the CDK_TOKEN and CDK_BASE_URL environment variables to use this tool.
 You can also use the CDK_KEY,CDK_CERT instead of --key and --cert flags to use a certificate for tls authentication.
 If you have an untrusted certificate you can use the CDK_INSECURE=true variable to disable tls verification`,
@@ -53,9 +53,9 @@ func init() {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Could not load server openapi: %s\n", err)
 	}
-	debug = rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Show more information for debugging")
-	key = rootCmd.PersistentFlags().String("key", "", "Set pem key for certificate authentication (useful for teleport)")
-	cert = rootCmd.PersistentFlags().String("cert", "", "Set pem cert for certificate authentication (useful for teleport)")
+	debug = rootCmd.PersistentFlags().BoolP("verbose", "v", false, "show more information for debugging")
+	key = rootCmd.PersistentFlags().String("key", "", "set pem key for certificate authentication (useful for teleport)")
+	cert = rootCmd.PersistentFlags().String("cert", "", "set pem cert for certificate authentication (useful for teleport)")
 	initGet()
 	initDelete()
 	initApply()

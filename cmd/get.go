@@ -8,7 +8,7 @@ import (
 
 var getCmd = &cobra.Command{
 	Use:   "get",
-	Short: "get resource of a given kind",
+	Short: "Get resource of a given kind",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Root command does nothing
@@ -19,7 +19,7 @@ var getCmd = &cobra.Command{
 
 var getCmdWhenNoSchema = &cobra.Command{
 	Use:   "get kind [name]",
-	Short: "get resource of a given kind",
+	Short: "Get resource of a given kind",
 	Long: `If name not provided it will list all resource. For example:
 conduktor get application
 will list all applications. Whereas:
@@ -56,7 +56,7 @@ func initGet() {
 	for _, tag := range tags {
 		tagCmd := &cobra.Command{
 			Use:   fmt.Sprintf("%s [name]", tag),
-			Short: "get resource of kind " + tag,
+			Short: "Get resource of kind " + tag,
 			Args:  cobra.MatchAll(cobra.MaximumNArgs(1)),
 			Long:  `If name not provided it will list all resource`,
 			Run: func(cmd *cobra.Command, args []string) {
