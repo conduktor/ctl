@@ -46,8 +46,14 @@ CDK_TOKEN=<admin-token>
 
 ### Commands Usage
 ````
+You need to define the CDK_TOKEN and CDK_BASE_URL environment variables to use this tool.
+You can also use the CDK_KEY,CDK_CERT instead of --key and --cert flags to use a certificate for tls authentication.
+If you have an untrusted certificate you can use the CDK_INSECURE=true variable to disable tls verification
+
 Usage:
+  conduktor [flags]
   conduktor [command]
+
 Available Commands:
   apply       Upsert a resource on Conduktor
   completion  Generate the autocompletion script for the specified shell
@@ -55,9 +61,14 @@ Available Commands:
   get         Get resource of a given kind
   help        Help about any command
   version     Display the version of conduktor
+
 Flags:
-  -h, --help      Help for conduktor
-  -v, --verbose   Show more information for debugging
+      --cert string   set pem cert for certificate authentication (useful for teleport)
+  -h, --help          help for conduktor
+      --key string    set pem key for certificate authentication (useful for teleport)
+  -v, --verbose       show more information for debugging
+
+Use "conduktor [command] --help" for more information about a command.
 ````
 
 You can find more usage details on our [documentation](https://docs.conduktor.io/platform/reference/cli-reference/)

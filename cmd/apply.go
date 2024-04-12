@@ -13,7 +13,7 @@ var dryRun *bool
 // applyCmd represents the apply command
 var applyCmd = &cobra.Command{
 	Use:   "apply",
-	Short: "upsert a resource on Conduktor",
+	Short: "Upsert a resource on Conduktor",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		var resources = make([]resource.Resource, 0)
@@ -30,13 +30,13 @@ var applyCmd = &cobra.Command{
 			upsertResult, err := apiClient.Apply(&resource, *dryRun)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Could not apply resource %s/%s: %s\n", resource.Kind, resource.Name, err)
-			    allSuccess = false
+				allSuccess = false
 			} else {
 				fmt.Printf("%s/%s: %s\n", resource.Kind, resource.Name, upsertResult)
 			}
 		}
-		if(!allSuccess) {
-		    os.Exit(1)
+		if !allSuccess {
+			os.Exit(1)
 		}
 	},
 }
