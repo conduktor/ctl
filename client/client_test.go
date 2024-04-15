@@ -32,6 +32,7 @@ func TestApplyShouldWork(t *testing.T) {
 		"http://baseUrl/public/v1/topic",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+token).
+			And(httpmock.HeaderIs("CDK-CLIENT", "CLI/unknown")).
 			And(httpmock.BodyContainsBytes(topic.Json)),
 		responder,
 	)
@@ -141,7 +142,8 @@ func TestGetShouldWork(t *testing.T) {
 		"GET",
 		"http://baseUrl/public/v1/application",
 		nil,
-		httpmock.HeaderIs("Authorization", "Bearer "+token),
+		httpmock.HeaderIs("Authorization", "Bearer "+token).
+			And(httpmock.HeaderIs("CDK-CLIENT", "CLI/unknown")),
 		responder,
 	)
 
@@ -262,7 +264,8 @@ func TestDescribeShouldWork(t *testing.T) {
 		"GET",
 		"http://baseUrl/public/v1/application/yo",
 		nil,
-		httpmock.HeaderIs("Authorization", "Bearer "+token),
+		httpmock.HeaderIs("Authorization", "Bearer "+token).
+			And(httpmock.HeaderIs("CDK-CLIENT", "CLI/unknown")),
 		responder,
 	)
 
@@ -322,7 +325,8 @@ func TestDeleteShouldWork(t *testing.T) {
 		"DELETE",
 		"http://baseUrl/public/v1/application/yo",
 		nil,
-		httpmock.HeaderIs("Authorization", "Bearer "+token),
+		httpmock.HeaderIs("Authorization", "Bearer "+token).
+			And(httpmock.HeaderIs("CDK-CLIENT", "CLI/unknown")),
 		responder,
 	)
 
