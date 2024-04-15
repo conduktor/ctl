@@ -19,7 +19,7 @@ type Client struct {
 }
 
 func Make(token string, baseUrl string, debug bool, key, cert string) (*Client, error) {
-	restyClient := resty.New().SetDebug(debug).SetHeader("Authorization", "Bearer "+token)
+	restyClient := resty.New().SetDebug(debug).SetHeader("Authorization", "Bearer "+token).SetHeader("CDK-CLIENT", "CLI")
 	if (key == "" && cert != "") || (key != "" && cert == "") {
 		return nil, fmt.Errorf("key and cert must be provided together")
 	} else if key != "" && cert != "" {
