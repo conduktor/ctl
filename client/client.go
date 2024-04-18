@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/conduktor/ctl/printutils"
 	"github.com/conduktor/ctl/resource"
+	"github.com/conduktor/ctl/schema"
 	"github.com/conduktor/ctl/utils"
 	"github.com/go-resty/resty/v2"
 	"os"
@@ -16,10 +17,12 @@ type Client struct {
 	token   string
 	baseUrl string
 	client  *resty.Client
+	kinds   schema.KindCatalog
 }
 
 func Make(token string, baseUrl string, debug bool, key, cert string) (*Client, error) {
-	restyClient := resty.New().SetDebug(debug).SetHeader("Authorization", "Bearer "+token).SetHeader("CDK-CLIENT", "CLI/"+utils.GetConduktorVersion())
+	//token is set later because it's not mandatory for getting the openapi and parsing different kind
+	restyClient := resty.New().SetDebug(debug).SetHeader("CDK-CLIENT", "CLI/"+utils.GetConduktorVersion())
 	if (key == "" && cert != "") || (key != "" && cert == "") {
 		return nil, fmt.Errorf("key and cert must be provided together")
 	} else if key != "" && cert != "" {
@@ -30,38 +33,47 @@ func Make(token string, baseUrl string, debug bool, key, cert string) (*Client, 
 		}
 	}
 
-	return &Client{
+	result := &Client{
 		token:   token,
 		baseUrl: baseUrl,
 		client:  restyClient,
-	}, nil
+		kinds:   nil,
+	}
+
+	if token != "" {
+		result.setTokenInRestClient()
+	} else {
+		//it will be set later only when really needed
+		//so aim is not fail when CDK_TOKEN is not set before printing the cmd help
+	}
+
+	err := result.initKindFromApi()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Cannot init kinds from api: %s\nLet's switch to default from ctl binary\n", err)
+		result.kinds = schema.DefaultKind()
+	}
+
+	return result, nil
 }
 
-func MakeFromEnv() *Client {
-	token := os.Getenv("CDK_TOKEN")
-	if token == "" {
-		fmt.Fprintln(os.Stderr, "Please set CDK_TOKEN")
-		os.Exit(1)
-	}
+func MakeFromEnv() (*Client, error) {
 	baseUrl := os.Getenv("CDK_BASE_URL")
 	if baseUrl == "" {
-		fmt.Fprintln(os.Stderr, "Please set CDK_BASE_URL")
-		os.Exit(2)
+		return nil, fmt.Errorf("Please set CDK_BASE_URL")
 	}
 	debug := strings.ToLower(os.Getenv("CDK_DEBUG")) == "true"
 	key := os.Getenv("CDK_KEY")
 	cert := os.Getenv("CDK_CERT")
 
-	client, err := Make(token, baseUrl, debug, key, cert)
+	client, err := Make("", baseUrl, debug, key, cert)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Cannot create client: %s", err)
-		os.Exit(3)
+		return nil, fmt.Errorf("Cannot create client: %s", err)
 	}
 	insecure := strings.ToLower(os.Getenv("CDK_INSECURE")) == "true"
 	if insecure {
 		client.IgnoreUntrustedCertificate()
 	}
-	return client
+	return client, nil
 }
 
 type UpsertResponse struct {
@@ -72,6 +84,21 @@ func (c *Client) IgnoreUntrustedCertificate() {
 	c.client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 }
 
+func (c *Client) setTokenFromEnvIfNeeded() {
+	if c.token == "" {
+		token := os.Getenv("CDK_TOKEN")
+		if token == "" {
+			fmt.Fprintln(os.Stderr, "Please set CDK_TOKEN")
+			os.Exit(1)
+		}
+		c.token = token
+		c.setTokenInRestClient()
+	}
+}
+
+func (c *Client) setTokenInRestClient() {
+	c.client = c.client.SetHeader("Authorization", "Bearer "+c.token)
+}
 func extractApiError(resp *resty.Response) string {
 	var apiError ApiError
 	jsonError := json.Unmarshal(resp.Body(), &apiError)
@@ -91,7 +118,17 @@ func (client *Client) ActivateDebug() {
 }
 
 func (client *Client) Apply(resource *resource.Resource, dryMode bool) (string, error) {
-	url := client.publicV1Url() + "/" + utils.UpperCamelToKebab(resource.Kind)
+	client.setTokenFromEnvIfNeeded()
+	kinds := client.GetKinds()
+	kind, ok := kinds[resource.Kind]
+	if !ok {
+		return "", fmt.Errorf("kind %s not found", resource.Kind)
+	}
+	applyPath, err := kind.ApplyPath(resource)
+	if err != nil {
+		return "", err
+	}
+	url := client.baseUrl + applyPath
 	builder := client.client.R().SetBody(resource.Json)
 	if dryMode {
 		builder = builder.SetQueryParam("dryMode", "true")
@@ -121,8 +158,9 @@ func printResponseAsYaml(bytes []byte) error {
 	return printutils.PrintResourceLikeYamlFile(os.Stdout, data)
 }
 
-func (client *Client) Get(kind string) error {
-	url := client.publicV1Url() + "/" + utils.UpperCamelToKebab(kind)
+func (client *Client) Get(kind *schema.Kind, parentPathValue []string) error {
+	client.setTokenFromEnvIfNeeded()
+	url := client.baseUrl + kind.ListPath(parentPathValue)
 	resp, err := client.client.R().Get(url)
 	if err != nil {
 		return err
@@ -132,26 +170,28 @@ func (client *Client) Get(kind string) error {
 	return printResponseAsYaml(resp.Body())
 }
 
-func (client *Client) Describe(kind, name string) error {
-	url := client.publicV1Url() + "/" + utils.UpperCamelToKebab(kind) + "/" + name
+func (client *Client) Describe(kind *schema.Kind, parentPathValue []string, name string) error {
+	client.setTokenFromEnvIfNeeded()
+	url := client.baseUrl + kind.DescribePath(parentPathValue, name)
 	resp, err := client.client.R().Get(url)
 	if err != nil {
 		return err
 	} else if resp.IsError() {
-		return fmt.Errorf("error describing resources %s/%s, got status code: %d:\n %s", kind, name, resp.StatusCode(), string(resp.Body()))
+		return fmt.Errorf("error describing resources %s/%s, got status code: %d:\n %s", kind.GetName(), name, resp.StatusCode(), string(resp.Body()))
 	}
 	return printResponseAsYaml(resp.Body())
 }
 
-func (client *Client) Delete(kind, name string) error {
-	url := client.publicV1Url() + "/" + utils.UpperCamelToKebab(kind) + "/" + name
+func (client *Client) Delete(kind *schema.Kind, parentPathValue []string, name string) error {
+	client.setTokenFromEnvIfNeeded()
+	url := client.baseUrl + kind.DescribePath(parentPathValue, name)
 	resp, err := client.client.R().Delete(url)
 	if err != nil {
 		return err
 	} else if resp.IsError() {
 		return fmt.Errorf(extractApiError(resp))
 	} else {
-		fmt.Printf("%s/%s deleted\n", kind, name)
+		fmt.Printf("%s/%s deleted\n", kind.GetName(), name)
 	}
 
 	return err
@@ -166,4 +206,25 @@ func (client *Client) GetOpenApi() ([]byte, error) {
 		return nil, fmt.Errorf(resp.String())
 	}
 	return resp.Body(), nil
+}
+
+func (client *Client) initKindFromApi() error {
+	data, err := client.GetOpenApi()
+	if err != nil {
+		return fmt.Errorf("Cannot get openapi: %s", err)
+	}
+	schema, err := schema.New(data)
+	if err != nil {
+		return fmt.Errorf("Cannot parse openapi: %s", err)
+	}
+	strict := false
+	client.kinds, err = schema.GetKinds(strict)
+	if err != nil {
+		fmt.Errorf("Cannot extract kinds from openapi: %s", err)
+	}
+	return nil
+}
+
+func (client *Client) GetKinds() schema.KindCatalog {
+	return client.kinds
 }

@@ -3,6 +3,7 @@ module github.com/conduktor/ctl
 go 1.22.0
 
 require (
+	github.com/davecgh/go-spew v1.1.1
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-resty/resty/v2 v2.11.0
 	github.com/jarcoal/httpmock v1.3.1

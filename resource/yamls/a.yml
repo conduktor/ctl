@@ -1,12 +1,12 @@
 ---
-version: v1
+apiVersion: v1
 kind: a
 metadata:
   name: a 
 spec:
   data: data
 ---
-version: v1
+apiVersion: v1
 kind: a
 metadata:
   name: b 

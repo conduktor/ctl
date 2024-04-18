@@ -15,6 +15,7 @@ func TestApplyShouldWork(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+	client.setTokenFromEnvIfNeeded()
 	httpmock.ActivateNonDefault(
 		client.client.GetClient(),
 	)
@@ -24,12 +25,15 @@ func TestApplyShouldWork(t *testing.T) {
 		Json:    []byte(`{"yolo": "data"}`),
 		Kind:    "Topic",
 		Name:    "toto",
-		Version: "v1",
+		Version: "v2",
+		Metadata: map[string]interface{}{
+			"cluster": "local",
+		},
 	}
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"PUT",
-		"http://baseUrl/public/v1/topic",
+		"http://baseUrl/public/kafka/v2/cluster/local/topic",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+token).
 			And(httpmock.HeaderIs("CDK-CLIENT", "CLI/unknown")).
@@ -61,14 +65,14 @@ func TestApplyWithDryModeShouldWork(t *testing.T) {
 
 	topic := resource.Resource{
 		Json:    []byte(`{"yolo": "data"}`),
-		Kind:    "Topic",
+		Kind:    "Application",
 		Name:    "toto",
 		Version: "v1",
 	}
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"PUT",
-		"http://baseUrl/public/v1/topic",
+		"http://baseUrl/public/self-serve/v1/application",
 		"dryMode=true",
 		httpmock.HeaderIs("Authorization", "Bearer "+token).
 			And(httpmock.BodyContainsBytes(topic.Json)),
@@ -102,14 +106,14 @@ func TestApplyShouldFailIfNo2xx(t *testing.T) {
 
 	topic := resource.Resource{
 		Json:    []byte(`{"yolo": "data"}`),
-		Kind:    "Topic",
+		Kind:    "Application",
 		Name:    "toto",
 		Version: "v1",
 	}
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"PUT",
-		"http://baseUrl/public/v1/topic",
+		"http://baseUrl/public/self-serve/v1/application",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+token).
 			And(httpmock.BodyContainsBytes(topic.Json)),
@@ -140,75 +144,15 @@ func TestGetShouldWork(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"GET",
-		"http://baseUrl/public/v1/application",
+		"http://baseUrl/public/self-serve/v1/application",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+token).
 			And(httpmock.HeaderIs("CDK-CLIENT", "CLI/unknown")),
 		responder,
 	)
 
-	err = client.Get("Application")
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func TestGetShouldApplyCaseTransformation(t *testing.T) {
-	defer httpmock.Reset()
-	baseUrl := "http://baseUrl"
-	token := "aToken"
-	client, err := Make(token, baseUrl, false, "", "")
-	if err != nil {
-		panic(err)
-	}
-	httpmock.ActivateNonDefault(
-		client.client.GetClient(),
-	)
-	responder, err := httpmock.NewJsonResponder(200, "[]")
-	if err != nil {
-		panic(err)
-	}
-
-	httpmock.RegisterMatcherResponderWithQuery(
-		"GET",
-		"http://baseUrl/public/v1/application-instance",
-		nil,
-		httpmock.HeaderIs("Authorization", "Bearer "+token),
-		responder,
-	)
-
-	err = client.Get("ApplicationInstance")
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func TestGetShouldKeepCase(t *testing.T) {
-	defer httpmock.Reset()
-	baseUrl := "http://baseUrl"
-	token := "aToken"
-	client, err := Make(token, baseUrl, false, "", "")
-	if err != nil {
-		panic(err)
-	}
-
-	httpmock.ActivateNonDefault(
-		client.client.GetClient(),
-	)
-	responder, err := httpmock.NewJsonResponder(200, "[]")
-	if err != nil {
-		panic(err)
-	}
-
-	httpmock.RegisterMatcherResponderWithQuery(
-		"GET",
-		"http://baseUrl/public/v1/application-instance",
-		nil,
-		httpmock.HeaderIs("Authorization", "Bearer "+token),
-		responder,
-	)
-
-	err = client.Get("application-instance")
+	app := client.GetKinds()["Application"]
+	err = client.Get(&app, []string{})
 	if err != nil {
 		t.Error(err)
 	}
@@ -232,13 +176,14 @@ func TestGetShouldFailIfN2xx(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"GET",
-		"http://baseUrl/public/v1/application",
+		"http://baseUrl/public/self-serve/v1/application",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+token),
 		responder,
 	)
 
-	err = client.Get("Application")
+	app := client.GetKinds()["Application"]
+	err = client.Get(&app, []string{})
 	if err == nil {
 		t.Failed()
 	}
@@ -262,14 +207,15 @@ func TestDescribeShouldWork(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"GET",
-		"http://baseUrl/public/v1/application/yo",
+		"http://baseUrl/public/self-serve/v1/application/yo",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+token).
 			And(httpmock.HeaderIs("CDK-CLIENT", "CLI/unknown")),
 		responder,
 	)
 
-	err = client.Describe("Application", "yo")
+	app := client.GetKinds()["Application"]
+	err = client.Describe(&app, []string{}, "yo")
 	if err != nil {
 		t.Error(err)
 	}
@@ -293,13 +239,14 @@ func TestDescribeShouldFailIfNo2xx(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"GET",
-		"http://baseUrl/public/v1/application/yo",
+		"http://baseUrl/public/self-serve/v1/application/yo",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+token),
 		responder,
 	)
 
-	err = client.Describe("Application", "yo")
+	app := client.GetKinds()["Application"]
+	err = client.Describe(&app, []string{}, "yo")
 	if err == nil {
 		t.Failed()
 	}
@@ -323,14 +270,15 @@ func TestDeleteShouldWork(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"DELETE",
-		"http://baseUrl/public/v1/application/yo",
+		"http://baseUrl/public/self-serve/v1/application/yo",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+token).
 			And(httpmock.HeaderIs("CDK-CLIENT", "CLI/unknown")),
 		responder,
 	)
 
-	err = client.Delete("Application", "yo")
+	app := client.GetKinds()["Application"]
+	err = client.Delete(&app, []string{}, "yo")
 	if err != nil {
 		t.Error(err)
 	}
@@ -353,13 +301,14 @@ func TestDeleteShouldFailOnNot2XX(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"DELETE",
-		"http://baseUrl/public/v1/api/application/yo",
+		"http://baseUrl/public/self_serve/v1/api/application/yo",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+token),
 		responder,
 	)
 
-	err = client.Delete("Application", "yo")
+	app := client.GetKinds()["Application"]
+	err = client.Delete(&app, []string{}, "yo")
 	if err == nil {
 		t.Fail()
 	}

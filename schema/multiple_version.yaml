@@ -1,0 +1,419 @@
+openapi: 3.0.3
+info:
+  title: Conduktor Public API
+  version: 0.0.1-SNAPSHOT
+  summary: The public API to interact with Conduktor platform.
+  contact:
+    email: contact@conduktor.io
+    url: https://docs.conduktor.io
+tags:
+- name: Introduction
+  description: |-
+    Conduktor enables you to accelerate time-to-market and boost the productivity of teams interacting with Kafka through a centralized interface. All Kafka providers are supported including Confluent, AWS MSK, Aiven and open-source Apache Kafka.
+
+    Get started with Conduktor [self-hosted](https://docs.conduktor.io/platform/installation/get-started/docker/) today. Setup takes only a few minutes.
+- name: Description
+  description: |-
+    The Conduktor REST API can be used to manage your Conduktor organizations Users, Groups and their associated Permissions. Additionally, it can be used to interact with Kafka resources that are added to your organization such as Clusters and Certificates.
+
+    The APIs have predictable resource-oriented URLs. All requests and responses are in JSON and should have their `content-type` header set to `application/json`
+- name: Authentication
+  description: Authentication to the API requires a token set in the **authorization**
+    header. This token can be generated from within the Admin > API Keys section of
+    your Conduktor deployment.
+paths:
+  /public/v2/cluster/{cluster}/sa/{sa}/topic:
+    get:
+      tags:
+        - topic
+        - cli_topic_kafka_v2
+      operationId: listTopicSelfServe2
+      parameters:
+        - name: cluster
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sa
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TopicResourceV2'
+        '400':
+          description: The request is not valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+              example:
+                title: The request is not valid
+      security:
+        - httpAuth: []
+      x-codeSamples:
+        - lang: Shell + Curl
+          source: |-
+            curl \
+              --request GET \
+              --url 'http://localhost:8080/public/v1/cluster/my-cluster/topic' \
+              --header 'Authorization: Bearer $BEARER' \
+              --location \
+              --max-redirs 32
+    put:
+      tags:
+        - cli_topic_kafka_v2
+      operationId: applyTopicSelfServe2
+      parameters:
+        - name: cluster
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sa
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: dryMode
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TopicResourceV2'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicApplyResult'
+        '400':
+          description: The request is not valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+              example:
+                title: The request is not valid
+      security:
+        - httpAuth: []
+      x-codeSamples:
+        - lang: Shell + Curl
+          source: |-
+            curl \
+              --request PUT \
+              --url 'http://localhost:8080/public/v1/cluster/my-cluster/topic?dryMode=false' \
+              --header 'Authorization: Bearer $BEARER' \
+              --header 'Content-Type: application/json' \
+              --data-raw '{"metadata":{"name":"my-topic","cluster":"my-cluster"},"spec":{"partitions":1,"replicationFactor":1,"configs":{}},"apiVersion":"v1","kind":"Topic"}' \
+              --location \
+              --max-redirs 32
+  /public/v1/cluster/{cluster}/topic/{topic name}:
+    get:
+      tags:
+        - topic
+        - cli_topic_kafka_v1
+      operationId: getTopicByNameSelfServe
+      parameters:
+        - name: cluster
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: topic name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicResource'
+        '400':
+          description: The request is not valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+              example:
+                title: The request is not valid
+      security:
+        - httpAuth: []
+      x-codeSamples:
+        - lang: Shell + Curl
+          source: |-
+            curl \
+              --request GET \
+              --url 'http://localhost:8080/public/v1/cluster/my-cluster/topic/my-topic' \
+              --header 'Authorization: Bearer $BEARER' \
+              --location \
+              --max-redirs 32
+    delete:
+      tags:
+        - topic
+        - cli_topic_kafka_v1
+      operationId: deleteTopicSelfServe
+      parameters:
+        - name: cluster
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: topic name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: The request is not valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+              example:
+                title: The request is not valid
+      security:
+        - httpAuth: []
+      x-codeSamples:
+        - lang: Shell + Curl
+          source: |-
+            curl \
+              --request DELETE \
+              --url 'http://localhost:8080/public/v1/cluster/my-cluster/topic/my-topic' \
+              --header 'Authorization: Bearer $BEARER' \
+              --location \
+              --max-redirs 32
+  /public/v1/cluster/{cluster}/topic:
+    get:
+      tags:
+        - topic
+        - cli_topic_kafka_v1
+      operationId: listTopicSelfServe
+      parameters:
+        - name: cluster
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TopicResource'
+        '400':
+          description: The request is not valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+              example:
+                title: The request is not valid
+      security:
+        - httpAuth: []
+      x-codeSamples:
+        - lang: Shell + Curl
+          source: |-
+            curl \
+              --request GET \
+              --url 'http://localhost:8080/public/v1/cluster/my-cluster/topic' \
+              --header 'Authorization: Bearer $BEARER' \
+              --location \
+              --max-redirs 32
+    put:
+      tags:
+        - topic
+        - cli_topic_kafka_v1
+      operationId: applyTopicSelfServe
+      parameters:
+        - name: cluster
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: dryMode
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TopicResource'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicApplyResult'
+        '400':
+          description: The request is not valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+              example:
+                title: The request is not valid
+      security:
+        - httpAuth: []
+      x-codeSamples:
+        - lang: Shell + Curl
+          source: |-
+            curl \
+              --request PUT \
+              --url 'http://localhost:8080/public/v1/cluster/my-cluster/topic?dryMode=false' \
+              --header 'Authorization: Bearer $BEARER' \
+              --header 'Content-Type: application/json' \
+              --data-raw '{"metadata":{"name":"my-topic","cluster":"my-cluster"},"spec":{"partitions":1,"replicationFactor":1,"configs":{}},"apiVersion":"v1","kind":"Topic"}' \
+              --location \
+              --max-redirs 32
+components:
+  schemas:
+    BadRequest:
+      title: BadRequest
+      required:
+        - title
+      type: object
+      properties:
+        title:
+          type: string
+        msg:
+          type: string
+        cause:
+          type: string
+    TopicResource:
+      title: TopicResource
+      required:
+        - metadata
+        - spec
+        - apiVersion
+        - kind
+      type: object
+      properties:
+        metadata:
+          $ref: '#/components/schemas/TopicMetadata'
+        spec:
+          $ref: '#/components/schemas/TopicSpec'
+        apiVersion:
+          $ref: '#/components/schemas/Version'
+        kind:
+          $ref: '#/components/schemas/TopicKind'
+    TopicResourceV2:
+      title: TopicResource
+      required:
+        - metadata
+        - spec
+        - apiVersion
+        - kind
+      type: object
+      properties:
+        metadata:
+          $ref: '#/components/schemas/TopicMetadataV2'
+        spec:
+          $ref: '#/components/schemas/TopicSpec'
+        apiVersion:
+          $ref: '#/components/schemas/Version'
+        kind:
+          $ref: '#/components/schemas/TopicKind'
+    TopicMetadata:
+      title: TopicMetadata
+      required:
+        - name
+        - cluster
+      type: object
+      properties:
+        name:
+          type: string
+        cluster:
+          type: string
+    TopicMetadataV2:
+      title: TopicMetadata
+      required:
+        - name
+        - cluster
+        - sa
+      type: object
+      properties:
+        name:
+          type: string
+        cluster:
+          type: string
+        sa:
+          type: string
+    TopicSpec:
+      title: TopicSpec
+      required:
+        - partitions
+        - replicationFactor
+        - configs
+      type: object
+      properties:
+        partitions:
+          type: integer
+          format: int32
+        replicationFactor:
+          type: integer
+          format: int32
+        configs:
+          $ref: '#/components/schemas/Map_Type_Type'
+    Map_Type_Type:
+      title: Map_Type_Type
+      type: object
+      additionalProperties:
+        type: string
+    Version:
+      title: Version
+      type: string
+      enum:
+        - v1
+        - v2
+    TopicKind:
+      title: TopicKind
+      type: string
+      enum:
+        - Topic
+    TopicApplyResult:
+      title: TopicApplyResult
+      required:
+        - resource
+        - upsertResult
+      type: object
+      properties:
+        resource:
+          $ref: '#/components/schemas/TopicResource'
+        upsertResult:
+          $ref: '#/components/schemas/UpsertResult'
+    UpsertResult:
+      title: UpsertResult
+      type: string
+      enum:
+        - Created
+        - Updated
+        - NotChanged

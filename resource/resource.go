@@ -14,24 +14,25 @@ import (
 )
 
 type Resource struct {
-	Json    []byte
-	Kind    string
-	Name    string
-	Version string
+	Json     []byte
+	Kind     string
+	Name     string
+	Version  string
+	Metadata map[string]interface{} `json:"-"`
 }
 
 func (r Resource) String() string {
 	return fmt.Sprintf(`version: %s, kind: %s, name: %s, json: '%s'`, r.Version, r.Kind, r.Name, string(r.Json))
 }
 
-type yamlRoot struct {
-	Version  string
-	Kind     string
-	Metadata metadata
+func (r Resource) StringFromMetadata(key string) (string, error) {
+	return extractKeyFromMetadataMap(r.Metadata, key)
 }
 
-type metadata struct {
-	Name string
+type yamlRoot struct {
+	ApiVersion string
+	Kind       string
+	Metadata   map[string]interface{}
 }
 
 func FromFile(path string) ([]Resource, error) {
@@ -87,17 +88,33 @@ func FromByte(data []byte) ([]Resource, error) {
 	return results, nil
 }
 
+func extractKeyFromMetadataMap(m map[string]interface{}, key string) (string, error) {
+	if val, ok := m[key]; ok {
+		if str, ok := val.(string); ok {
+			return str, nil
+		}
+		return "", fmt.Errorf("key %s in metadata is not a string", key)
+	}
+	return "", fmt.Errorf("key %s not found in metadata", key)
+
+}
+
 func yamlByteToResource(data []byte) (Resource, error) {
 	jsonByte, err := yamlJson.YAMLToJSON(data)
 	if err != nil {
-		return Resource{}, nil
+		return Resource{}, err
 	}
 
 	var yamlRoot yamlRoot
 	err = json.Unmarshal(jsonByte, &yamlRoot)
 	if err != nil {
-		return Resource{}, nil
+		return Resource{}, err
 	}
 
-	return Resource{Json: jsonByte, Kind: yamlRoot.Kind, Name: yamlRoot.Metadata.Name, Version: yamlRoot.Version}, nil
+	name, err := extractKeyFromMetadataMap(yamlRoot.Metadata, "name")
+	if err != nil {
+		return Resource{}, err
+	}
+
+	return Resource{Json: jsonByte, Kind: yamlRoot.Kind, Name: name, Version: yamlRoot.ApiVersion, Metadata: yamlRoot.Metadata}, nil
 }

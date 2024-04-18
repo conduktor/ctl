@@ -1,9 +1,10 @@
 # topics.yml
 ---
-apiVersion: v1
+apiVersion: v2
 kind: Topic
 metadata:
   name: abcd.topic
+  cluster: my-cluster
 spec:
   replicationFactor: 1
   partitions: 3
@@ -12,10 +13,11 @@ spec:
     cleanup.policy: delete
     retention.ms: 604800000
 ---
-apiVersion: v1
+apiVersion: v2
 kind: Topic
 metadata:
   name: abcd.myTopicWrong
+  cluster: my-cluster
 spec:
   replicationFactor: 1
   partitions: 3
