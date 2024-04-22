@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"github.com/davecgh/go-spew/spew"
 	"testing"
 )
 
@@ -26,20 +27,21 @@ func TestFromByteForOneResourceWithValidResource(t *testing.T) {
 	yamlByte := []byte(`
 # comment
 ---
-version: v1
+apiVersion: v1
 kind: Topic
 metadata:
   name: abc.myTopic
 spec:
   replicationFactor: 1
 ---
-version: v2
+apiVersion: v2
 kind: ConsumerGroup
 metadata:
   name: cg1
 `)
 
 	results, err := FromByte(yamlByte)
+	spew.Dump(results)
 	if err != nil {
 		t.Error(err)
 	}
@@ -48,17 +50,19 @@ metadata:
 	}
 
 	checkResource(t, results[0], Resource{
-		Version: "v1",
-		Kind:    "Topic",
-		Name:    "abc.myTopic",
-		Json:    []byte(`{"kind":"Topic","metadata":{"name":"abc.myTopic"},"spec":{"replicationFactor":1},"version":"v1"}`),
+		Version:  "v1",
+		Kind:     "Topic",
+		Name:     "abc.myTopic",
+		Metadata: map[string]interface{}{"name": "abc.myTopic"},
+		Json:     []byte(`{"apiVersion":"v1","kind":"Topic","metadata":{"name":"abc.myTopic"},"spec":{"replicationFactor":1}}`),
 	})
 
 	checkResource(t, results[1], Resource{
-		Version: "v2",
-		Kind:    "ConsumerGroup",
-		Name:    "cg1",
-		Json:    []byte(`{"kind":"ConsumerGroup","metadata":{"name":"cg1"},"version":"v2"}`),
+		Version:  "v2",
+		Kind:     "ConsumerGroup",
+		Name:     "cg1",
+		Metadata: map[string]interface{}{"name": "cg1"},
+		Json:     []byte(`{"apiVersion":"v2","kind":"ConsumerGroup","metadata":{"name":"cg1"}}`),
 	})
 }
 
@@ -72,30 +76,34 @@ func TestFromFolder(t *testing.T) {
 	}
 
 	checkResource(t, resources[0], Resource{
-		Version: "v1",
-		Kind:    "a",
-		Name:    "a",
-		Json:    []byte(`{"kind":"a","metadata":{"name":"a"},"spec":{"data":"data"},"version":"v1"}`),
+		Version:  "v1",
+		Kind:     "a",
+		Name:     "a",
+		Metadata: map[string]interface{}{"name": "a"},
+		Json:     []byte(`{"apiVersion":"v1","kind":"a","metadata":{"name":"a"},"spec":{"data":"data"}}`),
 	})
 
 	checkResource(t, resources[1], Resource{
-		Version: "v1",
-		Kind:    "a",
-		Name:    "b",
-		Json:    []byte(`{"kind":"a","metadata":{"name":"b"},"spec":{"data":"data2"},"version":"v1"}`),
+		Version:  "v1",
+		Kind:     "a",
+		Name:     "b",
+		Metadata: map[string]interface{}{"name": "b"},
+		Json:     []byte(`{"apiVersion":"v1","kind":"a","metadata":{"name":"b"},"spec":{"data":"data2"}}`),
 	})
 
 	checkResource(t, resources[2], Resource{
-		Version: "v1",
-		Kind:    "b",
-		Name:    "a",
-		Json:    []byte(`{"kind":"b","metadata":{"name":"a"},"spec":{"data":"yo"},"version":"v1"}`),
+		Version:  "v1",
+		Kind:     "b",
+		Name:     "a",
+		Metadata: map[string]interface{}{"name": "a"},
+		Json:     []byte(`{"apiVersion":"v1","kind":"b","metadata":{"name":"a"},"spec":{"data":"yo"}}`),
 	})
 
 	checkResource(t, resources[3], Resource{
-		Version: "v1",
-		Kind:    "b",
-		Name:    "b",
-		Json:    []byte(`{"kind":"b","metadata":{"name":"b"},"spec":{"data":"lo"},"version":"v1"}`),
+		Version:  "v1",
+		Kind:     "b",
+		Name:     "b",
+		Metadata: map[string]interface{}{"name": "b"},
+		Json:     []byte(`{"apiVersion":"v1","kind":"b","metadata":{"name":"b"},"spec":{"data":"lo"}}`),
 	})
 }

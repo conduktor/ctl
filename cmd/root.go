@@ -1,6 +1,3 @@
-/*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
@@ -12,10 +9,16 @@ import (
 )
 
 var debug *bool
-var key *string
-var cert *string
-var apiClient *client.Client
-var schemaClient *schema.Schema = nil
+var apiClient_ *client.Client
+var apiClientError error
+
+func apiClient() *client.Client {
+	if apiClientError != nil {
+		fmt.Fprintf(os.Stderr, "Cannot create client: %s", apiClientError)
+		os.Exit(1)
+	}
+	return apiClient_
+}
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -26,7 +29,7 @@ You can also use the CDK_KEY,CDK_CERT instead of --key and --cert flags to use a
 If you have an untrusted certificate you can use the CDK_INSECURE=true variable to disable tls verification`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		if *debug {
-			apiClient.ActivateDebug()
+			apiClient().ActivateDebug()
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
@@ -45,18 +48,17 @@ func Execute() {
 }
 
 func init() {
-	apiClient = client.MakeFromEnv()
-	openApi, err := apiClient.GetOpenApi()
-	if err == nil {
-		schemaClient, err = schema.New(openApi)
-	}
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Could not load server openapi: %s\n", err)
+	apiClient_, apiClientError = client.MakeFromEnv()
+	kinds := schema.KindCatalog{}
+	if apiClientError == nil {
+		kinds = apiClient_.GetKinds()
+	} else {
+		kinds = schema.DefaultKind()
 	}
 	debug = rootCmd.PersistentFlags().BoolP("verbose", "v", false, "show more information for debugging")
-	key = rootCmd.PersistentFlags().String("key", "", "set pem key for certificate authentication (useful for teleport)")
-	cert = rootCmd.PersistentFlags().String("cert", "", "set pem cert for certificate authentication (useful for teleport)")
-	initGet()
-	initDelete()
+	initGet(kinds)
+	initDelete(kinds)
 	initApply()
+	initMkKind()
+	initPrintKind(kinds)
 }

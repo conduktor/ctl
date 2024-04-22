@@ -2,8 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/conduktor/ctl/schema"
 	"github.com/spf13/cobra"
 	"os"
+	"strings"
 )
 
 var getCmd = &cobra.Command{
@@ -17,54 +19,28 @@ var getCmd = &cobra.Command{
 	},
 }
 
-var getCmdWhenNoSchema = &cobra.Command{
-	Use:   "get kind [name]",
-	Short: "Get resource of a given kind",
-	Long: `If name not provided it will list all resource. For example:
-conduktor get application
-will list all applications. Whereas:
-conduktor get application myapp
-will describe the application myapp`,
-	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.MaximumNArgs(2)),
-	Run: func(cmd *cobra.Command, args []string) {
-		var err error
-		if len(args) == 1 {
-			err = apiClient.Get(args[0])
-		} else if len(args) == 2 {
-			err = apiClient.Describe(args[0], args[1])
-		}
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s\n", err)
-			os.Exit(1)
-		}
-	},
-}
-
-func initGet() {
-	if schemaClient == nil {
-		rootCmd.AddCommand(getCmdWhenNoSchema)
-		return
-	}
-	tags, err := schemaClient.GetKind()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Could not load kind from openapi: %s\n", err)
-		rootCmd.AddCommand(getCmdWhenNoSchema)
-		return
-	}
+func initGet(kinds schema.KindCatalog) {
 	rootCmd.AddCommand(getCmd)
 
-	for _, tag := range tags {
-		tagCmd := &cobra.Command{
-			Use:   fmt.Sprintf("%s [name]", tag),
-			Short: "Get resource of kind " + tag,
-			Args:  cobra.MatchAll(cobra.MaximumNArgs(1)),
-			Long:  `If name not provided it will list all resource`,
+	for name, kind := range kinds {
+		flags := kind.GetFlag()
+		parentFlagValue := make([]*string, len(flags))
+		kindCmd := &cobra.Command{
+			Use:     fmt.Sprintf("%s [name]", name),
+			Short:   "Get resource of kind " + name,
+			Args:    cobra.MatchAll(cobra.MaximumNArgs(1)),
+			Long:    `If name not provided it will list all resource`,
+			Aliases: []string{strings.ToLower(name), strings.ToLower(name) + "s", name + "s"},
 			Run: func(cmd *cobra.Command, args []string) {
+				parentValue := make([]string, len(parentFlagValue))
+				for i, v := range parentFlagValue {
+					parentValue[i] = *v
+				}
 				var err error
 				if len(args) == 0 {
-					err = apiClient.Get(tag)
+					err = apiClient().Get(&kind, parentValue)
 				} else if len(args) == 1 {
-					err = apiClient.Describe(tag, args[0])
+					err = apiClient().Describe(&kind, parentValue, args[0])
 				}
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "%s\n", err)
@@ -72,6 +48,10 @@ func initGet() {
 				}
 			},
 		}
-		getCmd.AddCommand(tagCmd)
+		for i, flag := range kind.GetFlag() {
+			parentFlagValue[i] = kindCmd.Flags().String(flag, "", "Parent "+flag)
+			kindCmd.MarkFlagRequired(flag)
+		}
+		getCmd.AddCommand(kindCmd)
 	}
 }

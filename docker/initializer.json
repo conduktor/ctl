@@ -2,7 +2,7 @@
   {
     "httpRequest": {
       "method": "Put",
-      "path": "/public/v1/Topic",
+      "path": "/public/kafka/v2/cluster/my-cluster/topic",
       "headers": {
         "Authorization": "Bearer yo"
       }
@@ -18,7 +18,7 @@
   {
     "httpRequest": {
       "method": "Get",
-      "path": "/public/v1/Topic",
+      "path": "/public/kafka/v2/cluster/my-cluster/topic",
       "headers": {
         "Authorization": "Bearer yo"
       }
@@ -34,7 +34,7 @@
   {
     "httpRequest": {
       "method": "Get",
-      "path": "/public/v1/Topic/yolo",
+      "path": "/public/kafka/v2/cluster/my-cluster/topic/yolo",
       "headers": {
         "Authorization": "Bearer yo"
       }
@@ -50,7 +50,7 @@
   {
     "httpRequest": {
       "method": "Delete",
-      "path": "/public/v1/Topic/yolo",
+      "path": "/public/kafka/v2/cluster/my-cluster/topic/yolo",
       "headers": {
         "Authorization": "Bearer yo"
       }
