@@ -36,7 +36,7 @@ func TestApplyShouldWork(t *testing.T) {
 		"http://baseUrl/public/kafka/v2/cluster/local/topic",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+token).
-			And(httpmock.HeaderIs("CDK-CLIENT", "CLI/unknown")).
+			And(httpmock.HeaderIs("X-CDK-CLIENT", "CLI/unknown")).
 			And(httpmock.BodyContainsBytes(topic.Json)),
 		responder,
 	)
@@ -147,7 +147,7 @@ func TestGetShouldWork(t *testing.T) {
 		"http://baseUrl/public/self-serve/v1/application",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+token).
-			And(httpmock.HeaderIs("CDK-CLIENT", "CLI/unknown")),
+			And(httpmock.HeaderIs("X-CDK-CLIENT", "CLI/unknown")),
 		responder,
 	)
 
@@ -210,7 +210,7 @@ func TestDescribeShouldWork(t *testing.T) {
 		"http://baseUrl/public/self-serve/v1/application/yo",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+token).
-			And(httpmock.HeaderIs("CDK-CLIENT", "CLI/unknown")),
+			And(httpmock.HeaderIs("X-CDK-CLIENT", "CLI/unknown")),
 		responder,
 	)
 
@@ -273,7 +273,7 @@ func TestDeleteShouldWork(t *testing.T) {
 		"http://baseUrl/public/self-serve/v1/application/yo",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+token).
-			And(httpmock.HeaderIs("CDK-CLIENT", "CLI/unknown")),
+			And(httpmock.HeaderIs("X-CDK-CLIENT", "CLI/unknown")),
 		responder,
 	)
 

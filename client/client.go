@@ -22,7 +22,8 @@ type Client struct {
 
 func Make(token string, baseUrl string, debug bool, key, cert string) (*Client, error) {
 	//token is set later because it's not mandatory for getting the openapi and parsing different kind
-	restyClient := resty.New().SetDebug(debug).SetHeader("CDK-CLIENT", "CLI/"+utils.GetConduktorVersion())
+	restyClient := resty.New().SetDebug(debug).SetHeader("X-CDK-CLIENT", "CLI/"+utils.GetConduktorVersion())
+  
 	if (key == "" && cert != "") || (key != "" && cert == "") {
 		return nil, fmt.Errorf("key and cert must be provided together")
 	} else if key != "" && cert != "" {
