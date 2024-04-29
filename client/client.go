@@ -20,7 +20,7 @@ type Client struct {
 	kinds   schema.KindCatalog
 }
 
-func Make(token string, baseUrl string, debug bool, key, cert string, insecure bool) (*Client, error) {
+func Make(token string, baseUrl string, debug bool, key, cert, cacert string, insecure bool) (*Client, error) {
 	//token is set later because it's not mandatory for getting the openapi and parsing different kind
 	restyClient := resty.New().SetDebug(debug).SetHeader("X-CDK-CLIENT", "CLI/"+utils.GetConduktorVersion())
 
@@ -32,6 +32,10 @@ func Make(token string, baseUrl string, debug bool, key, cert string, insecure b
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	if cacert != "" {
+		restyClient.SetRootCertificate(cacert)
 	}
 
 	result := &Client{
@@ -69,9 +73,10 @@ func MakeFromEnv() (*Client, error) {
 	debug := strings.ToLower(os.Getenv("CDK_DEBUG")) == "true"
 	key := os.Getenv("CDK_KEY")
 	cert := os.Getenv("CDK_CERT")
+	cacert := os.Getenv("CDK_CACERT")
 	insecure := strings.ToLower(os.Getenv("CDK_INSECURE")) == "true"
 
-	client, err := Make("", baseUrl, debug, key, cert, insecure)
+	client, err := Make("", baseUrl, debug, key, cert, cacert, insecure)
 	if err != nil {
 		return nil, fmt.Errorf("Cannot create client: %s", err)
 	}
