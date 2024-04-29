@@ -47,7 +47,7 @@ CDK_TOKEN=<admin-token>
 ### Commands Usage
 ````
 You need to define the CDK_TOKEN and CDK_BASE_URL environment variables to use this tool.
-You can also use the CDK_KEY,CDK_CERT instead of --key and --cert flags to use a certificate for tls authentication.
+You can also use the CDK_KEY,CDK_CERT to use a certificate for tls authentication.
 If you have an untrusted certificate you can use the CDK_INSECURE=true variable to disable tls verification
 
 Usage:
