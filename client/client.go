@@ -20,10 +20,10 @@ type Client struct {
 	kinds   schema.KindCatalog
 }
 
-func Make(token string, baseUrl string, debug bool, key, cert string) (*Client, error) {
+func Make(token string, baseUrl string, debug bool, key, cert string, insecure bool) (*Client, error) {
 	//token is set later because it's not mandatory for getting the openapi and parsing different kind
 	restyClient := resty.New().SetDebug(debug).SetHeader("X-CDK-CLIENT", "CLI/"+utils.GetConduktorVersion())
-  
+
 	if (key == "" && cert != "") || (key != "" && cert == "") {
 		return nil, fmt.Errorf("key and cert must be provided together")
 	} else if key != "" && cert != "" {
@@ -48,6 +48,10 @@ func Make(token string, baseUrl string, debug bool, key, cert string) (*Client, 
 		//so aim is not fail when CDK_TOKEN is not set before printing the cmd help
 	}
 
+	if insecure {
+		result.IgnoreUntrustedCertificate()
+	}
+
 	err := result.initKindFromApi()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Cannot init kinds from api: %s\nLet's switch to default from ctl binary\n", err)
@@ -65,14 +69,11 @@ func MakeFromEnv() (*Client, error) {
 	debug := strings.ToLower(os.Getenv("CDK_DEBUG")) == "true"
 	key := os.Getenv("CDK_KEY")
 	cert := os.Getenv("CDK_CERT")
+	insecure := strings.ToLower(os.Getenv("CDK_INSECURE")) == "true"
 
-	client, err := Make("", baseUrl, debug, key, cert)
+	client, err := Make("", baseUrl, debug, key, cert, insecure)
 	if err != nil {
 		return nil, fmt.Errorf("Cannot create client: %s", err)
-	}
-	insecure := strings.ToLower(os.Getenv("CDK_INSECURE")) == "true"
-	if insecure {
-		client.IgnoreUntrustedCertificate()
 	}
 	return client, nil
 }
