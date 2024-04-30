@@ -58,7 +58,7 @@ func Make(token string, baseUrl string, debug bool, key, cert, cacert string, in
 
 	err := result.initKindFromApi()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Cannot init kinds from api: %s\nLet's switch to default from ctl binary\n", err)
+		fmt.Fprintf(os.Stderr, "Cannot access the openapi: %s\nSince the CLI can't access the open API, the list of Kinds reflects the most recent ones available at the time of the CLI's release (and not the latest ones overall)\n", err)
 		result.kinds = schema.DefaultKind()
 	}
 
