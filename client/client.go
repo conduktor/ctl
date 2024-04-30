@@ -18,7 +18,7 @@ type Client struct {
 	client  *resty.Client
 }
 
-func Make(token string, baseUrl string, debug bool, key, cert string) (*Client, error) {
+func Make(token string, baseUrl string, debug bool, key, cert, cacert string, insecure bool) (*Client, error) {
 	restyClient := resty.New().SetDebug(debug).SetHeader("Authorization", "Bearer "+token)
 	if (key == "" && cert != "") || (key != "" && cert == "") {
 		return nil, fmt.Errorf("key and cert must be provided together")
@@ -29,12 +29,21 @@ func Make(token string, baseUrl string, debug bool, key, cert string) (*Client, 
 			return nil, err
 		}
 	}
+	if cacert != "" {
+		restyClient.SetRootCertificate(cacert)
+	}
 
-	return &Client{
+	result := &Client{
 		token:   token,
 		baseUrl: baseUrl,
 		client:  restyClient,
-	}, nil
+	}
+
+	if insecure {
+		result.IgnoreUntrustedCertificate()
+	}
+
+	return result, nil
 }
 
 func MakeFromEnv() *Client {
@@ -51,15 +60,13 @@ func MakeFromEnv() *Client {
 	debug := strings.ToLower(os.Getenv("CDK_DEBUG")) == "true"
 	key := os.Getenv("CDK_KEY")
 	cert := os.Getenv("CDK_CERT")
+	cacert := os.Getenv("CDK_CACERT")
+	insecure := strings.ToLower(os.Getenv("CDK_INSECURE")) == "true"
 
-	client, err := Make(token, baseUrl, debug, key, cert)
+	client, err := Make(token, baseUrl, debug, key, cert, cacert, insecure)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Cannot create client: %s", err)
 		os.Exit(3)
-	}
-	insecure := strings.ToLower(os.Getenv("CDK_INSECURE")) == "true"
-	if insecure {
-		client.IgnoreUntrustedCertificate()
 	}
 	return client
 }
