@@ -11,7 +11,7 @@ func TestApplyShouldWork(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
 	token := "aToken"
-	client, err := Make(token, baseUrl, false, "", "")
+	client, err := Make(token, baseUrl, false, "", "", "", false)
 	if err != nil {
 		panic(err)
 	}
@@ -49,7 +49,7 @@ func TestApplyWithDryModeShouldWork(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
 	token := "aToken"
-	client, err := Make(token, baseUrl, false, "", "")
+	client, err := Make(token, baseUrl, false, "", "", "", false)
 	if err != nil {
 		panic(err)
 	}
@@ -87,7 +87,7 @@ func TestApplyShouldFailIfNo2xx(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
 	token := "aToken"
-	client, err := Make(token, baseUrl, false, "", "")
+	client, err := Make(token, baseUrl, false, "", "", "", false)
 	if err != nil {
 		panic(err)
 	}
@@ -125,7 +125,7 @@ func TestGetShouldWork(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
 	token := "aToken"
-	client, err := Make(token, baseUrl, false, "", "")
+	client, err := Make(token, baseUrl, false, "", "", "", false)
 	if err != nil {
 		panic(err)
 	}
@@ -155,7 +155,7 @@ func TestGetShouldApplyCaseTransformation(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
 	token := "aToken"
-	client, err := Make(token, baseUrl, false, "", "")
+	client, err := Make(token, baseUrl, false, "", "", "", false)
 	if err != nil {
 		panic(err)
 	}
@@ -185,7 +185,7 @@ func TestGetShouldKeepCase(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
 	token := "aToken"
-	client, err := Make(token, baseUrl, false, "", "")
+	client, err := Make(token, baseUrl, false, "", "", "", false)
 	if err != nil {
 		panic(err)
 	}
@@ -216,7 +216,7 @@ func TestGetShouldFailIfN2xx(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
 	token := "aToken"
-	client, err := Make(token, baseUrl, false, "", "")
+	client, err := Make(token, baseUrl, false, "", "", "", false)
 	if err != nil {
 		panic(err)
 	}
@@ -246,7 +246,7 @@ func TestDescribeShouldWork(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
 	token := "aToken"
-	client, err := Make(token, baseUrl, false, "", "")
+	client, err := Make(token, baseUrl, false, "", "", "", false)
 	if err != nil {
 		panic(err)
 	}
@@ -276,7 +276,7 @@ func TestDescribeShouldFailIfNo2xx(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl/api"
 	token := "aToken"
-	client, err := Make(token, baseUrl, false, "", "")
+	client, err := Make(token, baseUrl, false, "", "", "", false)
 	if err != nil {
 		panic(err)
 	}
@@ -306,7 +306,7 @@ func TestDeleteShouldWork(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
 	token := "aToken"
-	client, err := Make(token, baseUrl, false, "", "")
+	client, err := Make(token, baseUrl, false, "", "", "", false)
 	if err != nil {
 		panic(err)
 	}
@@ -335,7 +335,7 @@ func TestDeleteShouldFailOnNot2XX(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
 	token := "aToken"
-	client, err := Make(token, baseUrl, false, "", "")
+	client, err := Make(token, baseUrl, false, "", "", "", false)
 	if err != nil {
 		panic(err)
 	}

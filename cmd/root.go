@@ -23,7 +23,7 @@ var rootCmd = &cobra.Command{
 	Short: "Command line tools for conduktor",
 	Long: `You need to define the CDK_TOKEN and CDK_BASE_URL environment variables to use this tool.
 You can also use the CDK_KEY,CDK_CERT instead of --key and --cert flags to use a certificate for tls authentication.
-If you have an untrusted certificate you can use the CDK_INSECURE=true variable to disable tls verification`,
+If you have an untrusted certificate you can use the CDK_INSECURE=true or CDK_CACERT variable to disable tls verification`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		if *debug {
 			apiClient.ActivateDebug()
