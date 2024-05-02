@@ -74,6 +74,8 @@ jobs:
           echo BRANCH $BRANCH
           export BASE_BRANCH=main
           echo BASE_BRANCH $BASE_BRANCH
+          VERIF_SHA=$(curl -s -L https://github.com/conduktor/ctl/archive/refs/tags/${APP_VERSION}.tar.gz | sha256sum | cut -f 1 -d " ")
+          echo VERIF_SHA $VERIF_SHA
 
           export TITLE="Bump conduktor-ctl version to ${APP_VERSION}"
           export BODY="Release https://github.com/conduktor/ctl/releases/tag/${APP_VERSION}"
@@ -86,11 +88,13 @@ jobs:
           git config user.email github-actions@github.com
           git checkout -b $BRANCH
           sed -i  's/version "[^"]*"/version "'"$APP_VERSION"'"/' Formula/conduktor-cli.rb
+          sed -i  's/sha256 "[^"]*"/sha256 "'"$VERIF_SHA"'"/' Formula/conduktor-cli.rb
           sed -i  's/gitSha\s*=\s*"[^"]*"/gitSha = "'"$APP_SHA"'"/' Formula/conduktor-cli.rb
           git add Formula/conduktor-cli.rb
           git commit -m "$MESSAGE"
           git push origin $BRANCH
           gh pr create --title "$TITLE" --body "$BODY" --repo 'https://github.com/conduktor/homebrew-brew' --base $BASE_BRANCH
+          gh pr merge --auto --squash --delete-branch
           cd ..
 
   build-docker:
