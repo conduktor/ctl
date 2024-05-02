@@ -10,12 +10,12 @@ import (
 func TestApplyShouldWork(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
-	token := "aToken"
-	client, err := Make(token, baseUrl, false, "", "", "", false)
+	apiKey := "aToken"
+	client, err := Make(apiKey, baseUrl, false, "", "", "", false)
 	if err != nil {
 		panic(err)
 	}
-	client.setTokenFromEnvIfNeeded()
+	client.setApiKeyFromEnvIfNeeded()
 	httpmock.ActivateNonDefault(
 		client.client.GetClient(),
 	)
@@ -35,7 +35,7 @@ func TestApplyShouldWork(t *testing.T) {
 		"PUT",
 		"http://baseUrl/public/kafka/v2/cluster/local/topic",
 		nil,
-		httpmock.HeaderIs("Authorization", "Bearer "+token).
+		httpmock.HeaderIs("Authorization", "Bearer "+apiKey).
 			And(httpmock.HeaderIs("X-CDK-CLIENT", "CLI/unknown")).
 			And(httpmock.BodyContainsBytes(topic.Json)),
 		responder,
@@ -53,8 +53,8 @@ func TestApplyShouldWork(t *testing.T) {
 func TestApplyWithDryModeShouldWork(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
-	token := "aToken"
-	client, err := Make(token, baseUrl, false, "", "", "", false)
+	apiKey := "aToken"
+	client, err := Make(apiKey, baseUrl, false, "", "", "", false)
 	if err != nil {
 		panic(err)
 	}
@@ -74,7 +74,7 @@ func TestApplyWithDryModeShouldWork(t *testing.T) {
 		"PUT",
 		"http://baseUrl/public/self-serve/v1/application",
 		"dryMode=true",
-		httpmock.HeaderIs("Authorization", "Bearer "+token).
+		httpmock.HeaderIs("Authorization", "Bearer "+apiKey).
 			And(httpmock.BodyContainsBytes(topic.Json)),
 		responder,
 	)
@@ -91,8 +91,8 @@ func TestApplyWithDryModeShouldWork(t *testing.T) {
 func TestApplyShouldFailIfNo2xx(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
-	token := "aToken"
-	client, err := Make(token, baseUrl, false, "", "", "", false)
+	apiKey := "aToken"
+	client, err := Make(apiKey, baseUrl, false, "", "", "", false)
 	if err != nil {
 		panic(err)
 	}
@@ -115,7 +115,7 @@ func TestApplyShouldFailIfNo2xx(t *testing.T) {
 		"PUT",
 		"http://baseUrl/public/self-serve/v1/application",
 		nil,
-		httpmock.HeaderIs("Authorization", "Bearer "+token).
+		httpmock.HeaderIs("Authorization", "Bearer "+apiKey).
 			And(httpmock.BodyContainsBytes(topic.Json)),
 		responder,
 	)
@@ -129,8 +129,8 @@ func TestApplyShouldFailIfNo2xx(t *testing.T) {
 func TestGetShouldWork(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
-	token := "aToken"
-	client, err := Make(token, baseUrl, false, "", "", "", false)
+	apiKey := "aToken"
+	client, err := Make(apiKey, baseUrl, false, "", "", "", false)
 	if err != nil {
 		panic(err)
 	}
@@ -146,7 +146,7 @@ func TestGetShouldWork(t *testing.T) {
 		"GET",
 		"http://baseUrl/public/self-serve/v1/application",
 		nil,
-		httpmock.HeaderIs("Authorization", "Bearer "+token).
+		httpmock.HeaderIs("Authorization", "Bearer "+apiKey).
 			And(httpmock.HeaderIs("X-CDK-CLIENT", "CLI/unknown")),
 		responder,
 	)
@@ -161,8 +161,8 @@ func TestGetShouldWork(t *testing.T) {
 func TestGetShouldFailIfN2xx(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
-	token := "aToken"
-	client, err := Make(token, baseUrl, false, "", "", "", false)
+	apiKey := "aToken"
+	client, err := Make(apiKey, baseUrl, false, "", "", "", false)
 	if err != nil {
 		panic(err)
 	}
@@ -178,7 +178,7 @@ func TestGetShouldFailIfN2xx(t *testing.T) {
 		"GET",
 		"http://baseUrl/public/self-serve/v1/application",
 		nil,
-		httpmock.HeaderIs("Authorization", "Bearer "+token),
+		httpmock.HeaderIs("Authorization", "Bearer "+apiKey),
 		responder,
 	)
 
@@ -192,8 +192,8 @@ func TestGetShouldFailIfN2xx(t *testing.T) {
 func TestDescribeShouldWork(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
-	token := "aToken"
-	client, err := Make(token, baseUrl, false, "", "", "", false)
+	apiKey := "aToken"
+	client, err := Make(apiKey, baseUrl, false, "", "", "", false)
 	if err != nil {
 		panic(err)
 	}
@@ -209,7 +209,7 @@ func TestDescribeShouldWork(t *testing.T) {
 		"GET",
 		"http://baseUrl/public/self-serve/v1/application/yo",
 		nil,
-		httpmock.HeaderIs("Authorization", "Bearer "+token).
+		httpmock.HeaderIs("Authorization", "Bearer "+apiKey).
 			And(httpmock.HeaderIs("X-CDK-CLIENT", "CLI/unknown")),
 		responder,
 	)
@@ -224,8 +224,8 @@ func TestDescribeShouldWork(t *testing.T) {
 func TestDescribeShouldFailIfNo2xx(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl/api"
-	token := "aToken"
-	client, err := Make(token, baseUrl, false, "", "", "", false)
+	apiKey := "aToken"
+	client, err := Make(apiKey, baseUrl, false, "", "", "", false)
 	if err != nil {
 		panic(err)
 	}
@@ -241,7 +241,7 @@ func TestDescribeShouldFailIfNo2xx(t *testing.T) {
 		"GET",
 		"http://baseUrl/public/self-serve/v1/application/yo",
 		nil,
-		httpmock.HeaderIs("Authorization", "Bearer "+token),
+		httpmock.HeaderIs("Authorization", "Bearer "+apiKey),
 		responder,
 	)
 
@@ -255,8 +255,8 @@ func TestDescribeShouldFailIfNo2xx(t *testing.T) {
 func TestDeleteShouldWork(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
-	token := "aToken"
-	client, err := Make(token, baseUrl, false, "", "", "", false)
+	apiKey := "aToken"
+	client, err := Make(apiKey, baseUrl, false, "", "", "", false)
 	if err != nil {
 		panic(err)
 	}
@@ -272,7 +272,7 @@ func TestDeleteShouldWork(t *testing.T) {
 		"DELETE",
 		"http://baseUrl/public/self-serve/v1/application/yo",
 		nil,
-		httpmock.HeaderIs("Authorization", "Bearer "+token).
+		httpmock.HeaderIs("Authorization", "Bearer "+apiKey).
 			And(httpmock.HeaderIs("X-CDK-CLIENT", "CLI/unknown")),
 		responder,
 	)
@@ -286,8 +286,8 @@ func TestDeleteShouldWork(t *testing.T) {
 func TestDeleteShouldFailOnNot2XX(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
-	token := "aToken"
-	client, err := Make(token, baseUrl, false, "", "", "", false)
+	apiKey := "aToken"
+	client, err := Make(apiKey, baseUrl, false, "", "", "", false)
 	if err != nil {
 		panic(err)
 	}
@@ -303,7 +303,7 @@ func TestDeleteShouldFailOnNot2XX(t *testing.T) {
 		"DELETE",
 		"http://baseUrl/public/self_serve/v1/api/application/yo",
 		nil,
-		httpmock.HeaderIs("Authorization", "Bearer "+token),
+		httpmock.HeaderIs("Authorization", "Bearer "+apiKey),
 		responder,
 	)
 

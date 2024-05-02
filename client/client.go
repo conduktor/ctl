@@ -14,14 +14,14 @@ import (
 )
 
 type Client struct {
-	token   string
+	apiKey  string
 	baseUrl string
 	client  *resty.Client
 	kinds   schema.KindCatalog
 }
 
-func Make(token string, baseUrl string, debug bool, key, cert, cacert string, insecure bool) (*Client, error) {
-	//token is set later because it's not mandatory for getting the openapi and parsing different kind
+func Make(apiKey string, baseUrl string, debug bool, key, cert, cacert string, insecure bool) (*Client, error) {
+	//apiKey is set later because it's not mandatory for getting the openapi and parsing different kind
 	restyClient := resty.New().SetDebug(debug).SetHeader("X-CDK-CLIENT", "CLI/"+utils.GetConduktorVersion())
 
 	if (key == "" && cert != "") || (key != "" && cert == "") {
@@ -39,17 +39,17 @@ func Make(token string, baseUrl string, debug bool, key, cert, cacert string, in
 	}
 
 	result := &Client{
-		token:   token,
+		apiKey:  apiKey,
 		baseUrl: baseUrl,
 		client:  restyClient,
 		kinds:   nil,
 	}
 
-	if token != "" {
-		result.setTokenInRestClient()
+	if apiKey != "" {
+		result.setApiKeyInRestClient()
 	} else {
 		//it will be set later only when really needed
-		//so aim is not fail when CDK_TOKEN is not set before printing the cmd help
+		//so aim is not fail when CDK_API_KEY is not set before printing the cmd help
 	}
 
 	if insecure {
@@ -91,20 +91,20 @@ func (c *Client) IgnoreUntrustedCertificate() {
 	c.client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 }
 
-func (c *Client) setTokenFromEnvIfNeeded() {
-	if c.token == "" {
-		token := os.Getenv("CDK_TOKEN")
-		if token == "" {
-			fmt.Fprintln(os.Stderr, "Please set CDK_TOKEN")
+func (c *Client) setApiKeyFromEnvIfNeeded() {
+	if c.apiKey == "" {
+		apiKey := os.Getenv("CDK_API_KEY")
+		if apiKey == "" {
+			fmt.Fprintln(os.Stderr, "Please set CDK_API_KEY")
 			os.Exit(1)
 		}
-		c.token = token
-		c.setTokenInRestClient()
+		c.apiKey = apiKey
+		c.setApiKeyInRestClient()
 	}
 }
 
-func (c *Client) setTokenInRestClient() {
-	c.client = c.client.SetHeader("Authorization", "Bearer "+c.token)
+func (c *Client) setApiKeyInRestClient() {
+	c.client = c.client.SetHeader("Authorization", "Bearer "+c.apiKey)
 }
 func extractApiError(resp *resty.Response) string {
 	var apiError ApiError
@@ -125,7 +125,7 @@ func (client *Client) ActivateDebug() {
 }
 
 func (client *Client) Apply(resource *resource.Resource, dryMode bool) (string, error) {
-	client.setTokenFromEnvIfNeeded()
+	client.setApiKeyFromEnvIfNeeded()
 	kinds := client.GetKinds()
 	kind, ok := kinds[resource.Kind]
 	if !ok {
@@ -166,7 +166,7 @@ func printResponseAsYaml(bytes []byte) error {
 }
 
 func (client *Client) Get(kind *schema.Kind, parentPathValue []string) error {
-	client.setTokenFromEnvIfNeeded()
+	client.setApiKeyFromEnvIfNeeded()
 	url := client.baseUrl + kind.ListPath(parentPathValue)
 	resp, err := client.client.R().Get(url)
 	if err != nil {
@@ -178,7 +178,7 @@ func (client *Client) Get(kind *schema.Kind, parentPathValue []string) error {
 }
 
 func (client *Client) Describe(kind *schema.Kind, parentPathValue []string, name string) error {
-	client.setTokenFromEnvIfNeeded()
+	client.setApiKeyFromEnvIfNeeded()
 	url := client.baseUrl + kind.DescribePath(parentPathValue, name)
 	resp, err := client.client.R().Get(url)
 	if err != nil {
@@ -190,7 +190,7 @@ func (client *Client) Describe(kind *schema.Kind, parentPathValue []string, name
 }
 
 func (client *Client) Delete(kind *schema.Kind, parentPathValue []string, name string) error {
-	client.setTokenFromEnvIfNeeded()
+	client.setApiKeyFromEnvIfNeeded()
 	url := client.baseUrl + kind.DescribePath(parentPathValue, name)
 	resp, err := client.client.R().Delete(url)
 	if err != nil {

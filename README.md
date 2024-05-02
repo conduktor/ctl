@@ -41,12 +41,12 @@ To use Conduktor CLI, you need to define 2 environment variables:
 -   Your API token (either a User Token or Application Token). You can generate an API token on `/settings/public-api-keys` page of your Console instance.
 ````yaml
 CDK_BASE_URL=http://localhost:8080
-CDK_TOKEN=<admin-token>
+CDK_API_KEY=<admin-token>
 ````
 
 ### Commands Usage
 ````
-You need to define the CDK_TOKEN and CDK_BASE_URL environment variables to use this tool.
+You need to define the CDK_API_KEY and CDK_BASE_URL environment variables to use this tool.
 You can also use the CDK_KEY,CDK_CERT to use a certificate for tls authentication.
 If you have an untrusted certificate you can use the CDK_INSECURE=true variable to disable tls verification or you can use CACERT.
 
@@ -90,8 +90,8 @@ conduktor get application
 
 How to run:
 ```
-read CDK_TOKEN
-export CDK_TOKEN
+read CDK_API_KEY
+export CDK_API_KEY
 export CDK_BASE_URL=http://localhost:8080
 go run . 
 ```
