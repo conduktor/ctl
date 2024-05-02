@@ -46,6 +46,53 @@ jobs:
           project_path: "./"
           binary_name: "conduktor"
 
+  bump:
+    needs: [unit-test, integration-test]
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.CONDUKTORBOT_GHCR_RW }}
+      APP_VERSION: ${{ github.event.release.tag_name }}
+      APP_SHA: ${{ github.sha }}
+    steps:
+      - run: env
+        shell: bash
+      - uses: actions/checkout@v3
+        with:
+          repository: 'conduktor/homebrew-brew'
+          ref: main 
+          path: homebrew-brew 
+          token: ${{ secrets.CONDUKTORBOT_REPO_WRITE }}
+      - name: Update conduktor-ctl on homebrew
+        env:
+          GH_TOKEN: ${{ secrets.CONDUKTORBOT_REPO_WRITE }}
+        run: |
+          yq --version
+          gh version
+          gh auth status
+
+          export BRANCH=update_console-plus_$APP_VERSION
+          echo BRANCH $BRANCH
+          export BASE_BRANCH=main
+          echo BASE_BRANCH $BASE_BRANCH
+
+          export TITLE="Bump conduktor-ctl version to ${APP_VERSION}"
+          export BODY="Release https://github.com/conduktor/ctl/releases/tag/${APP_VERSION}"
+          export MESSAGE="${TITLE} .${BODY}"
+          echo TITLE $TITLE
+          echo BODY $BODY
+          echo MESSAGE $MESSAGE
+          cd homebrew-brew
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git checkout -b $BRANCH
+          sed -i  's/version "[^"]*"/version "'"$APP_VERSION"'"/' Formula/conduktor-cli.rb
+          sed -i  's/gitSha\s*=\s*"[^"]*"/gitSha = "'"$APP_SHA"'"/' Formula/conduktor-cli.rb
+          git add Formula/conduktor-cli.rb
+          git commit -m "$MESSAGE"
+          git push origin $BRANCH
+          gh pr create --title "$TITLE" --body "$BODY" --repo 'https://github.com/conduktor/homebrew-brew' --base $BASE_BRANCH
+          cd ..
+
   build-docker:
     name: Build and publish conduktor-ctl image
     needs: [unit-test, integration-test]
