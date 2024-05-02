@@ -106,8 +106,8 @@ Here some useful commands to get you started:
 
 Build and run the project locally:
 ```
-read CDK_TOKEN
-export CDK_TOKEN
+read CDK_API_KEY
+export CDK_API_KEY
 export CDK_BASE_URL=http://localhost:8080
 go run . 
 ```

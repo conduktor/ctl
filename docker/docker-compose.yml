@@ -4,7 +4,7 @@ services:
       dockerfile: docker/Dockerfile
       context: ..
     environment:
-      CDK_TOKEN: yo
+      CDK_API_KEY: yo
       CDK_BASE_URL: http://mock:1080
     volumes:
       - ./test_resource.yml:/test_resource.yml
