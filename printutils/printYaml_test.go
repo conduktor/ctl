@@ -8,7 +8,7 @@ import (
 )
 
 func TestPrintResourceLikeYamlOnSingleResource(t *testing.T) {
-	resourceFromBe := `{"spec": "someSpec", "version": "v4", "kind": "Gelato", "metadata": "arancia"}`
+	resourceFromBe := `{"spec": "someSpec", "apiVersion": "v4", "kind": "Gelato", "metadata": "arancia"}`
 	var data interface{}
 	err := json.Unmarshal([]byte(resourceFromBe), &data)
 	if err != nil {
@@ -17,7 +17,7 @@ func TestPrintResourceLikeYamlOnSingleResource(t *testing.T) {
 	var output bytes.Buffer
 	PrintResourceLikeYamlFile(&output, data)
 	expected := strings.TrimSpace(`
-version: v4
+apiVersion: v4
 kind: Gelato
 metadata: arancia
 spec: someSpec`)
@@ -52,7 +52,7 @@ cat`)
 }
 
 func TestPrintResourceLikeYamlOnMultileResources(t *testing.T) {
-	resourceFromBe := `{"spec": "someSpec", "version": "v4", "newKind": "Gelato", "metadata": "arancia"}`
+	resourceFromBe := `{"spec": "someSpec", "apiVersion": "v4", "newKind": "Gelato", "metadata": "arancia"}`
 	var data interface{}
 	err := json.Unmarshal([]byte(resourceFromBe), &data)
 	if err != nil {
@@ -61,7 +61,7 @@ func TestPrintResourceLikeYamlOnMultileResources(t *testing.T) {
 	var output bytes.Buffer
 	PrintResourceLikeYamlFile(&output, data)
 	expected := strings.TrimSpace(`
-version: v4
+apiVersion: v4
 metadata: arancia
 spec: someSpec
 newKind: Gelato

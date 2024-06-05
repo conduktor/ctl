@@ -35,7 +35,7 @@ func printResource(w io.Writer, data interface{}) error {
 	if !ok {
 		fmt.Fprint(w, string(yamlBytes))
 	} else {
-		wantedKeys := []string{"version", "kind", "metadata", "spec"}
+		wantedKeys := []string{"apiVersion", "kind", "metadata", "spec"}
 		for _, wantedKey := range wantedKeys {
 			printKeyYaml(w, wantedKey, asMap[wantedKey])
 		}
