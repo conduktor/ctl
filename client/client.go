@@ -58,7 +58,7 @@ func Make(apiKey string, baseUrl string, debug bool, key, cert, cacert string, i
 
 	err := result.initKindFromApi()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Cannot access the Conduktor API: %s\nTherefore, the list of Kinds reflects the most recent ones available at the time of the CLI's release (and not the latest ones overall)\n", err)
+		fmt.Fprintf(os.Stderr, "Cannot access the Conduktor API: %s\nUsing offline defaults.\n", err)
 		result.kinds = schema.DefaultKind()
 	}
 
