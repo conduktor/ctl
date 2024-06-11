@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	gabs "github.com/Jeffail/gabs/v2"
 	yamlJson "github.com/ghodss/yaml"
 	yaml "gopkg.in/yaml.v3"
 )
@@ -116,5 +117,28 @@ func yamlByteToResource(data []byte) (Resource, error) {
 		return Resource{}, err
 	}
 
-	return Resource{Json: jsonByte, Kind: yamlRoot.Kind, Name: name, Version: yamlRoot.ApiVersion, Metadata: yamlRoot.Metadata}, nil
+	resource := Resource{Json: jsonByte, Kind: yamlRoot.Kind, Name: name, Version: yamlRoot.ApiVersion, Metadata: yamlRoot.Metadata}
+	return expendIncludeFiles(resource)
+}
+
+func expendIncludeFiles(r Resource) (Resource, error) {
+	// Expend spec.schemaFile into spec.schema and remove spec.schemaFile if kind is Subject
+	if r.Kind == "Subject" {
+		jsonData, err := gabs.ParseJSON(r.Json)
+		if err != nil {
+			return Resource{}, err
+		}
+		schemaFileExist := jsonData.ExistsP("spec.schemaFile")
+		if schemaFileExist {
+			filePath := jsonData.Path("spec.schemaFile").Data().(string)
+			fileContent, err := os.ReadFile(filePath)
+			if err != nil {
+				return Resource{}, err
+			}
+			jsonData.SetP(string(fileContent), "spec.schema")
+			jsonData.DeleteP("spec.schemaFile")
+			r.Json = []byte(jsonData.String())
+		}
+	}
+	return r, nil
 }

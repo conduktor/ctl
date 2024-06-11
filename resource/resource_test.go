@@ -2,6 +2,8 @@ package resource
 
 import (
 	"github.com/davecgh/go-spew/spew"
+	"log"
+	"os"
 	"testing"
 )
 
@@ -106,4 +108,111 @@ func TestFromFolder(t *testing.T) {
 		Metadata: map[string]interface{}{"name": "b"},
 		Json:     []byte(`{"apiVersion":"v1","kind":"b","metadata":{"name":"b"},"spec":{"data":"lo"}}`),
 	})
+}
+
+func TestResourceExpansion(t *testing.T) {
+
+	avroSchema, err := os.CreateTemp("/tmp", "schema.avsc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer avroSchema.Close()
+	defer os.Remove(avroSchema.Name())
+	if _, err := avroSchema.Write([]byte(`{"type":"record","name":"myrecord","fields":[{"name":"f1","type":"string"}]}`)); err != nil {
+		log.Fatal(err)
+	}
+
+	jsonSchemaContent := []byte(`{
+	"$id": "https://mycompany.com/myrecord",
+	"$schema": "https://json-schema.org/draft/2019-09/schema",
+	"type": "object",
+	"title": "MyRecord",
+	"description": "Json schema for MyRecord",
+	"properties": {
+		"id": { "type": "string" },
+		"name": { "type": [ "string", "null" ] }
+	},
+	"required": [ "id" ],
+	"additionalProperties": false
+}`)
+	jsonSchema, err := os.CreateTemp("/tmp", "schema.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer jsonSchema.Close()
+	defer os.Remove(jsonSchema.Name())
+	if _, err := jsonSchema.Write(jsonSchemaContent); err != nil {
+		log.Fatal(err)
+	}
+
+	yamlByte := []byte(`
+# comment
+---
+apiVersion: v1
+kind: Subject
+metadata:
+  cluster: cluster-a
+  name: abc.mySchema
+spec:
+  format: avro
+  schema: |
+    {
+      "type":"record",
+      "name":"myrecord",
+      "fields": [{ "name":"f1", "type":"string" }]
+    }
+---
+apiVersion: v1
+kind: Subject
+metadata:
+  cluster: cluster-a
+  name: abc.mySchemaExtAvro
+spec:
+  format: json
+  schemaFile: ` + avroSchema.Name() + `
+---
+apiVersion: v1
+kind: Subject
+metadata:
+  cluster: cluster-a
+  name: abc.mySchemaExtJson
+spec:
+  format: avro
+  schemaFile: ` + jsonSchema.Name() + `
+`)
+
+	results, err := FromByte(yamlByte)
+	spew.Dump(results)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(results) != 3 {
+		t.Errorf("results expected of length 3, got length %d", len(results))
+	}
+
+	checkResource(t, results[0], Resource{
+		Version:  "v1",
+		Kind:     "Subject",
+		Name:     "abc.mySchema",
+		Metadata: map[string]interface{}{"cluster": "cluster-a", "name": "abc.mySchema"},
+		Json:     []byte(`{"apiVersion":"v1","kind":"Subject","metadata":{"cluster":"cluster-a","name":"abc.mySchema"},"spec":{"format":"avro","schema":"{\n  \"type\":\"record\",\n  \"name\":\"myrecord\",\n  \"fields\": [{ \"name\":\"f1\", \"type\":\"string\" }]\n}\n"}}`),
+	})
+
+	checkResource(t, results[1], Resource{
+		Version:  "v1",
+		Kind:     "Subject",
+		Name:     "abc.mySchemaExtAvro",
+		Metadata: map[string]interface{}{"cluster": "cluster-a", "name": "abc.mySchemaExtAvro"},
+		Json:     []byte(`{"apiVersion":"v1","kind":"Subject","metadata":{"cluster":"cluster-a","name":"abc.mySchemaExtAvro"},"spec":{"format":"json","schema":"{\"type\":\"record\",\"name\":\"myrecord\",\"fields\":[{\"name\":\"f1\",\"type\":\"string\"}]}"}}`), // schemaFile is expanded
+	})
+
+	checkResource(t, results[2], Resource{
+		Version:  "v1",
+		Kind:     "Subject",
+		Name:     "abc.mySchemaExtJson",
+		Metadata: map[string]interface{}{"cluster": "cluster-a", "name": "abc.mySchemaExtJson"},
+		Json:     []byte(`{"apiVersion":"v1","kind":"Subject","metadata":{"cluster":"cluster-a","name":"abc.mySchemaExtJson"},"spec":{"format":"avro","schema":"{\n\t\"$id\": \"https://mycompany.com/myrecord\",\n\t\"$schema\": \"https://json-schema.org/draft/2019-09/schema\",\n\t\"type\": \"object\",\n\t\"title\": \"MyRecord\",\n\t\"description\": \"Json schema for MyRecord\",\n\t\"properties\": {\n\t\t\"id\": { \"type\": \"string\" },\n\t\t\"name\": { \"type\": [ \"string\", \"null\" ] }\n\t},\n\t\"required\": [ \"id\" ],\n\t\"additionalProperties\": false\n}"}}`),
+	})
+
 }
