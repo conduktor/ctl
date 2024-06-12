@@ -11,6 +11,7 @@ require (
 	github.com/spf13/cobra v1.8.0
 	golang.org/x/exp v0.0.0-20240213143201-ec583247a57a
 	gopkg.in/yaml.v3 v3.0.1
+	github.com/Jeffail/gabs/v2 v2.7.0
 )
 
 require (
