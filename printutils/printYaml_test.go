@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"strings"
 	"testing"
+
+	"github.com/conduktor/ctl/orderedjson"
 )
 
-func TestPrintResourceLikeYamlOnSingleResource(t *testing.T) {
+func TestPrintResourceLikeYamlOnSingleResourceFromNormalJson(t *testing.T) {
 	resourceFromBe := `{"spec": "someSpec", "apiVersion": "v4", "kind": "Gelato", "metadata": "arancia"}`
 	var data interface{}
 	err := json.Unmarshal([]byte(resourceFromBe), &data)
@@ -20,6 +22,29 @@ func TestPrintResourceLikeYamlOnSingleResource(t *testing.T) {
 apiVersion: v4
 kind: Gelato
 metadata: arancia
+spec: someSpec`)
+	got := strings.TrimSpace(output.String())
+	if got != expected {
+		t.Errorf("got:\n%s \nexpected:\n%s", got, expected)
+	}
+}
+
+func TestPrintResourceLikeYamlOnSingleResourceFromOrderedJson(t *testing.T) {
+	resourceFromBe := `{"spec": "someSpec", "apiVersion": "v4", "kind": "Gelato", "metadata": {"z": 1, "t": 2, "x": 3}}`
+	var data orderedjson.OrderedData
+	err := json.Unmarshal([]byte(resourceFromBe), &data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var output bytes.Buffer
+	PrintResourceLikeYamlFile(&output, data)
+	expected := strings.TrimSpace(`
+apiVersion: v4
+kind: Gelato
+metadata:
+    z: 1
+    t: 2
+    x: 3
 spec: someSpec`)
 	got := strings.TrimSpace(output.String())
 	if got != expected {
@@ -51,7 +76,31 @@ cat`)
 	}
 }
 
-func TestPrintResourceLikeYamlOnMultileResources(t *testing.T) {
+func TestPrintResourceLikeYamlOnResourcesWithNewUnexpectedFieldFromOrderedJson(t *testing.T) {
+	resourceFromBe := `{"spec": "someSpec", "apiVersion": "v4", "newKind": "Gelato", "metadata": {"z": 1, "t": 2, "x": 3}}`
+	var data orderedjson.OrderedData
+	err := json.Unmarshal([]byte(resourceFromBe), &data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var output bytes.Buffer
+	PrintResourceLikeYamlFile(&output, data)
+	expected := strings.TrimSpace(`
+apiVersion: v4
+metadata:
+    z: 1
+    t: 2
+    x: 3
+spec: someSpec
+newKind: Gelato
+`)
+	got := strings.TrimSpace(output.String())
+	if got != expected {
+		t.Errorf("got:\n%s \nexpected:\n%s", got, expected)
+	}
+}
+
+func TestPrintResourceLikeYamlOnResourcesWithNewUnexpectedFieldFromNormalJson(t *testing.T) {
 	resourceFromBe := `{"spec": "someSpec", "apiVersion": "v4", "newKind": "Gelato", "metadata": "arancia"}`
 	var data interface{}
 	err := json.Unmarshal([]byte(resourceFromBe), &data)
@@ -71,6 +120,64 @@ newKind: Gelato
 		t.Errorf("got:\n%s \nexpected:\n%s", got, expected)
 	}
 }
+
+func TestPrintResourceLikeYamlOnMultipleResourceUsingNormalJson(t *testing.T) {
+	resourceFromBe := `[{"spec": "someSpec", "apiVersion": "v4", "newKind": "Gelato", "metadata": "arancia"}, {"spec": "someSpec2", "apiVersion": "v5", "newKind": "banana", "metadata": "bananaa"}]`
+	var data interface{}
+	err := json.Unmarshal([]byte(resourceFromBe), &data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var output bytes.Buffer
+	PrintResourceLikeYamlFile(&output, data)
+	expected := strings.TrimSpace(`
+---
+apiVersion: v4
+metadata: arancia
+spec: someSpec
+newKind: Gelato
+---
+apiVersion: v5
+metadata: bananaa
+spec: someSpec2
+newKind: banana 
+`)
+	got := strings.TrimSpace(output.String())
+	if got != expected {
+		t.Errorf("got:\n%s \nexpected:\n%s", got, expected)
+	}
+}
+
+func TestPrintResourceLikeYamlOnMultipleResourceUsingOrderedJson(t *testing.T) {
+	resourceFromBe := `[{"spec": "someSpec", "apiVersion": "v4", "newKind": "Gelato", "metadata": "arancia"}, {"spec": "someSpec2", "apiVersion": "v5", "newKind": "banana", "metadata": {"z": 1, "t": 2, "x": 3}}]`
+	var data orderedjson.OrderedData
+	err := json.Unmarshal([]byte(resourceFromBe), &data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var output bytes.Buffer
+	PrintResourceLikeYamlFile(&output, data)
+	expected := strings.TrimSpace(`
+---
+apiVersion: v4
+metadata: arancia
+spec: someSpec
+newKind: Gelato
+---
+apiVersion: v5
+metadata:
+    z: 1
+    t: 2
+    x: 3
+spec: someSpec2
+newKind: banana 
+`)
+	got := strings.TrimSpace(output.String())
+	if got != expected {
+		t.Errorf("got:\n%s \nexpected:\n%s", got, expected)
+	}
+}
+
 func TestPrintResourceWithMissingFieldAndUnexpectedField(t *testing.T) {
 	resourceFromBe := `[[1], 3, true, "cat"]`
 	var data interface{}

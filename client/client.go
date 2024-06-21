@@ -4,13 +4,15 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"os"
+	"strings"
+
+	"github.com/conduktor/ctl/orderedjson"
 	"github.com/conduktor/ctl/printutils"
 	"github.com/conduktor/ctl/resource"
 	"github.com/conduktor/ctl/schema"
 	"github.com/conduktor/ctl/utils"
 	"github.com/go-resty/resty/v2"
-	"os"
-	"strings"
 )
 
 type Client struct {
@@ -157,12 +159,18 @@ func (client *Client) Apply(resource *resource.Resource, dryMode bool) (string, 
 }
 
 func printResponseAsYaml(bytes []byte) error {
-	var data interface{}
+	var data orderedjson.OrderedData //using this instead of interface{} keep json order
+	var finalData interface{}        // in case it does not work we will failback to deserializing directly to interface{}
 	err := json.Unmarshal(bytes, &data)
 	if err != nil {
-		return err
+		err = json.Unmarshal(bytes, &finalData)
+		if err != nil {
+			return err
+		}
+	} else {
+		finalData = data
 	}
-	return printutils.PrintResourceLikeYamlFile(os.Stdout, data)
+	return printutils.PrintResourceLikeYamlFile(os.Stdout, finalData)
 }
 
 func (client *Client) Get(kind *schema.Kind, parentPathValue []string) error {
