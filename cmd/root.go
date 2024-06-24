@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/conduktor/ctl/client"
 	"github.com/conduktor/ctl/schema"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 var debug *bool
@@ -58,7 +59,7 @@ func init() {
 	debug = rootCmd.PersistentFlags().BoolP("verbose", "v", false, "show more information for debugging")
 	initGet(kinds)
 	initDelete(kinds)
-	initApply()
+	initApply(kinds)
 	initMkKind()
 	initPrintKind(kinds)
 }

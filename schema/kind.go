@@ -4,18 +4,22 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	"github.com/conduktor/ctl/resource"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/conduktor/ctl/resource"
 )
 
 type KindVersion struct {
 	ListPath        string
 	Name            string
 	ParentPathParam []string
+	Order           int `json:1000` //same value DefaultPriority
 }
+
+const DefaultPriority = 1000 //update  json annotation for Order when changing this value
 
 type Kind struct {
 	Versions map[int]KindVersion
@@ -74,9 +78,7 @@ func (kind *Kind) AddVersion(version int, kindVersion *KindVersion) error {
 func (kind *Kind) GetFlag() []string {
 	kindVersion := kind.GetLatestKindVersion()
 	result := make([]string, len(kindVersion.ParentPathParam))
-	for i, param := range kindVersion.ParentPathParam {
-		result[i] = param
-	}
+	copy(result, kindVersion.ParentPathParam)
 	return result
 }
 
