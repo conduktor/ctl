@@ -2,13 +2,14 @@ package schema
 
 import (
 	"fmt"
-	"github.com/conduktor/ctl/utils"
-	"github.com/pb33f/libopenapi"
-	v3high "github.com/pb33f/libopenapi/datamodel/high/v3"
 	"regexp"
 	"slices"
 	"strconv"
 	"strings"
+
+	"github.com/conduktor/ctl/utils"
+	"github.com/pb33f/libopenapi"
+	v3high "github.com/pb33f/libopenapi/datamodel/high/v3"
 )
 
 type Schema struct {
@@ -41,7 +42,7 @@ func (s *Schema) GetKinds(strict bool) (map[string]Kind, error) {
 				if err != nil {
 					return nil, err
 				}
-				newKind, err := buildKindVersion(path.Key(), tagParsed.kind, put, strict)
+				newKind, err := buildKindVersion(path.Key(), tagParsed.kind, tagParsed.order, put, strict)
 				if err != nil {
 					return nil, err
 				}
@@ -60,11 +61,12 @@ func (s *Schema) GetKinds(strict bool) (map[string]Kind, error) {
 	return result, nil
 }
 
-func buildKindVersion(path, kind string, put *v3high.Operation, strict bool) (*KindVersion, error) {
+func buildKindVersion(path, kind string, order int, put *v3high.Operation, strict bool) (*KindVersion, error) {
 	newKind := &KindVersion{
 		Name:            kind,
 		ListPath:        path,
 		ParentPathParam: make([]string, 0, len(put.Parameters)),
+		Order:           order,
 	}
 	for _, parameter := range put.Parameters {
 		if parameter.In == "path" && *parameter.Required {
@@ -77,6 +79,11 @@ func buildKindVersion(path, kind string, put *v3high.Operation, strict bool) (*K
 		if err != nil {
 			return nil, err
 		}
+
+		err = checkThatOrderArePresent(newKind)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return newKind, nil
 }
@@ -84,16 +91,17 @@ func buildKindVersion(path, kind string, put *v3high.Operation, strict bool) (*K
 type tagParseResult struct {
 	kind    string
 	version int
+	order   int
 }
 
 func parseTag(tag string) (tagParseResult, error) {
 	// we extract kind and version from the tag
 	// e.g. cli_cluster_kafka_v1 -> kind: Cluster, version: 1
 	// e.g. cli_topic-policy_self-serve_v2 -> kind: TopicPolicy, version: 2
-	re := regexp.MustCompile(`cli_([^_]+)_[^_]+_v(\d+)`)
+	re := regexp.MustCompile(`cli_([^_]+)_[^_]+_v(\d+)(?:_(\d+))?`)
 	matches := re.FindStringSubmatch(tag)
 
-	if len(matches) < 3 {
+	if len(matches) < 4 {
 		return tagParseResult{}, fmt.Errorf("Invalid tag format: %s", tag)
 	}
 
@@ -102,8 +110,18 @@ func parseTag(tag string) (tagParseResult, error) {
 	if err != nil {
 		return tagParseResult{}, fmt.Errorf("Invalid version number in tag: %s", matches[2])
 	}
+	orderStr := matches[3]
+	var order int
+	if orderStr == "" {
+		order = DefaultPriority
+	} else {
+		order, err = strconv.Atoi(orderStr)
+	}
+	if err != nil {
+		return tagParseResult{}, fmt.Errorf("Invalid order number in tag: %s", orderStr)
+	}
 
-	return tagParseResult{kind: utils.KebabToUpperCamel(kind), version: version}, nil
+	return tagParseResult{kind: utils.KebabToUpperCamel(kind), version: version, order: order}, nil
 }
 
 func checkThatPathParamAreInSpec(kind *KindVersion, requestBody *v3high.RequestBody) error {
@@ -127,6 +145,14 @@ func checkThatPathParamAreInSpec(kind *KindVersion, requestBody *v3high.RequestB
 		}
 
 	}
+	return nil
+}
+
+func checkThatOrderArePresent(kind *KindVersion) error {
+	if kind.Order == DefaultPriority {
+		return fmt.Errorf("No priority set in schema for kind %s", kind.Name)
+	}
+
 	return nil
 }
 

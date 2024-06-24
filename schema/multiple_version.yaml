@@ -26,7 +26,7 @@ paths:
     get:
       tags:
         - topic
-        - cli_topic_kafka_v2
+        - cli_topic_kafka_v2_42
       operationId: listTopicSelfServe2
       parameters:
         - name: cluster
@@ -69,7 +69,7 @@ paths:
               --max-redirs 32
     put:
       tags:
-        - cli_topic_kafka_v2
+        - cli_topic_kafka_v2_42
       operationId: applyTopicSelfServe2
       parameters:
         - name: cluster
