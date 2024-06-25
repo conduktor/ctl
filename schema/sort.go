@@ -9,7 +9,7 @@ import (
 	"github.com/conduktor/ctl/resource"
 )
 
-func resourcePriority(catalog KindCatalog, resource resource.Resource, debug, failbackToDefaultCatalog bool) int {
+func resourcePriority(catalog KindCatalog, resource resource.Resource, debug, fallbackToDefaultCatalog bool) int {
 	kind, ok := catalog[resource.Kind]
 	if !ok {
 		if debug {
@@ -26,7 +26,7 @@ func resourcePriority(catalog KindCatalog, resource resource.Resource, debug, fa
 		return DefaultPriority
 	} else {
 		order := kindVersion.Order
-		if order == DefaultPriority && failbackToDefaultCatalog {
+		if order == DefaultPriority && fallbackToDefaultCatalog {
 			defaultCatalog := DefaultKind()
 			orderFromDefaultCatalog := resourcePriority(defaultCatalog, resource, false, false)
 			if orderFromDefaultCatalog != DefaultPriority && debug {
