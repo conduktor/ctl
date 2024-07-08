@@ -24,6 +24,7 @@ type Client struct {
 
 func Make(apiKey string, baseUrl string, debug bool, key, cert, cacert string, insecure bool) (*Client, error) {
 	//apiKey is set later because it's not mandatory for getting the openapi and parsing different kind
+	//or to get jwt token
 	restyClient := resty.New().SetDebug(debug).SetHeader("X-CDK-CLIENT", "CLI/"+utils.GetConduktorVersion())
 
 	if (key == "" && cert != "") || (key != "" && cert == "") {
@@ -183,6 +184,27 @@ func (client *Client) Get(kind *schema.Kind, parentPathValue []string) error {
 		return fmt.Errorf(extractApiError(resp))
 	}
 	return printResponseAsYaml(resp.Body())
+}
+
+func (client *Client) Login(username, password string) (LoginResult, error) {
+	url := client.baseUrl + "/api/login"
+	resp, err := client.client.R().SetBody(map[string]string{"username": username, "password": password}).Post(url)
+	if err != nil {
+		return LoginResult{}, err
+	} else if resp.IsError() {
+		if resp.StatusCode() == 401 {
+			return LoginResult{}, fmt.Errorf("Invalid username or password")
+		} else {
+
+			return LoginResult{}, fmt.Errorf(extractApiError(resp))
+		}
+	}
+	result := LoginResult{}
+	err = json.Unmarshal(resp.Body(), &result)
+	if err != nil {
+		return LoginResult{}, err
+	}
+	return result, nil
 }
 
 func (client *Client) Describe(kind *schema.Kind, parentPathValue []string, name string) error {
