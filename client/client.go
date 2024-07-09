@@ -109,6 +109,12 @@ func (c *Client) setApiKeyFromEnvIfNeeded() {
 func (c *Client) setApiKeyInRestClient() {
 	c.client = c.client.SetHeader("Authorization", "Bearer "+c.apiKey)
 }
+
+func (c *Client) SetApiKey(apiKey string) {
+	c.apiKey = apiKey
+	c.setApiKeyInRestClient()
+}
+
 func extractApiError(resp *resty.Response) string {
 	var apiError ApiError
 	jsonError := json.Unmarshal(resp.Body(), &apiError)
@@ -258,6 +264,78 @@ func (client *Client) initKindFromApi() error {
 	client.kinds, err = schema.GetKinds(strict)
 	if err != nil {
 		fmt.Errorf("Cannot extract kinds from openapi: %s", err)
+	}
+	return nil
+}
+
+func (client *Client) ListAdminToken() ([]Token, error) {
+	result := make([]Token, 0)
+	client.setApiKeyFromEnvIfNeeded()
+	url := client.baseUrl + "/token/v1/admin_tokens"
+	resp, err := client.client.R().Get(url)
+	if err != nil {
+		return result, err
+	} else if resp.IsError() {
+		return result, fmt.Errorf(extractApiError(resp))
+	} else {
+		err = json.Unmarshal(resp.Body(), &result)
+		return result, err
+	}
+}
+
+func (client *Client) ListApplicationInstanceToken(applicationInstanceName string) ([]Token, error) {
+	result := make([]Token, 0)
+	client.setApiKeyFromEnvIfNeeded()
+	url := client.baseUrl + "/token/v1/application_instance_tokens/" + applicationInstanceName
+	resp, err := client.client.R().Get(url)
+	if err != nil {
+		return result, err
+	} else if resp.IsError() {
+		return result, fmt.Errorf(extractApiError(resp))
+	} else {
+		err = json.Unmarshal(resp.Body(), &result)
+		return result, err
+	}
+}
+
+func (client *Client) CreateAdminToken(name string) (CreatedToken, error) {
+	var result CreatedToken
+	client.setApiKeyFromEnvIfNeeded()
+	url := client.baseUrl + "/token/v1/admin_tokens"
+	resp, err := client.client.R().SetBody(map[string]string{"name": name}).Post(url)
+	if err != nil {
+		return result, err
+	} else if resp.IsError() {
+		return result, fmt.Errorf(extractApiError(resp))
+	} else {
+		err = json.Unmarshal(resp.Body(), &result)
+		return result, err
+	}
+}
+
+func (client *Client) CreateApplicationInstanceToken(applicationInstanceName, name string) (CreatedToken, error) {
+	var result CreatedToken
+	client.setApiKeyFromEnvIfNeeded()
+	url := client.baseUrl + "/token/v1/application_instance_tokens/" + applicationInstanceName
+	resp, err := client.client.R().SetBody(map[string]string{"name": name}).Post(url)
+	if err != nil {
+		return result, err
+	} else if resp.IsError() {
+		return result, fmt.Errorf(extractApiError(resp))
+	} else {
+		err = json.Unmarshal(resp.Body(), &result)
+		return result, err
+	}
+}
+
+func (client *Client) DeleteToken(uuid string) error {
+	client.setApiKeyFromEnvIfNeeded()
+	url := client.baseUrl + "/token/v1/" + uuid
+	resp, err := client.client.R().Delete(url)
+	if err != nil {
+		return err
+	} else if resp.IsError() {
+		return fmt.Errorf(extractApiError(resp))
 	}
 	return nil
 }
