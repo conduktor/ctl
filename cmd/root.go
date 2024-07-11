@@ -25,7 +25,7 @@ func apiClient() *client.Client {
 var rootCmd = &cobra.Command{
 	Use:   "conduktor",
 	Short: "Command line tools for conduktor",
-	Long: `Make sure you've set the environment variables CDK_API_KEY (generated from Console) and CDK_BASE_URL.
+	Long: `Make sure you've set the environment variables CDK_USER/CDK_PASSWORD or CDK_API_KEY (generated from Console) and CDK_BASE_URL.
 Additionally, you can configure client TLS authentication by providing your certificate paths in CDK_KEY and CDK_CERT.
 For server TLS authentication, you can ignore the certificate by setting CDK_INSECURE=true, or provide a certificate authority using CDK_CACERT.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
@@ -50,7 +50,7 @@ func Execute() {
 
 func init() {
 	apiClient_, apiClientError = client.MakeFromEnv()
-	kinds := schema.KindCatalog{}
+	var kinds schema.KindCatalog
 	if apiClientError == nil {
 		kinds = apiClient_.GetKinds()
 	} else {

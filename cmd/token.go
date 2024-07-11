@@ -125,7 +125,7 @@ var deleteTokenCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := apiClient().DeleteToken(args[0])
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Could not create admin token: %s\n", err)
+			fmt.Fprintf(os.Stderr, "Could not delete token: %s\n", err)
 			os.Exit(1)
 		}
 		fmt.Println("Token deleted")
@@ -134,9 +134,9 @@ var deleteTokenCmd = &cobra.Command{
 
 func init() {
 	applicationInstanceNameForList = listApplicationInstanceTokenCmd.PersistentFlags().StringP("application-instance", "i", "", "Application instance name")
-	rootCmd.MarkPersistentFlagRequired("application-instance")
 	applicationInstanceNameForCreate = createApplicationInstanceTokenCmd.PersistentFlags().StringP("application-instance", "i", "", "Application instance name")
-	rootCmd.MarkPersistentFlagRequired("application-instance")
+	listApplicationInstanceTokenCmd.MarkPersistentFlagRequired("application-instance")
+	createApplicationInstanceTokenCmd.MarkPersistentFlagRequired("application-instance")
 	listTokenCmd.AddCommand(listApplicationInstanceTokenCmd)
 	listTokenCmd.AddCommand(listAdminCmd)
 	tokenCmd.AddCommand(listTokenCmd)

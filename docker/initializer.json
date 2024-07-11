@@ -11,7 +11,9 @@
       "statusCode": 200,
       "body": "\"Created\"",
       "headers": {
-        "Content-Type": ["application/json"]
+        "Content-Type": [
+          "application/json"
+        ]
       }
     }
   },
@@ -27,7 +29,9 @@
       "statusCode": 200,
       "body": "[{}]",
       "headers": {
-        "Content-Type": ["application/json"]
+        "Content-Type": [
+          "application/json"
+        ]
       }
     }
   },
@@ -43,7 +47,9 @@
       "statusCode": 200,
       "body": "{}",
       "headers": {
-        "Content-Type": ["application/json"]
+        "Content-Type": [
+          "application/json"
+        ]
       }
     }
   },
@@ -59,8 +65,134 @@
       "statusCode": 200,
       "body": "{}",
       "headers": {
-        "Content-Type": ["application/json"]
+        "Content-Type": [
+          "application/json"
+        ]
       }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Post",
+      "path": "/api/login",
+      "body": {
+        "username": "admin",
+        "password": "secret"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": {
+        "access_token": "yo",
+        "refresh_token": "yo",
+        "token_type": "yo",
+        "expires_in": 0
+      },
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Get",
+      "path": "/token/v1/admin_tokens",
+      "headers": {
+        "Authorization": "Bearer yo"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": [],
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "GET",
+      "path": "/token/v1/application_instance_tokens/my_app_instance",
+      "headers": {
+        "Authorization": "Bearer yo"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": [],
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Post",
+      "path": "/token/v1/admin_tokens",
+      "headers": {
+        "Authorization": "Bearer yo"
+      },
+      "body": {
+        "name": "a_admin_token"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": {
+        "id": "000",
+        "name": "a_admin_token",
+        "created_at": "",
+        "token": "a_token"
+      },
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Post",
+      "path": "/token/v1/application_instance_tokens/my_app_instance",
+      "headers": {
+        "Authorization": "Bearer yo"
+      },
+      "body": {
+        "name": "a_admin_token"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": {
+        "id": "000",
+        "name": "a_admin_token",
+        "created_at": "",
+        "token": "a_token"
+      },
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "DELETE",
+      "path": "/token/v1/0-0-0-0-0",
+      "headers": {
+        "Authorization": "Bearer yo"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200
     }
   }
 ]
