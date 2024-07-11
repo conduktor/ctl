@@ -11,7 +11,10 @@ func TestApplyShouldWork(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
 	apiKey := "aToken"
-	client, err := Make(apiKey, baseUrl, false, "", "", "", false)
+	client, err := Make(ApiParameter{
+		ApiKey:  apiKey,
+		BaseUrl: baseUrl,
+	})
 	if err != nil {
 		panic(err)
 	}
@@ -54,7 +57,10 @@ func TestApplyWithDryModeShouldWork(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
 	apiKey := "aToken"
-	client, err := Make(apiKey, baseUrl, false, "", "", "", false)
+	client, err := Make(ApiParameter{
+		ApiKey:  apiKey,
+		BaseUrl: baseUrl,
+	})
 	if err != nil {
 		panic(err)
 	}
@@ -92,7 +98,10 @@ func TestApplyShouldFailIfNo2xx(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
 	apiKey := "aToken"
-	client, err := Make(apiKey, baseUrl, false, "", "", "", false)
+	client, err := Make(ApiParameter{
+		ApiKey:  apiKey,
+		BaseUrl: baseUrl,
+	})
 	if err != nil {
 		panic(err)
 	}
@@ -130,7 +139,10 @@ func TestGetShouldWork(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
 	apiKey := "aToken"
-	client, err := Make(apiKey, baseUrl, false, "", "", "", false)
+	client, err := Make(ApiParameter{
+		ApiKey:  apiKey,
+		BaseUrl: baseUrl,
+	})
 	if err != nil {
 		panic(err)
 	}
@@ -162,7 +174,10 @@ func TestGetShouldFailIfN2xx(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
 	apiKey := "aToken"
-	client, err := Make(apiKey, baseUrl, false, "", "", "", false)
+	client, err := Make(ApiParameter{
+		ApiKey:  apiKey,
+		BaseUrl: baseUrl,
+	})
 	if err != nil {
 		panic(err)
 	}
@@ -193,7 +208,10 @@ func TestDescribeShouldWork(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
 	apiKey := "aToken"
-	client, err := Make(apiKey, baseUrl, false, "", "", "", false)
+	client, err := Make(ApiParameter{
+		ApiKey:  apiKey,
+		BaseUrl: baseUrl,
+	})
 	if err != nil {
 		panic(err)
 	}
@@ -225,7 +243,10 @@ func TestDescribeShouldFailIfNo2xx(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl/api"
 	apiKey := "aToken"
-	client, err := Make(apiKey, baseUrl, false, "", "", "", false)
+	client, err := Make(ApiParameter{
+		ApiKey:  apiKey,
+		BaseUrl: baseUrl,
+	})
 	if err != nil {
 		panic(err)
 	}
@@ -256,7 +277,10 @@ func TestDeleteShouldWork(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
 	apiKey := "aToken"
-	client, err := Make(apiKey, baseUrl, false, "", "", "", false)
+	client, err := Make(ApiParameter{
+		ApiKey:  apiKey,
+		BaseUrl: baseUrl,
+	})
 	if err != nil {
 		panic(err)
 	}
@@ -287,7 +311,10 @@ func TestDeleteShouldFailOnNot2XX(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
 	apiKey := "aToken"
-	client, err := Make(apiKey, baseUrl, false, "", "", "", false)
+	client, err := Make(ApiParameter{
+		ApiKey:  apiKey,
+		BaseUrl: baseUrl,
+	})
 	if err != nil {
 		panic(err)
 	}

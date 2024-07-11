@@ -22,41 +22,72 @@ type Client struct {
 	kinds   schema.KindCatalog
 }
 
-func Make(apiKey string, baseUrl string, debug bool, key, cert, cacert string, insecure bool) (*Client, error) {
+type ApiParameter struct {
+	ApiKey      string
+	BaseUrl     string
+	Debug       bool
+	Key         string
+	Cert        string
+	Cacert      string
+	CdkUser     string
+	CdkPassword string
+	Insecure    bool
+}
+
+func Make(apiParameter ApiParameter) (*Client, error) {
 	//apiKey is set later because it's not mandatory for getting the openapi and parsing different kind
 	//or to get jwt token
-	restyClient := resty.New().SetDebug(debug).SetHeader("X-CDK-CLIENT", "CLI/"+utils.GetConduktorVersion())
+	restyClient := resty.New().SetDebug(apiParameter.Debug).SetHeader("X-CDK-CLIENT", "CLI/"+utils.GetConduktorVersion())
 
-	if (key == "" && cert != "") || (key != "" && cert == "") {
-		return nil, fmt.Errorf("key and cert must be provided together")
-	} else if key != "" && cert != "" {
-		certificate, err := tls.LoadX509KeyPair(cert, key)
+	if apiParameter.BaseUrl == "" {
+		return nil, fmt.Errorf("Please set CDK_BASE_URL")
+	}
+
+	if (apiParameter.Key == "" && apiParameter.Cert != "") || (apiParameter.Key != "" && apiParameter.Cert == "") {
+		return nil, fmt.Errorf("CDK_KEY and CDK_CERT must be provided together")
+	} else if apiParameter.Key != "" && apiParameter.Cert != "" {
+		certificate, err := tls.LoadX509KeyPair(apiParameter.Cert, apiParameter.Key)
 		restyClient.SetCertificates(certificate)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	if cacert != "" {
-		restyClient.SetRootCertificate(cacert)
+	if (apiParameter.CdkUser != "" && apiParameter.CdkPassword == "") || (apiParameter.CdkUser == "" && apiParameter.CdkPassword != "") {
+		return nil, fmt.Errorf("CDK_USER and CDK_PASSWORD must be provided together")
+	}
+	if apiParameter.CdkUser != "" && apiParameter.ApiKey != "" {
+		return nil, fmt.Errorf("Can't set both CDK_USER and CDK_API_KEY")
+	}
+
+	if apiParameter.Cacert != "" {
+		restyClient.SetRootCertificate(apiParameter.Cacert)
 	}
 
 	result := &Client{
-		apiKey:  apiKey,
-		baseUrl: baseUrl,
+		apiKey:  apiParameter.ApiKey,
+		baseUrl: apiParameter.BaseUrl,
 		client:  restyClient,
 		kinds:   nil,
 	}
 
-	if apiKey != "" {
+	if apiParameter.Insecure {
+		result.IgnoreUntrustedCertificate()
+	}
+
+	if apiParameter.CdkUser != "" {
+		jwtToken, err := result.Login(apiParameter.CdkUser, apiParameter.CdkPassword)
+		if err != nil {
+			return nil, fmt.Errorf("Could not login: %s", err)
+		}
+		result.apiKey = jwtToken.AccessToken
+	}
+
+	if apiParameter.ApiKey != "" {
 		result.setApiKeyInRestClient()
 	} else {
 		//it will be set later only when really needed
 		//so aim is not fail when CDK_API_KEY is not set before printing the cmd help
-	}
-
-	if insecure {
-		result.IgnoreUntrustedCertificate()
 	}
 
 	err := result.initKindFromApi()
@@ -69,17 +100,18 @@ func Make(apiKey string, baseUrl string, debug bool, key, cert, cacert string, i
 }
 
 func MakeFromEnv() (*Client, error) {
-	baseUrl := os.Getenv("CDK_BASE_URL")
-	if baseUrl == "" {
-		return nil, fmt.Errorf("Please set CDK_BASE_URL")
+	apiParameter := ApiParameter{
+		BaseUrl:     os.Getenv("CDK_BASE_URL"),
+		Debug:       strings.ToLower(os.Getenv("CDK_DEBUG")) == "true",
+		Cert:        os.Getenv("CDK_CERT"),
+		Cacert:      os.Getenv("CDK_CACERT"),
+		ApiKey:      os.Getenv("CDK_API_KEY"),
+		CdkUser:     os.Getenv("CDK_USER"),
+		CdkPassword: os.Getenv("CDK_PASSWORD"),
+		Insecure:    strings.ToLower(os.Getenv("CDK_INSECURE")) == "true",
 	}
-	debug := strings.ToLower(os.Getenv("CDK_DEBUG")) == "true"
-	key := os.Getenv("CDK_KEY")
-	cert := os.Getenv("CDK_CERT")
-	cacert := os.Getenv("CDK_CACERT")
-	insecure := strings.ToLower(os.Getenv("CDK_INSECURE")) == "true"
 
-	client, err := Make("", baseUrl, debug, key, cert, cacert, insecure)
+	client, err := Make(apiParameter)
 	if err != nil {
 		return nil, fmt.Errorf("Cannot create client: %s", err)
 	}
