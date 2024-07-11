@@ -7,8 +7,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/conduktor/ctl/orderedjson"
-	"github.com/conduktor/ctl/printutils"
 	"github.com/conduktor/ctl/resource"
 	"github.com/conduktor/ctl/schema"
 	"github.com/conduktor/ctl/utils"
@@ -197,31 +195,18 @@ func (client *Client) Apply(resource *resource.Resource, dryMode bool) (string, 
 	return upsertResponse.UpsertResult, nil
 }
 
-func printResponseAsYaml(bytes []byte) error {
-	var data orderedjson.OrderedData //using this instead of interface{} keep json order
-	var finalData interface{}        // in case it does not work we will failback to deserializing directly to interface{}
-	err := json.Unmarshal(bytes, &data)
-	if err != nil {
-		err = json.Unmarshal(bytes, &finalData)
-		if err != nil {
-			return err
-		}
-	} else {
-		finalData = data
-	}
-	return printutils.PrintResourceLikeYamlFile(os.Stdout, finalData)
-}
-
-func (client *Client) Get(kind *schema.Kind, parentPathValue []string) error {
+func (client *Client) Get(kind *schema.Kind, parentPathValue []string) ([]resource.Resource, error) {
+	var result []resource.Resource
 	client.setApiKeyFromEnvIfNeeded()
 	url := client.baseUrl + kind.ListPath(parentPathValue)
 	resp, err := client.client.R().Get(url)
 	if err != nil {
-		return err
+		return result, err
 	} else if resp.IsError() {
-		return fmt.Errorf(extractApiError(resp))
+		return result, fmt.Errorf(extractApiError(resp))
 	}
-	return printResponseAsYaml(resp.Body())
+	err = json.Unmarshal(resp.Body(), &result)
+	return result, err
 }
 
 func (client *Client) Login(username, password string) (LoginResult, error) {
@@ -245,16 +230,18 @@ func (client *Client) Login(username, password string) (LoginResult, error) {
 	return result, nil
 }
 
-func (client *Client) Describe(kind *schema.Kind, parentPathValue []string, name string) error {
+func (client *Client) Describe(kind *schema.Kind, parentPathValue []string, name string) (resource.Resource, error) {
+	var result resource.Resource
 	client.setApiKeyFromEnvIfNeeded()
 	url := client.baseUrl + kind.DescribePath(parentPathValue, name)
 	resp, err := client.client.R().Get(url)
 	if err != nil {
-		return err
+		return result, err
 	} else if resp.IsError() {
-		return fmt.Errorf("error describing resources %s/%s, got status code: %d:\n %s", kind.GetName(), name, resp.StatusCode(), string(resp.Body()))
+		return result, fmt.Errorf("error describing resources %s/%s, got status code: %d:\n %s", kind.GetName(), name, resp.StatusCode(), string(resp.Body()))
 	}
-	return printResponseAsYaml(resp.Body())
+	err = json.Unmarshal(resp.Body(), &result)
+	return result, err
 }
 
 func (client *Client) Delete(kind *schema.Kind, parentPathValue []string, name string) error {

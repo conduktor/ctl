@@ -1,11 +1,20 @@
 package client
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/conduktor/ctl/resource"
 	"github.com/jarcoal/httpmock"
 )
+
+var aResource = resource.Resource{
+	Version:  "v1",
+	Kind:     "Topic",
+	Name:     "abc.myTopic",
+	Metadata: map[string]interface{}{"name": "abc.myTopic"},
+	Json:     []byte(`{"apiVersion":"v1","kind":"Topic","metadata":{"name":"abc.myTopic"},"spec":{"replicationFactor":1}}`),
+}
 
 func TestApplyShouldWork(t *testing.T) {
 	defer httpmock.Reset()
@@ -149,7 +158,7 @@ func TestGetShouldWork(t *testing.T) {
 	httpmock.ActivateNonDefault(
 		client.client.GetClient(),
 	)
-	responder, err := httpmock.NewJsonResponder(200, "[]")
+	responder, err := httpmock.NewJsonResponder(200, []resource.Resource{aResource})
 	if err != nil {
 		panic(err)
 	}
@@ -164,9 +173,12 @@ func TestGetShouldWork(t *testing.T) {
 	)
 
 	app := client.GetKinds()["Application"]
-	err = client.Get(&app, []string{})
+	result, err := client.Get(&app, []string{})
 	if err != nil {
 		t.Error(err)
+	}
+	if !reflect.DeepEqual(result[0].Json, aResource.Json) {
+		t.Errorf("Bad result expected %v got: %v", aResource, result)
 	}
 }
 
@@ -198,7 +210,7 @@ func TestGetShouldFailIfN2xx(t *testing.T) {
 	)
 
 	app := client.GetKinds()["Application"]
-	err = client.Get(&app, []string{})
+	_, err = client.Get(&app, []string{})
 	if err == nil {
 		t.Failed()
 	}
@@ -218,7 +230,7 @@ func TestDescribeShouldWork(t *testing.T) {
 	httpmock.ActivateNonDefault(
 		client.client.GetClient(),
 	)
-	responder, err := httpmock.NewJsonResponder(200, "[]")
+	responder, err := httpmock.NewJsonResponder(200, aResource)
 	if err != nil {
 		panic(err)
 	}
@@ -233,9 +245,13 @@ func TestDescribeShouldWork(t *testing.T) {
 	)
 
 	app := client.GetKinds()["Application"]
-	err = client.Describe(&app, []string{}, "yo")
+	result, err := client.Describe(&app, []string{}, "yo")
 	if err != nil {
 		t.Error(err)
+	}
+	if !reflect.DeepEqual(result.Json, aResource.Json) {
+		t.Errorf("Bad result expected %v got: %v", aResource, result)
+
 	}
 }
 
@@ -267,7 +283,7 @@ func TestDescribeShouldFailIfNo2xx(t *testing.T) {
 	)
 
 	app := client.GetKinds()["Application"]
-	err = client.Describe(&app, []string{}, "yo")
+	_, err = client.Describe(&app, []string{}, "yo")
 	if err == nil {
 		t.Failed()
 	}

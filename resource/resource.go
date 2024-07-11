@@ -10,6 +10,8 @@ import (
 	"strings"
 
 	gabs "github.com/Jeffail/gabs/v2"
+	"github.com/conduktor/ctl/orderedjson"
+	"github.com/conduktor/ctl/printutils"
 	yamlJson "github.com/ghodss/yaml"
 	yaml "gopkg.in/yaml.v3"
 )
@@ -17,9 +19,35 @@ import (
 type Resource struct {
 	Json     []byte
 	Kind     string
-	Name     string
+	Name     string //duplicate data from Metadata.Name extracted for convenience
 	Version  string
-	Metadata map[string]interface{} `json:"-"`
+	Metadata map[string]interface{}
+	Spec     map[string]interface{}
+}
+
+func (r Resource) MarshalJSON() ([]byte, error) {
+	return r.Json, nil
+}
+
+func (r *Resource) UnmarshalJSON(data []byte) error {
+	var forParsingStruct forParsingStruct
+	err := json.Unmarshal(data, &forParsingStruct)
+	if err != nil {
+		return err
+	}
+
+	name, err := extractKeyFromMetadataMap(forParsingStruct.Metadata, "name")
+	if err != nil {
+		return err
+	}
+
+	r.Json = data
+	r.Kind = forParsingStruct.Kind
+	r.Name = name
+	r.Version = forParsingStruct.ApiVersion
+	r.Metadata = forParsingStruct.Metadata
+	r.Spec = forParsingStruct.Spec
+	return expendIncludeFiles(r)
 }
 
 func (r Resource) String() string {
@@ -30,10 +58,11 @@ func (r Resource) StringFromMetadata(key string) (string, error) {
 	return extractKeyFromMetadataMap(r.Metadata, key)
 }
 
-type yamlRoot struct {
+type forParsingStruct struct {
 	ApiVersion string
 	Kind       string
 	Metadata   map[string]interface{}
+	Spec       map[string]interface{}
 }
 
 func FromFile(path string) ([]Resource, error) {
@@ -42,7 +71,7 @@ func FromFile(path string) ([]Resource, error) {
 		return nil, err
 	}
 
-	return FromByte(data)
+	return FromYamlByte(data)
 }
 
 func FromFolder(path string) ([]Resource, error) {
@@ -50,7 +79,7 @@ func FromFolder(path string) ([]Resource, error) {
 	if err != nil {
 		return nil, err
 	}
-	var result = make([]Resource, 0, 0)
+	var result = make([]Resource, 0)
 	for _, entry := range dirEntry {
 		if !entry.IsDir() && (strings.HasSuffix(entry.Name(), ".yml") || strings.HasSuffix(entry.Name(), ".yaml")) {
 			resources, err := FromFile(filepath.Join(path, entry.Name()))
@@ -64,7 +93,7 @@ func FromFolder(path string) ([]Resource, error) {
 	return result, nil
 }
 
-func FromByte(data []byte) ([]Resource, error) {
+func FromYamlByte(data []byte) ([]Resource, error) {
 	reader := bytes.NewReader(data)
 	var yamlData interface{}
 	results := make([]Resource, 0, 2)
@@ -106,39 +135,44 @@ func yamlByteToResource(data []byte) (Resource, error) {
 		return Resource{}, err
 	}
 
-	var yamlRoot yamlRoot
-	err = json.Unmarshal(jsonByte, &yamlRoot)
-	if err != nil {
-		return Resource{}, err
-	}
-
-	name, err := extractKeyFromMetadataMap(yamlRoot.Metadata, "name")
-	if err != nil {
-		return Resource{}, err
-	}
-
-	resource := Resource{Json: jsonByte, Kind: yamlRoot.Kind, Name: name, Version: yamlRoot.ApiVersion, Metadata: yamlRoot.Metadata}
-	return expendIncludeFiles(resource)
+	var result Resource
+	err = json.Unmarshal(jsonByte, &result)
+	return result, err
 }
 
-func expendIncludeFiles(r Resource) (Resource, error) {
+func expendIncludeFiles(r *Resource) error {
 	// Expend spec.schemaFile into spec.schema and remove spec.schemaFile if kind is Subject
 	if r.Kind == "Subject" {
 		jsonData, err := gabs.ParseJSON(r.Json)
 		if err != nil {
-			return Resource{}, err
+			return err
 		}
 		schemaFileExist := jsonData.ExistsP("spec.schemaFile")
 		if schemaFileExist {
 			filePath := jsonData.Path("spec.schemaFile").Data().(string)
 			fileContent, err := os.ReadFile(filePath)
 			if err != nil {
-				return Resource{}, err
+				return err
 			}
 			jsonData.SetP(string(fileContent), "spec.schema")
 			jsonData.DeleteP("spec.schemaFile")
 			r.Json = []byte(jsonData.String())
 		}
 	}
-	return r, nil
+	return nil
+}
+
+func (r *Resource) PrintPreservingOriginalFieldOrder() error {
+	var data orderedjson.OrderedData //using this instead of interface{} keep json order
+	var finalData interface{}        // in case it does not work we will failback to deserializing directly to interface{}
+	err := json.Unmarshal(r.Json, &data)
+	if err != nil {
+		err = json.Unmarshal(r.Json, &finalData)
+		if err != nil {
+			return err
+		}
+	} else {
+		finalData = data
+	}
+	return printutils.PrintResourceLikeYamlFile(os.Stdout, finalData)
 }
