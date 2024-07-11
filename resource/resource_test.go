@@ -1,10 +1,12 @@
 package resource
 
 import (
-	"github.com/davecgh/go-spew/spew"
+	"encoding/json"
 	"log"
 	"os"
 	"testing"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 func checkResource(t *testing.T, result, expected Resource) {
@@ -42,7 +44,7 @@ metadata:
   name: cg1
 `)
 
-	results, err := FromByte(yamlByte)
+	results, err := FromYamlByte(yamlByte)
 	spew.Dump(results)
 	if err != nil {
 		t.Error(err)
@@ -181,7 +183,7 @@ spec:
   schemaFile: ` + jsonSchema.Name() + `
 `)
 
-	results, err := FromByte(yamlByte)
+	results, err := FromYamlByte(yamlByte)
 	spew.Dump(results)
 	if err != nil {
 		t.Error(err)
@@ -215,4 +217,39 @@ spec:
 		Json:     []byte(`{"apiVersion":"v1","kind":"Subject","metadata":{"cluster":"cluster-a","name":"abc.mySchemaExtJson"},"spec":{"format":"avro","schema":"{\n\t\"$id\": \"https://mycompany.com/myrecord\",\n\t\"$schema\": \"https://json-schema.org/draft/2019-09/schema\",\n\t\"type\": \"object\",\n\t\"title\": \"MyRecord\",\n\t\"description\": \"Json schema for MyRecord\",\n\t\"properties\": {\n\t\t\"id\": { \"type\": \"string\" },\n\t\t\"name\": { \"type\": [ \"string\", \"null\" ] }\n\t},\n\t\"required\": [ \"id\" ],\n\t\"additionalProperties\": false\n}"}}`),
 	})
 
+}
+
+func TestJsonUnmarshal(t *testing.T) {
+	aResource := Resource{
+		Version:  "v1",
+		Kind:     "Subject",
+		Name:     "abc.mySchemaExtJson",
+		Metadata: map[string]interface{}{"cluster": "cluster-a", "name": "abc.mySchemaExtJson"},
+		Json:     []byte(`{"apiVersion":"v1","kind":"Subject","metadata":{"cluster":"cluster-a","name":"abc.mySchemaExtJson"},"spec":{"format":"avro","schema":"{\n\t\"$id\": \"https://mycompany.com/myrecord\",\n\t\"$schema\": \"https://json-schema.org/draft/2019-09/schema\",\n\t\"type\": \"object\",\n\t\"title\": \"MyRecord\",\n\t\"description\": \"Json schema for MyRecord\",\n\t\"properties\": {\n\t\t\"id\": { \"type\": \"string\" },\n\t\t\"name\": { \"type\": [ \"string\", \"null\" ] }\n\t},\n\t\"required\": [ \"id\" ],\n\t\"additionalProperties\": false\n}"}}`),
+	}
+
+	var decodedResource Resource
+	err := json.Unmarshal(aResource.Json, &decodedResource)
+	if err != nil {
+		t.Error(err)
+	}
+	checkResource(t, decodedResource, aResource)
+}
+
+func TestJsonMarshall(t *testing.T) {
+	aResource := Resource{
+		Version:  "v1",
+		Kind:     "Subject",
+		Name:     "abc.mySchemaExtJson",
+		Metadata: map[string]interface{}{"cluster": "cluster-a", "name": "abc.mySchemaExtJson"},
+		Json:     []byte(`{"apiVersion":"v1","kind":"Subject","metadata":{"cluster":"cluster-a","name":"abc.mySchemaExtJson"},"spec":{"format":"avro","schema":"{\n\t\"$id\": \"https://mycompany.com/myrecord\",\n\t\"$schema\": \"https://json-schema.org/draft/2019-09/schema\",\n\t\"type\": \"object\",\n\t\"title\": \"MyRecord\",\n\t\"description\": \"Json schema for MyRecord\",\n\t\"properties\": {\n\t\t\"id\": { \"type\": \"string\" },\n\t\t\"name\": { \"type\": [ \"string\", \"null\" ] }\n\t},\n\t\"required\": [ \"id\" ],\n\t\"additionalProperties\": false\n}"}}`),
+	}
+
+	bytes, err := json.Marshal(aResource)
+	if err != nil {
+		t.Error(err)
+	}
+	if string(bytes) != string(aResource.Json) {
+		t.Errorf("Expected %s got %s", string(aResource.Json), string(bytes))
+	}
 }

@@ -2,10 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/conduktor/ctl/schema"
-	"github.com/spf13/cobra"
 	"os"
 	"strings"
+
+	"github.com/conduktor/ctl/resource"
+	"github.com/conduktor/ctl/schema"
+	"github.com/spf13/cobra"
 )
 
 var getCmd = &cobra.Command{
@@ -38,9 +40,16 @@ func initGet(kinds schema.KindCatalog) {
 				}
 				var err error
 				if len(args) == 0 {
-					err = apiClient().Get(&kind, parentValue)
+					var result []resource.Resource
+					result, err = apiClient().Get(&kind, parentValue)
+					for _, r := range result {
+						r.PrintPreservingOriginalFieldOrder()
+						fmt.Println("---")
+					}
 				} else if len(args) == 1 {
-					err = apiClient().Describe(&kind, parentValue, args[0])
+					var result resource.Resource
+					result, err = apiClient().Describe(&kind, parentValue, args[0])
+					result.PrintPreservingOriginalFieldOrder()
 				}
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "%s\n", err)

@@ -27,7 +27,7 @@
     },
     "httpResponse": {
       "statusCode": 200,
-      "body": "[{}]",
+      "body": [{"metadata": {"name": "a"}}],
       "headers": {
         "Content-Type": [
           "application/json"
@@ -45,7 +45,7 @@
     },
     "httpResponse": {
       "statusCode": 200,
-      "body": "{}",
+      "body": {"metadata": {"name": "a"}},
       "headers": {
         "Content-Type": [
           "application/json"
