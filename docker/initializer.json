@@ -83,7 +83,7 @@
     "httpResponse": {
       "statusCode": 200,
       "body": {
-        "access_token": "yo",
+        "access_token": "yo_from_login",
         "refresh_token": "yo",
         "token_type": "yo",
         "expires_in": 0
@@ -193,6 +193,24 @@
     },
     "httpResponse": {
       "statusCode": 200
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Get",
+      "path": "/public/console/v2/kafka-cluster/my_kafka_cluster",
+      "headers": {
+        "Authorization": "Bearer yo_from_login"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": {"metadata": {"name": "a"}},
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
     }
   }
 ]
