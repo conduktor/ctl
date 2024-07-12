@@ -81,7 +81,7 @@ func Make(apiParameter ApiParameter) (*Client, error) {
 		result.apiKey = jwtToken.AccessToken
 	}
 
-	if apiParameter.ApiKey != "" {
+	if result.apiKey != "" {
 		result.setApiKeyInRestClient()
 	} else {
 		//it will be set later only when really needed
