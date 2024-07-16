@@ -140,24 +140,36 @@ func yamlByteToResource(data []byte) (Resource, error) {
 	return result, err
 }
 
+func loadTextFromFile(r *Resource, jsonPathForFilePath string, destJsonPath string) error {
+	jsonData, err := gabs.ParseJSON(r.Json)
+	if err != nil {
+		return err
+	}
+
+	pathExist := jsonData.ExistsP(jsonPathForFilePath)
+	if pathExist {
+		filePath, ok := jsonData.Path(jsonPathForFilePath).Data().(string)
+		if !ok {
+			return fmt.Errorf("%s is not a string", filePath)
+		}
+		fileContent, err := os.ReadFile(filePath)
+		if err != nil {
+			return fmt.Errorf("failed to read file %s: \"%w\"", filePath, err)
+		}
+		jsonData.SetP(string(fileContent), destJsonPath)
+		jsonData.DeleteP(jsonPathForFilePath)
+		finalJson := []byte(jsonData.String())
+		return r.UnmarshalJSON(finalJson)
+	}
+	return nil
+}
+
 func expendIncludeFiles(r *Resource) error {
 	// Expend spec.schemaFile into spec.schema and remove spec.schemaFile if kind is Subject
 	if r.Kind == "Subject" {
-		jsonData, err := gabs.ParseJSON(r.Json)
-		if err != nil {
-			return err
-		}
-		schemaFileExist := jsonData.ExistsP("spec.schemaFile")
-		if schemaFileExist {
-			filePath := jsonData.Path("spec.schemaFile").Data().(string)
-			fileContent, err := os.ReadFile(filePath)
-			if err != nil {
-				return err
-			}
-			jsonData.SetP(string(fileContent), "spec.schema")
-			jsonData.DeleteP("spec.schemaFile")
-			r.Json = []byte(jsonData.String())
-		}
+		return loadTextFromFile(r, "spec.schemaFile", "spec.schema")
+	} else if r.Kind == "Topic" {
+		return loadTextFromFile(r, "metadata.labels.conduktor~1io/descriptionFile", "metadata.labels.conduktor~1io/description")
 	}
 	return nil
 }

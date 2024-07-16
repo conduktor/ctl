@@ -4,12 +4,21 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
 )
 
 func checkResource(t *testing.T, result, expected Resource) {
+	checkResourceGeneric(t, result, expected, true)
+}
+
+func checkResourceWithoutJsonOrder(t *testing.T, result, expected Resource) {
+	checkResourceGeneric(t, result, expected, false)
+}
+
+func checkResourceGeneric(t *testing.T, result, expected Resource, jsonOrderMatter bool) {
 	if result.Name != expected.Name {
 		t.Errorf("Expected name %s got %s", expected.Name, result.Name)
 	}
@@ -22,8 +31,31 @@ func checkResource(t *testing.T, result, expected Resource) {
 		t.Errorf("Expected version %s got %s", expected.Version, result.Version)
 	}
 
-	if string(result.Json) != string(expected.Json) {
-		t.Errorf("Expected json:\n%s got\n%s", string(expected.Json), string(result.Json))
+	if !reflect.DeepEqual(result.Metadata, expected.Metadata) {
+		t.Errorf("Expected Metadata %s got %s", expected.Metadata, result.Metadata)
+	}
+	if !reflect.DeepEqual(result.Spec, expected.Spec) {
+		t.Errorf("Expected Spec %s got %s", expected.Spec, result.Spec)
+	}
+
+	if jsonOrderMatter {
+		if string(result.Json) != string(expected.Json) {
+			t.Errorf("Expected json:\n%s got\n%s", string(expected.Json), string(result.Json))
+		}
+	} else {
+		var gotJson map[string]interface{}
+		var expectedJson map[string]interface{}
+		err := json.Unmarshal(result.Json, &gotJson)
+		if err != nil {
+			t.Error(err)
+		}
+		err = json.Unmarshal(expected.Json, &expectedJson)
+		if err != nil {
+			t.Error(err)
+		}
+		if !reflect.DeepEqual(gotJson, expectedJson) {
+			t.Errorf("Expected json:\n%s got\n%s", string(expected.Json), string(result.Json))
+		}
 	}
 }
 
@@ -58,6 +90,7 @@ metadata:
 		Kind:     "Topic",
 		Name:     "abc.myTopic",
 		Metadata: map[string]interface{}{"name": "abc.myTopic"},
+		Spec:     map[string]interface{}{"replicationFactor": 1.0},
 		Json:     []byte(`{"apiVersion":"v1","kind":"Topic","metadata":{"name":"abc.myTopic"},"spec":{"replicationFactor":1}}`),
 	})
 
@@ -84,6 +117,7 @@ func TestFromFolder(t *testing.T) {
 		Kind:     "a",
 		Name:     "a",
 		Metadata: map[string]interface{}{"name": "a"},
+		Spec:     map[string]interface{}{"data": "data"},
 		Json:     []byte(`{"apiVersion":"v1","kind":"a","metadata":{"name":"a"},"spec":{"data":"data"}}`),
 	})
 
@@ -92,6 +126,7 @@ func TestFromFolder(t *testing.T) {
 		Kind:     "a",
 		Name:     "b",
 		Metadata: map[string]interface{}{"name": "b"},
+		Spec:     map[string]interface{}{"data": "data2"},
 		Json:     []byte(`{"apiVersion":"v1","kind":"a","metadata":{"name":"b"},"spec":{"data":"data2"}}`),
 	})
 
@@ -100,6 +135,7 @@ func TestFromFolder(t *testing.T) {
 		Kind:     "b",
 		Name:     "a",
 		Metadata: map[string]interface{}{"name": "a"},
+		Spec:     map[string]interface{}{"data": "yo"},
 		Json:     []byte(`{"apiVersion":"v1","kind":"b","metadata":{"name":"a"},"spec":{"data":"yo"}}`),
 	})
 
@@ -108,11 +144,58 @@ func TestFromFolder(t *testing.T) {
 		Kind:     "b",
 		Name:     "b",
 		Metadata: map[string]interface{}{"name": "b"},
+		Spec:     map[string]interface{}{"data": "lo"},
 		Json:     []byte(`{"apiVersion":"v1","kind":"b","metadata":{"name":"b"},"spec":{"data":"lo"}}`),
 	})
 }
 
-func TestResourceExpansion(t *testing.T) {
+func TestResourceExpansionForTopic(t *testing.T) {
+	topicDesc, err := os.CreateTemp("/tmp", "topic.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer topicDesc.Close()
+	defer os.Remove(topicDesc.Name())
+	if _, err := topicDesc.Write([]byte(`This topic is awesome`)); err != nil {
+		log.Fatal(err)
+	}
+
+	yamlByte := []byte(`
+# comment
+---
+apiVersion: v1
+kind: Topic
+metadata:
+  cluster: cluster-a
+  name: toto
+  labels:
+    conduktor.io/descriptionFile: ` + topicDesc.Name() + `
+spec:
+  replicationFactor: 2
+  partition: 3
+`)
+
+	results, err := FromYamlByte(yamlByte)
+	spew.Dump(results)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(results) != 1 {
+		t.Errorf("results expected of length 1, got length %d", len(results))
+	}
+
+	checkResourceWithoutJsonOrder(t, results[0], Resource{
+		Version:  "v1",
+		Kind:     "Topic",
+		Name:     "toto",
+		Metadata: map[string]interface{}{"cluster": "cluster-a", "name": "toto", "labels": map[string]interface{}{"conduktor.io/description": "This topic is awesome"}},
+		Spec:     map[string]interface{}{"replicationFactor": 2.0, "partition": 3.0},
+		Json:     []byte(`{"apiVersion":"v1","kind":"Topic","metadata":{"cluster":"cluster-a","name":"toto","labels":{"conduktor.io/description":"This topic is awesome"}},"spec":{"replicationFactor":2,"partition":3}}`),
+	})
+}
+
+func TestResourceExpansionForSchema(t *testing.T) {
 
 	avroSchema, err := os.CreateTemp("/tmp", "schema.avsc")
 	if err != nil {
@@ -198,6 +281,7 @@ spec:
 		Kind:     "Subject",
 		Name:     "abc.mySchema",
 		Metadata: map[string]interface{}{"cluster": "cluster-a", "name": "abc.mySchema"},
+		Spec:     map[string]interface{}{"format": "avro", "schema": "{\n  \"type\":\"record\",\n  \"name\":\"myrecord\",\n  \"fields\": [{ \"name\":\"f1\", \"type\":\"string\" }]\n}\n"},
 		Json:     []byte(`{"apiVersion":"v1","kind":"Subject","metadata":{"cluster":"cluster-a","name":"abc.mySchema"},"spec":{"format":"avro","schema":"{\n  \"type\":\"record\",\n  \"name\":\"myrecord\",\n  \"fields\": [{ \"name\":\"f1\", \"type\":\"string\" }]\n}\n"}}`),
 	})
 
@@ -206,6 +290,7 @@ spec:
 		Kind:     "Subject",
 		Name:     "abc.mySchemaExtAvro",
 		Metadata: map[string]interface{}{"cluster": "cluster-a", "name": "abc.mySchemaExtAvro"},
+		Spec:     map[string]interface{}{"format": "json", "schema": "{\"type\":\"record\",\"name\":\"myrecord\",\"fields\":[{\"name\":\"f1\",\"type\":\"string\"}]}"},
 		Json:     []byte(`{"apiVersion":"v1","kind":"Subject","metadata":{"cluster":"cluster-a","name":"abc.mySchemaExtAvro"},"spec":{"format":"json","schema":"{\"type\":\"record\",\"name\":\"myrecord\",\"fields\":[{\"name\":\"f1\",\"type\":\"string\"}]}"}}`), // schemaFile is expanded
 	})
 
@@ -213,6 +298,7 @@ spec:
 		Version:  "v1",
 		Kind:     "Subject",
 		Name:     "abc.mySchemaExtJson",
+		Spec:     map[string]interface{}{"format": "avro", "schema": "{\n\t\"$id\": \"https://mycompany.com/myrecord\",\n\t\"$schema\": \"https://json-schema.org/draft/2019-09/schema\",\n\t\"type\": \"object\",\n\t\"title\": \"MyRecord\",\n\t\"description\": \"Json schema for MyRecord\",\n\t\"properties\": {\n\t\t\"id\": { \"type\": \"string\" },\n\t\t\"name\": { \"type\": [ \"string\", \"null\" ] }\n\t},\n\t\"required\": [ \"id\" ],\n\t\"additionalProperties\": false\n}"},
 		Metadata: map[string]interface{}{"cluster": "cluster-a", "name": "abc.mySchemaExtJson"},
 		Json:     []byte(`{"apiVersion":"v1","kind":"Subject","metadata":{"cluster":"cluster-a","name":"abc.mySchemaExtJson"},"spec":{"format":"avro","schema":"{\n\t\"$id\": \"https://mycompany.com/myrecord\",\n\t\"$schema\": \"https://json-schema.org/draft/2019-09/schema\",\n\t\"type\": \"object\",\n\t\"title\": \"MyRecord\",\n\t\"description\": \"Json schema for MyRecord\",\n\t\"properties\": {\n\t\t\"id\": { \"type\": \"string\" },\n\t\t\"name\": { \"type\": [ \"string\", \"null\" ] }\n\t},\n\t\"required\": [ \"id\" ],\n\t\"additionalProperties\": false\n}"}}`),
 	})
@@ -224,6 +310,7 @@ func TestJsonUnmarshal(t *testing.T) {
 		Version:  "v1",
 		Kind:     "Subject",
 		Name:     "abc.mySchemaExtJson",
+		Spec:     map[string]interface{}{"format": "avro", "schema": "{\n\t\"$id\": \"https://mycompany.com/myrecord\",\n\t\"$schema\": \"https://json-schema.org/draft/2019-09/schema\",\n\t\"type\": \"object\",\n\t\"title\": \"MyRecord\",\n\t\"description\": \"Json schema for MyRecord\",\n\t\"properties\": {\n\t\t\"id\": { \"type\": \"string\" },\n\t\t\"name\": { \"type\": [ \"string\", \"null\" ] }\n\t},\n\t\"required\": [ \"id\" ],\n\t\"additionalProperties\": false\n}"},
 		Metadata: map[string]interface{}{"cluster": "cluster-a", "name": "abc.mySchemaExtJson"},
 		Json:     []byte(`{"apiVersion":"v1","kind":"Subject","metadata":{"cluster":"cluster-a","name":"abc.mySchemaExtJson"},"spec":{"format":"avro","schema":"{\n\t\"$id\": \"https://mycompany.com/myrecord\",\n\t\"$schema\": \"https://json-schema.org/draft/2019-09/schema\",\n\t\"type\": \"object\",\n\t\"title\": \"MyRecord\",\n\t\"description\": \"Json schema for MyRecord\",\n\t\"properties\": {\n\t\t\"id\": { \"type\": \"string\" },\n\t\t\"name\": { \"type\": [ \"string\", \"null\" ] }\n\t},\n\t\"required\": [ \"id\" ],\n\t\"additionalProperties\": false\n}"}}`),
 	}
