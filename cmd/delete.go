@@ -41,34 +41,78 @@ func initDelete(kinds schema.KindCatalog) {
 	deleteCmd.MarkFlagRequired("file")
 
 	for name, kind := range kinds {
-		flags := kind.GetFlag()
-		parentFlagValue := make([]*string, len(flags))
-		kindCmd := &cobra.Command{
-			Use:     fmt.Sprintf("%s [name]", name),
-			Short:   "Delete resource of kind " + name,
-			Args:    cobra.MatchAll(cobra.ExactArgs(1)),
-			Aliases: []string{strings.ToLower(name), strings.ToLower(name) + "s", name + "s"},
-			Run: func(cmd *cobra.Command, args []string) {
-				parentValue := make([]string, len(parentFlagValue))
-				for i, v := range parentFlagValue {
-					parentValue[i] = *v
-				}
-				var err error
-				if strings.Contains(kind.GetLatestKindVersion().ListPath, "gateway") {
-					err = gatewayApiClient().Delete(&kind, parentValue, args[0])
-				} else {
-					err = apiClient().Delete(&kind, parentValue, args[0])
-				}
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "%s\n", err)
-					os.Exit(1)
-				}
-			},
+		if name == "AliasTopics" {
+			aliasTopicDeleteCmd := buildDeleteAliasTopicCmd(name, kind)
+			deleteCmd.AddCommand(aliasTopicDeleteCmd)
+		} else {
+			flags := kind.GetFlag()
+			parentFlagValue := make([]*string, len(flags))
+			kindCmd := &cobra.Command{
+				Use:     fmt.Sprintf("%s [name]", name),
+				Short:   "Delete resource of kind " + name,
+				Args:    cobra.MatchAll(cobra.ExactArgs(1)),
+				Aliases: []string{strings.ToLower(name), strings.ToLower(name) + "s", name + "s"},
+				Run: func(cmd *cobra.Command, args []string) {
+					parentValue := make([]string, len(parentFlagValue))
+					for i, v := range parentFlagValue {
+						parentValue[i] = *v
+					}
+					var err error
+					if strings.Contains(kind.GetLatestKindVersion().ListPath, "gateway") {
+						err = gatewayApiClient().Delete(&kind, parentValue, args[0])
+					} else {
+						err = apiClient().Delete(&kind, parentValue, args[0])
+					}
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "%s\n", err)
+						os.Exit(1)
+					}
+				},
+			}
+			for i, flag := range kind.GetFlag() {
+				parentFlagValue[i] = kindCmd.Flags().String(flag, "", "Parent "+flag)
+				kindCmd.MarkFlagRequired(flag)
+			}
+			deleteCmd.AddCommand(kindCmd)
 		}
-		for i, flag := range kind.GetFlag() {
-			parentFlagValue[i] = kindCmd.Flags().String(flag, "", "Parent "+flag)
-			kindCmd.MarkFlagRequired(flag)
-		}
-		deleteCmd.AddCommand(kindCmd)
 	}
+}
+
+func buildDeleteAliasTopicCmd(name string, kind schema.Kind) *cobra.Command {
+	const nameFlag = "name"
+	const vClusterFlag = "vcluster"
+	var nameValue string
+	var vClusterValue string
+	var aliasTopicDeleteCmd = &cobra.Command{
+		Use:     fmt.Sprintf("%s [name]", name),
+		Short:   "Delete an Alias Topic",
+		Args:    cobra.ExactArgs(0),
+		Aliases: []string{strings.ToLower(name), strings.ToLower(name) + "s", name + "s"},
+		Run: func(cmd *cobra.Command, args []string) {
+			var err error
+			queryParams := make(map[string]string)
+			if nameValue != "" {
+				queryParams[nameFlag] = nameValue
+			}
+			if vClusterValue != "" {
+				queryParams[vClusterFlag] = vClusterValue
+			} else {
+				queryParams[vClusterFlag] = "passthrough"
+			}
+
+			err = gatewayApiClient().DeleteAliasTopics(&kind, queryParams)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "%s\n", err)
+				os.Exit(1)
+			}
+		},
+	}
+
+	aliasTopicDeleteCmd.Flags().StringVar(&nameValue, nameFlag, "", "name of the alias topic")
+	aliasTopicDeleteCmd.Flags().StringVar(&vClusterValue, "vCluster", "", "vCluster of the alias topic")
+
+	aliasTopicDeleteCmd.MarkFlagRequired(nameFlag)
+	aliasTopicDeleteCmd.MarkFlagRequired(vClusterFlag)
+
+	return aliasTopicDeleteCmd
 }

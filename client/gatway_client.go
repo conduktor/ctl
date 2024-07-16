@@ -75,26 +75,45 @@ func MakeGatewayClientFromEnv() (*GatewayClient, error) {
 	return client, nil
 }
 
-func (client *GatewayClient) Get(kind *schema.Kind, parentPathValue []string) error {
+func (client *GatewayClient) Get(kind *schema.Kind, parentPathValue []string) ([]resource.Resource, error) {
+	var result []resource.Resource
 	url := client.baseUrl + kind.ListPath(parentPathValue)
 	resp, err := client.client.R().Get(url)
 	if err != nil {
-		return err
+		return result, err
 	} else if resp.IsError() {
-		return fmt.Errorf(extractApiError(resp))
+		return result, fmt.Errorf(extractApiError(resp))
 	}
-	return printResponseAsYaml(resp.Body())
+	err = json.Unmarshal(resp.Body(), &result)
+	return result, err
 }
 
-func (client *GatewayClient) Describe(kind *schema.Kind, parentPathValue []string, name string) error {
+func (client *GatewayClient) GetAliasTopics(kind *schema.Kind, param map[string]string) ([]resource.Resource, error) {
+	var result []resource.Resource
+	url := client.baseUrl + kind.ListPath(nil)
+	req := client.client.R()
+	req.SetQueryParams(param)
+	resp, err := req.Get(url)
+	if err != nil {
+		return result, err
+	} else if resp.IsError() {
+		return result, fmt.Errorf(extractApiError(resp))
+	}
+	err = json.Unmarshal(resp.Body(), &result)
+	return result, err
+}
+
+func (client *GatewayClient) Describe(kind *schema.Kind, parentPathValue []string, name string) (resource.Resource, error) {
+	var result resource.Resource
 	url := client.baseUrl + kind.DescribePath(parentPathValue, name)
 	resp, err := client.client.R().Get(url)
 	if err != nil {
-		return err
+		return result, err
 	} else if resp.IsError() {
-		return fmt.Errorf("error describing resources %s/%s, got status code: %d:\n %s", kind.GetName(), name, resp.StatusCode(), string(resp.Body()))
+		return result, fmt.Errorf("error describing resources %s/%s, got status code: %d:\n %s", kind.GetName(), name, resp.StatusCode(), string(resp.Body()))
 	}
-	return printResponseAsYaml(resp.Body())
+	err = json.Unmarshal(resp.Body(), &result)
+	return result, err
 }
 
 func (client *GatewayClient) Delete(kind *schema.Kind, parentPathValue []string, name string) error {
@@ -106,6 +125,27 @@ func (client *GatewayClient) Delete(kind *schema.Kind, parentPathValue []string,
 		return fmt.Errorf(extractApiError(resp))
 	} else {
 		fmt.Printf("%s/%s deleted\n", kind.GetName(), name)
+	}
+
+	return err
+}
+
+func (client *GatewayClient) DeleteAliasTopics(kind *schema.Kind, param map[string]string) error {
+	url := client.baseUrl + kind.ListPath(nil)
+	req := client.client.R()
+	req.SetBody(
+		map[string]interface{}{
+			"name":     param["name"],
+			"vCluster": param["vcluster"],
+		},
+	)
+	resp, err := req.Delete(url)
+	if err != nil {
+		return err
+	} else if resp.IsError() {
+		return fmt.Errorf(extractApiError(resp))
+	} else {
+		fmt.Printf("%s/%s deleted\n", kind.GetName(), param)
 	}
 
 	return err
