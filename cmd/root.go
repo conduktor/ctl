@@ -12,6 +12,8 @@ import (
 var debug *bool
 var apiClient_ *client.Client
 var apiClientError error
+var gatewayApiClient_ *client.GatewayClient
+var gatewayApiClientError error
 
 func apiClient() *client.Client {
 	if apiClientError != nil {
@@ -19,6 +21,14 @@ func apiClient() *client.Client {
 		os.Exit(1)
 	}
 	return apiClient_
+}
+
+func gatewayApiClient() *client.GatewayClient {
+	if gatewayApiClientError != nil {
+		fmt.Fprintf(os.Stderr, "Cannot create gateway client: %s", gatewayApiClientError)
+		os.Exit(1)
+	}
+	return gatewayApiClient_
 }
 
 // rootCmd represents the base command when called without any subcommands
@@ -55,6 +65,13 @@ func init() {
 		kinds = apiClient_.GetKinds()
 	} else {
 		kinds = schema.DefaultKind()
+	}
+	gatewayApiClient_, gatewayApiClientError = client.MakeGatewayClientFromEnv()
+	if gatewayApiClientError == nil {
+		var gatewayKinds = gatewayApiClient().GetKinds()
+		for k, v := range gatewayKinds {
+			kinds[k] = v
+		}
 	}
 	debug = rootCmd.PersistentFlags().BoolP("verbose", "v", false, "show more information for debugging")
 	initGet(kinds)

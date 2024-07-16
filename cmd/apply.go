@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/conduktor/ctl/resource"
 	"github.com/conduktor/ctl/schema"
@@ -36,7 +37,13 @@ func initApply(kinds schema.KindCatalog) {
 			schema.SortResourcesForApply(kinds, resources, *debug)
 			allSuccess := true
 			for _, resource := range resources {
-				upsertResult, err := apiClient().Apply(&resource, *dryRun)
+				var upsertResult string
+				var err error
+				if strings.Contains(resource.Version, "gateway") {
+					upsertResult, err = gatewayApiClient().Apply(&resource, *dryRun)
+				} else {
+					upsertResult, err = apiClient().Apply(&resource, *dryRun)
+				}
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "Could not apply resource %s/%s: %s\n", resource.Kind, resource.Name, err)
 					allSuccess = false

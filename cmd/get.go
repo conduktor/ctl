@@ -41,14 +41,22 @@ func initGet(kinds schema.KindCatalog) {
 				var err error
 				if len(args) == 0 {
 					var result []resource.Resource
-					result, err = apiClient().Get(&kind, parentValue)
+					if strings.Contains(kind.GetLatestKindVersion().ListPath, "gateway") {
+						result, err = gatewayApiClient().Get(&kind, parentValue)
+					} else {
+						result, err = apiClient().Get(&kind, parentValue)
+					}
 					for _, r := range result {
 						r.PrintPreservingOriginalFieldOrder()
 						fmt.Println("---")
 					}
 				} else if len(args) == 1 {
 					var result resource.Resource
-					result, err = apiClient().Describe(&kind, parentValue, args[0])
+					if strings.Contains(kind.GetLatestKindVersion().ListPath, "gateway") {
+						result, err = gatewayApiClient().Describe(&kind, parentValue, args[0])
+					} else {
+						result, err = apiClient().Describe(&kind, parentValue, args[0])
+					}
 					result.PrintPreservingOriginalFieldOrder()
 				}
 				if err != nil {

@@ -53,7 +53,12 @@ func initDelete(kinds schema.KindCatalog) {
 				for i, v := range parentFlagValue {
 					parentValue[i] = *v
 				}
-				err := apiClient().Delete(&kind, parentValue, args[0])
+				var err error
+				if strings.Contains(kind.GetLatestKindVersion().ListPath, "gateway") {
+					err = gatewayApiClient().Delete(&kind, parentValue, args[0])
+				} else {
+					err = apiClient().Delete(&kind, parentValue, args[0])
+				}
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "%s\n", err)
 					os.Exit(1)
