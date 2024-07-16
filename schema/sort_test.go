@@ -35,7 +35,7 @@ func TestSortResources(t *testing.T) {
 		{Kind: "kind2", Version: "v1"},
 	}
 
-	SortResources(catalog, resources, false)
+	SortResourcesForApply(catalog, resources, false)
 
 	expected := []resource.Resource{
 		{Kind: "kind1", Version: "v1"},

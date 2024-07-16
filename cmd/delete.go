@@ -2,27 +2,43 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/conduktor/ctl/schema"
-	"github.com/spf13/cobra"
 	"os"
 	"strings"
+
+	"github.com/conduktor/ctl/schema"
+	"github.com/spf13/cobra"
 )
 
-// applyCmd represents the apply command
-var deleteCmd = &cobra.Command{
-	Use:   "delete",
-	Short: "Delete resource of a given kind and name",
-	Long:  ``,
-	Args:  cobra.NoArgs,
-	Run: func(cmd *cobra.Command, args []string) {
-		// Root command does nothing
-		cmd.Help()
-		os.Exit(1)
-	},
-}
-
 func initDelete(kinds schema.KindCatalog) {
+	var filePath *[]string
+	var deleteCmd = &cobra.Command{
+		Use:   "delete",
+		Short: "Delete resource of a given kind and name",
+		Long:  ``,
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			// Root command does nothing
+			resources := loadResourceFromFileFlag(*filePath)
+			schema.SortResourcesForDelete(kinds, resources, *debug)
+			allSuccess := true
+			for _, resource := range resources {
+				err := apiClient().DeleteResource(&resource)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Could not delete resource %s/%s: %s\n", resource.Kind, resource.Name, err)
+					allSuccess = false
+				}
+			}
+			if !allSuccess {
+				os.Exit(1)
+			}
+		},
+	}
+
 	rootCmd.AddCommand(deleteCmd)
+
+	filePath = deleteCmd.Flags().StringArrayP("file", "f", make([]string, 0, 0), "the files to apply")
+
+	deleteCmd.MarkFlagRequired("file")
 
 	for name, kind := range kinds {
 		flags := kind.GetFlag()

@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var filePath *[]string
 var dryRun *bool
 
 func resourceForPath(path string) ([]resource.Resource, error) {
@@ -27,22 +26,15 @@ func resourceForPath(path string) ([]resource.Resource, error) {
 
 func initApply(kinds schema.KindCatalog) {
 	// applyCmd represents the apply command
+	var filePath *[]string
 	var applyCmd = &cobra.Command{
 		Use:   "apply",
 		Short: "Upsert a resource on Conduktor",
 		Long:  ``,
 		Run: func(cmd *cobra.Command, args []string) {
-			var resources = make([]resource.Resource, 0)
-			for _, path := range *filePath {
-				r, err := resourceForPath(path)
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "%s\n", err)
-					os.Exit(1)
-				}
-				resources = append(resources, r...)
-			}
-			var allSuccess = true
-			schema.SortResources(kinds, resources, *debug)
+			resources := loadResourceFromFileFlag(*filePath)
+			schema.SortResourcesForApply(kinds, resources, *debug)
+			allSuccess := true
 			for _, resource := range resources {
 				upsertResult, err := apiClient().Apply(&resource, *dryRun)
 				if err != nil {
@@ -60,7 +52,6 @@ func initApply(kinds schema.KindCatalog) {
 
 	rootCmd.AddCommand(applyCmd)
 
-	// Here you will define your flags and configuration settings.
 	filePath = applyCmd.
 		PersistentFlags().StringArrayP("file", "f", make([]string, 0, 0), "Specify the files to apply")
 
