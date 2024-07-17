@@ -41,8 +41,8 @@ func initDelete(kinds schema.KindCatalog) {
 	deleteCmd.MarkFlagRequired("file")
 
 	for name, kind := range kinds {
-		if name == "AliasTopics" {
-			aliasTopicDeleteCmd := buildDeleteAliasTopicCmd(name, kind)
+		if name == "AliasTopics" || name == "ConcentrationRules" {
+			aliasTopicDeleteCmd := buildDeleteByVClusterAndNameCmd(name, kind)
 			deleteCmd.AddCommand(aliasTopicDeleteCmd)
 		} else {
 			flags := kind.GetFlag()
@@ -78,14 +78,14 @@ func initDelete(kinds schema.KindCatalog) {
 	}
 }
 
-func buildDeleteAliasTopicCmd(name string, kind schema.Kind) *cobra.Command {
+func buildDeleteByVClusterAndNameCmd(name string, kind schema.Kind) *cobra.Command {
 	const nameFlag = "name"
 	const vClusterFlag = "vcluster"
 	var nameValue string
 	var vClusterValue string
 	var aliasTopicDeleteCmd = &cobra.Command{
 		Use:     fmt.Sprintf("%s [name]", name),
-		Short:   "Delete an Alias Topic",
+		Short:   "Delete resource of kind " + kind.GetName(),
 		Args:    cobra.ExactArgs(0),
 		Aliases: []string{strings.ToLower(name), strings.ToLower(name) + "s", name + "s"},
 		Run: func(cmd *cobra.Command, args []string) {
@@ -100,7 +100,7 @@ func buildDeleteAliasTopicCmd(name string, kind schema.Kind) *cobra.Command {
 				queryParams[vClusterFlag] = "passthrough"
 			}
 
-			err = gatewayApiClient().DeleteAliasTopics(&kind, queryParams)
+			err = gatewayApiClient().DeleteKindByNameAndVCluster(&kind, queryParams)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "%s\n", err)
 				os.Exit(1)
@@ -108,8 +108,8 @@ func buildDeleteAliasTopicCmd(name string, kind schema.Kind) *cobra.Command {
 		},
 	}
 
-	aliasTopicDeleteCmd.Flags().StringVar(&nameValue, nameFlag, "", "name of the alias topic")
-	aliasTopicDeleteCmd.Flags().StringVar(&vClusterValue, "vCluster", "", "vCluster of the alias topic")
+	aliasTopicDeleteCmd.Flags().StringVar(&nameValue, nameFlag, "", "name of the "+kind.GetName())
+	aliasTopicDeleteCmd.Flags().StringVar(&vClusterValue, vClusterFlag, "", "vCluster of the "+kind.GetName())
 
 	aliasTopicDeleteCmd.MarkFlagRequired(nameFlag)
 	aliasTopicDeleteCmd.MarkFlagRequired(vClusterFlag)

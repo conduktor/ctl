@@ -88,7 +88,7 @@ func (client *GatewayClient) Get(kind *schema.Kind, parentPathValue []string) ([
 	return result, err
 }
 
-func (client *GatewayClient) GetAliasTopics(kind *schema.Kind, param map[string]string) ([]resource.Resource, error) {
+func (client *GatewayClient) ListKindWithFilters(kind *schema.Kind, param map[string]string) ([]resource.Resource, error) {
 	var result []resource.Resource
 	url := client.baseUrl + kind.ListPath(nil)
 	req := client.client.R()
@@ -130,7 +130,7 @@ func (client *GatewayClient) Delete(kind *schema.Kind, parentPathValue []string,
 	return err
 }
 
-func (client *GatewayClient) DeleteAliasTopics(kind *schema.Kind, param map[string]string) error {
+func (client *GatewayClient) DeleteKindByNameAndVCluster(kind *schema.Kind, param map[string]string) error {
 	url := client.baseUrl + kind.ListPath(nil)
 	req := client.client.R()
 	req.SetBody(

@@ -25,8 +25,8 @@ func initGet(kinds schema.KindCatalog) {
 	rootCmd.AddCommand(getCmd)
 
 	for name, kind := range kinds {
-		if name == "AliasTopics" {
-			aliasTopicGetCmd := buildGetAliasTopicCmd(name, kind)
+		if name == "AliasTopics" || name == "ConcentrationRules" {
+			aliasTopicGetCmd := buildListFilteredByVClusterOrNameCmd(name, kind)
 			getCmd.AddCommand(aliasTopicGetCmd)
 		} else {
 			flags := kind.GetFlag()
@@ -74,7 +74,7 @@ func initGet(kinds schema.KindCatalog) {
 	}
 }
 
-func buildGetAliasTopicCmd(name string, kind schema.Kind) *cobra.Command {
+func buildListFilteredByVClusterOrNameCmd(name string, kind schema.Kind) *cobra.Command {
 	const nameFlag = "name"
 	const vClusterFlag = "vcluster"
 	const showDefaultsFlag = "showDefaults"
@@ -83,7 +83,7 @@ func buildGetAliasTopicCmd(name string, kind schema.Kind) *cobra.Command {
 	var showDefaultsValue string
 	var aliasTopicGetCmd = &cobra.Command{
 		Use:     fmt.Sprintf("%s [name]", name),
-		Short:   "List Alias Topics",
+		Short:   "Get resource of kind " + kind.GetName(),
 		Args:    cobra.ExactArgs(0),
 		Aliases: []string{strings.ToLower(name), strings.ToLower(name) + "s", name + "s"},
 		Run: func(cmd *cobra.Command, args []string) {
@@ -100,7 +100,7 @@ func buildGetAliasTopicCmd(name string, kind schema.Kind) *cobra.Command {
 				queryParams[showDefaultsFlag] = showDefaultsValue
 			}
 
-			result, err = gatewayApiClient().GetAliasTopics(&kind, queryParams)
+			result, err = gatewayApiClient().ListKindWithFilters(&kind, queryParams)
 			for _, r := range result {
 				r.PrintPreservingOriginalFieldOrder()
 				fmt.Println("---")
@@ -112,8 +112,8 @@ func buildGetAliasTopicCmd(name string, kind schema.Kind) *cobra.Command {
 		},
 	}
 
-	aliasTopicGetCmd.Flags().StringVar(&nameValue, nameFlag, "", "filter the alias topic result list by name")
-	aliasTopicGetCmd.Flags().StringVar(&vClusterValue, "vCluster", "", "filter the alias topic result list by vcluster")
+	aliasTopicGetCmd.Flags().StringVar(&nameValue, nameFlag, "", "filter the "+kind.GetName()+" result list by name")
+	aliasTopicGetCmd.Flags().StringVar(&vClusterValue, vClusterFlag, "", "filter the "+kind.GetName()+" result list by vcluster")
 	aliasTopicGetCmd.Flags().StringVar(&showDefaultsValue, "showDefaults", "", "Toggle show defaults values (true|false, default false)")
 
 	return aliasTopicGetCmd
