@@ -69,6 +69,10 @@ func initGet(kinds schema.KindCatalog) {
 					}
 				},
 			}
+			for i, flag := range kind.GetFlag() {
+				parentFlagValue[i] = kindCmd.Flags().String(flag, "", "Parent "+flag)
+				kindCmd.MarkFlagRequired(flag)
+			}
 			getCmd.AddCommand(kindCmd)
 		}
 	}
