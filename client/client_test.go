@@ -323,6 +323,44 @@ func TestDeleteShouldWork(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestDeleteResourceShouldWork(t *testing.T) {
+	defer httpmock.Reset()
+	baseUrl := "http://baseUrl"
+	apiKey := "aToken"
+	client, err := Make(ApiParameter{
+		ApiKey:  apiKey,
+		BaseUrl: baseUrl,
+	})
+	if err != nil {
+		panic(err)
+	}
+	httpmock.ActivateNonDefault(
+		client.client.GetClient(),
+	)
+	responder, err := httpmock.NewJsonResponder(200, "[]")
+	if err != nil {
+		panic(err)
+	}
+
+	httpmock.RegisterMatcherResponderWithQuery(
+		"DELETE",
+		"http://baseUrl/public/kafka/v2/cluster/local/topic/toto",
+		nil,
+		httpmock.HeaderIs("Authorization", "Bearer "+apiKey).
+			And(httpmock.HeaderIs("X-CDK-CLIENT", "CLI/unknown")),
+		responder,
+	)
+
+	resource, err := resource.FromYamlByte([]byte(`{"apiVersion":"v2","kind":"Topic","metadata":{"name":"toto","cluster":"local"},"spec":{}}`))
+	if err != nil {
+		t.Error(err)
+	}
+	err = client.DeleteResource(&resource[0])
+	if err != nil {
+		t.Error(err)
+	}
+}
 func TestDeleteShouldFailOnNot2XX(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"

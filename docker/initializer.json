@@ -73,6 +73,42 @@
   },
   {
     "httpRequest": {
+      "method": "Delete",
+      "path": "/public/kafka/v2/cluster/my-cluster/topic/abcd.topic",
+      "headers": {
+        "Authorization": "Bearer yo"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "{}",
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Delete",
+      "path": "/public/kafka/v2/cluster/my-cluster/topic/abcd.myTopicWrong",
+      "headers": {
+        "Authorization": "Bearer yo"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "{}",
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
       "method": "Post",
       "path": "/api/login",
       "body": {

@@ -259,6 +259,30 @@ func (client *Client) Delete(kind *schema.Kind, parentPathValue []string, name s
 	return err
 }
 
+func (client *Client) DeleteResource(resource *resource.Resource) error {
+	client.setApiKeyFromEnvIfNeeded()
+	kinds := client.GetKinds()
+	kind, ok := kinds[resource.Kind]
+	if !ok {
+		return fmt.Errorf("kind %s not found", resource.Kind)
+	}
+	deletePath, err := kind.DeletePath(resource)
+	if err != nil {
+		return err
+	}
+	url := client.baseUrl + deletePath
+	resp, err := client.client.R().Delete(url)
+	if err != nil {
+		return err
+	} else if resp.IsError() {
+		return fmt.Errorf(extractApiError(resp))
+	} else {
+		fmt.Printf("%s/%s deleted\n", kind.GetName(), resource.Name)
+	}
+
+	return err
+}
+
 func (client *Client) GetOpenApi() ([]byte, error) {
 	url := client.baseUrl + "/public/docs/docs.yaml"
 	resp, err := client.client.R().Get(url)

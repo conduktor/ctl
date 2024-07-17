@@ -39,9 +39,21 @@ func resourcePriority(catalog KindCatalog, resource resource.Resource, debug, fa
 	}
 }
 
-func SortResources(catalog KindCatalog, resources []resource.Resource, debug bool) {
+func SortResourcesForApply(catalog KindCatalog, resources []resource.Resource, debug bool) {
+	sortResources(catalog, resources, debug, false)
+}
+
+func SortResourcesForDelete(catalog KindCatalog, resources []resource.Resource, debug bool) {
+	sortResources(catalog, resources, debug, true)
+}
+
+func sortResources(catalog KindCatalog, resources []resource.Resource, debug bool, reverse bool) {
 	sort.SliceStable(resources, func(i, j int) bool {
-		return resourcePriority(catalog, resources[i], debug, true) < resourcePriority(catalog, resources[j], debug, true)
+		if reverse {
+			return resourcePriority(catalog, resources[i], debug, true) > resourcePriority(catalog, resources[j], debug, true)
+		} else {
+			return resourcePriority(catalog, resources[i], debug, true) < resourcePriority(catalog, resources[j], debug, true)
+		}
 	})
 
 }

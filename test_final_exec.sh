@@ -16,6 +16,9 @@ main() {
 	docker compose -f docker/docker-compose.yml up -d mock
 	sleep 1
 	docker compose -f docker/docker-compose.yml run conduktor apply -f /test_resource.yml
+	docker compose -f docker/docker-compose.yml run conduktor apply -f /
+	docker compose -f docker/docker-compose.yml run conduktor delete -f /test_resource.yml
+	docker compose -f docker/docker-compose.yml run conduktor apply -f /
 	docker compose -f docker/docker-compose.yml run conduktor get Topic yolo --cluster=my-cluster
 	docker compose -f docker/docker-compose.yml run conduktor delete Topic yolo -v --cluster=my-cluster
 	docker compose -f docker/docker-compose.yml run -e CDK_USER=admin -e CDK_PASSWORD=secret conduktor login

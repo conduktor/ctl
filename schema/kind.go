@@ -138,3 +138,12 @@ func (kind *Kind) ApplyPath(resource *resource.Resource) (string, error) {
 	}
 	return kind.ListPath(parentPathValues), nil
 }
+
+func (kind *Kind) DeletePath(resource *resource.Resource) (string, error) {
+	applyPath, err := kind.ApplyPath(resource)
+	if err != nil {
+		return "", err
+	}
+
+	return applyPath + "/" + resource.Name, nil
+}
