@@ -25,7 +25,7 @@ func initGet(kinds schema.KindCatalog) {
 	rootCmd.AddCommand(getCmd)
 
 	for name, kind := range kinds {
-		if name == "AliasTopics" || name == "ConcentrationRules" {
+		if name == "AliasTopics" || name == "ConcentrationRules" || name == "ServiceAccounts" {
 			aliasTopicGetCmd := buildListFilteredByVClusterOrNameCmd(name, kind)
 			getCmd.AddCommand(aliasTopicGetCmd)
 		} else {

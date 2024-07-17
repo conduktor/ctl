@@ -41,7 +41,7 @@ func initDelete(kinds schema.KindCatalog) {
 	deleteCmd.MarkFlagRequired("file")
 
 	for name, kind := range kinds {
-		if name == "AliasTopics" || name == "ConcentrationRules" {
+		if name == "AliasTopics" || name == "ConcentrationRules" || name == "ServiceAccounts" {
 			aliasTopicDeleteCmd := buildDeleteByVClusterAndNameCmd(name, kind)
 			deleteCmd.AddCommand(aliasTopicDeleteCmd)
 		} else {
@@ -112,7 +112,6 @@ func buildDeleteByVClusterAndNameCmd(name string, kind schema.Kind) *cobra.Comma
 	aliasTopicDeleteCmd.Flags().StringVar(&vClusterValue, vClusterFlag, "", "vCluster of the "+kind.GetName())
 
 	aliasTopicDeleteCmd.MarkFlagRequired(nameFlag)
-	aliasTopicDeleteCmd.MarkFlagRequired(vClusterFlag)
 
 	return aliasTopicDeleteCmd
 }
