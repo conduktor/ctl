@@ -2,7 +2,7 @@
   {
     "httpRequest": {
       "method": "Put",
-      "path": "/public/kafka/v2/cluster/my-cluster/topic",
+      "path": "/api/public/kafka/v2/cluster/my-cluster/topic",
       "headers": {
         "Authorization": "Bearer yo"
       }
@@ -20,7 +20,7 @@
   {
     "httpRequest": {
       "method": "Get",
-      "path": "/public/kafka/v2/cluster/my-cluster/topic",
+      "path": "/api/public/kafka/v2/cluster/my-cluster/topic",
       "headers": {
         "Authorization": "Bearer yo"
       }
@@ -38,7 +38,7 @@
   {
     "httpRequest": {
       "method": "Get",
-      "path": "/public/kafka/v2/cluster/my-cluster/topic/yolo",
+      "path": "/api/public/kafka/v2/cluster/my-cluster/topic/yolo",
       "headers": {
         "Authorization": "Bearer yo"
       }
@@ -56,7 +56,7 @@
   {
     "httpRequest": {
       "method": "Delete",
-      "path": "/public/kafka/v2/cluster/my-cluster/topic/yolo",
+      "path": "/api/public/kafka/v2/cluster/my-cluster/topic/yolo",
       "headers": {
         "Authorization": "Bearer yo"
       }
@@ -74,7 +74,7 @@
   {
     "httpRequest": {
       "method": "Delete",
-      "path": "/public/kafka/v2/cluster/my-cluster/topic/abcd.topic",
+      "path": "/api/public/kafka/v2/cluster/my-cluster/topic/abcd.topic",
       "headers": {
         "Authorization": "Bearer yo"
       }
@@ -92,7 +92,7 @@
   {
     "httpRequest": {
       "method": "Delete",
-      "path": "/public/kafka/v2/cluster/my-cluster/topic/abcd.myTopicWrong",
+      "path": "/api/public/kafka/v2/cluster/my-cluster/topic/abcd.myTopicWrong",
       "headers": {
         "Authorization": "Bearer yo"
       }
@@ -134,7 +134,7 @@
   {
     "httpRequest": {
       "method": "Get",
-      "path": "/token/v1/admin_tokens",
+      "path": "/api/token/v1/admin_tokens",
       "headers": {
         "Authorization": "Bearer yo"
       }
@@ -152,7 +152,7 @@
   {
     "httpRequest": {
       "method": "GET",
-      "path": "/token/v1/application_instance_tokens/my_app_instance",
+      "path": "/api/token/v1/application_instance_tokens/my_app_instance",
       "headers": {
         "Authorization": "Bearer yo"
       }
@@ -170,7 +170,7 @@
   {
     "httpRequest": {
       "method": "Post",
-      "path": "/token/v1/admin_tokens",
+      "path": "/api/token/v1/admin_tokens",
       "headers": {
         "Authorization": "Bearer yo"
       },
@@ -196,7 +196,7 @@
   {
     "httpRequest": {
       "method": "Post",
-      "path": "/token/v1/application_instance_tokens/my_app_instance",
+      "path": "/api/token/v1/application_instance_tokens/my_app_instance",
       "headers": {
         "Authorization": "Bearer yo"
       },
@@ -222,7 +222,7 @@
   {
     "httpRequest": {
       "method": "DELETE",
-      "path": "/token/v1/0-0-0-0-0",
+      "path": "/api/token/v1/0-0-0-0-0",
       "headers": {
         "Authorization": "Bearer yo"
       }
@@ -234,7 +234,7 @@
   {
     "httpRequest": {
       "method": "Get",
-      "path": "/public/console/v2/kafka-cluster/my_kafka_cluster",
+      "path": "/api/public/console/v2/kafka-cluster/my_kafka_cluster",
       "headers": {
         "Authorization": "Bearer yo_from_login"
       }

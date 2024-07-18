@@ -16,6 +16,21 @@ var aResource = resource.Resource{
 	Json:     []byte(`{"apiVersion":"v1","kind":"Topic","metadata":{"name":"abc.myTopic"},"spec":{"replicationFactor":1}}`),
 }
 
+func TestUniformizeBaseUrl(t *testing.T) {
+	validUrls := []string{
+		"http://baseUrl/api/",
+		"http://baseUrl/api",
+		"http://baseUrl/",
+		"http://baseUrl",
+	}
+	expectedResult := "http://baseUrl/api"
+	for _, url := range validUrls {
+		finalUrl := uniformizeBaseUrl(url)
+		if finalUrl != expectedResult {
+			t.Errorf("When uniformize %s got %s expected %s", url, finalUrl, expectedResult)
+		}
+	}
+}
 func TestApplyShouldWork(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
@@ -45,7 +60,7 @@ func TestApplyShouldWork(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"PUT",
-		"http://baseUrl/public/kafka/v2/cluster/local/topic",
+		"http://baseUrl/api/public/kafka/v2/cluster/local/topic",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+apiKey).
 			And(httpmock.HeaderIs("X-CDK-CLIENT", "CLI/unknown")).
@@ -87,7 +102,7 @@ func TestApplyWithDryModeShouldWork(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"PUT",
-		"http://baseUrl/public/self-serve/v1/application",
+		"http://baseUrl/api/public/self-serve/v1/application",
 		"dryMode=true",
 		httpmock.HeaderIs("Authorization", "Bearer "+apiKey).
 			And(httpmock.BodyContainsBytes(topic.Json)),
@@ -131,7 +146,7 @@ func TestApplyShouldFailIfNo2xx(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"PUT",
-		"http://baseUrl/public/self-serve/v1/application",
+		"http://baseUrl/api/public/self-serve/v1/application",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+apiKey).
 			And(httpmock.BodyContainsBytes(topic.Json)),
@@ -165,7 +180,7 @@ func TestGetShouldWork(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"GET",
-		"http://baseUrl/public/self-serve/v1/application",
+		"http://baseUrl/api/public/self-serve/v1/application",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+apiKey).
 			And(httpmock.HeaderIs("X-CDK-CLIENT", "CLI/unknown")),
@@ -203,7 +218,7 @@ func TestGetShouldFailIfN2xx(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"GET",
-		"http://baseUrl/public/self-serve/v1/application",
+		"http://baseUrl/api/public/self-serve/v1/application",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+apiKey),
 		responder,
@@ -237,7 +252,7 @@ func TestDescribeShouldWork(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"GET",
-		"http://baseUrl/public/self-serve/v1/application/yo",
+		"http://baseUrl/api/public/self-serve/v1/application/yo",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+apiKey).
 			And(httpmock.HeaderIs("X-CDK-CLIENT", "CLI/unknown")),
@@ -276,7 +291,7 @@ func TestDescribeShouldFailIfNo2xx(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"GET",
-		"http://baseUrl/public/self-serve/v1/application/yo",
+		"http://baseUrl/api/public/self-serve/v1/application/yo",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+apiKey),
 		responder,
@@ -310,7 +325,7 @@ func TestDeleteShouldWork(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"DELETE",
-		"http://baseUrl/public/self-serve/v1/application/yo",
+		"http://baseUrl/api/public/self-serve/v1/application/yo",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+apiKey).
 			And(httpmock.HeaderIs("X-CDK-CLIENT", "CLI/unknown")),
@@ -345,7 +360,7 @@ func TestDeleteResourceShouldWork(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"DELETE",
-		"http://baseUrl/public/kafka/v2/cluster/local/topic/toto",
+		"http://baseUrl/api/public/kafka/v2/cluster/local/topic/toto",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+apiKey).
 			And(httpmock.HeaderIs("X-CDK-CLIENT", "CLI/unknown")),
@@ -382,7 +397,7 @@ func TestDeleteShouldFailOnNot2XX(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"DELETE",
-		"http://baseUrl/public/self_serve/v1/api/application/yo",
+		"http://baseUrl/api/public/self_serve/v1/api/application/yo",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+apiKey),
 		responder,
