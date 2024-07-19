@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/conduktor/ctl/resource"
@@ -30,6 +31,11 @@ type ApiParameter struct {
 	CdkUser     string
 	CdkPassword string
 	Insecure    bool
+}
+
+func uniformizeBaseUrl(baseUrl string) string {
+	regex := regexp.MustCompile(`(/api)?/?$`)
+	return regex.ReplaceAllString(baseUrl, "/api")
 }
 
 func Make(apiParameter ApiParameter) (*Client, error) {
@@ -64,7 +70,7 @@ func Make(apiParameter ApiParameter) (*Client, error) {
 
 	result := &Client{
 		apiKey:  apiParameter.ApiKey,
-		baseUrl: apiParameter.BaseUrl,
+		baseUrl: uniformizeBaseUrl(apiParameter.BaseUrl),
 		client:  restyClient,
 		kinds:   nil,
 	}
@@ -210,7 +216,7 @@ func (client *Client) Get(kind *schema.Kind, parentPathValue []string) ([]resour
 }
 
 func (client *Client) Login(username, password string) (LoginResult, error) {
-	url := client.baseUrl + "/api/login"
+	url := client.baseUrl + "/login"
 	resp, err := client.client.R().SetBody(map[string]string{"username": username, "password": password}).Post(url)
 	if err != nil {
 		return LoginResult{}, err
