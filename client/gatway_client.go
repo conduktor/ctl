@@ -103,6 +103,37 @@ func (client *GatewayClient) ListKindWithFilters(kind *schema.Kind, param map[st
 	return result, err
 }
 
+func (client *GatewayClient) ListInterceptorsFilters(kind *schema.Kind, name string, global bool, vCluster string, group string, username string) ([]resource.Resource, error) {
+	var result []resource.Resource
+	url := client.baseUrl + kind.ListPath(nil)
+	req := client.client.R()
+	queryParams := make(map[string]string)
+	if name != "" {
+		queryParams["name"] = name
+	}
+	if vCluster != "" {
+		queryParams["vCluster"] = vCluster
+	}
+	if group != "" {
+		queryParams["group"] = group
+	}
+	if username != "" {
+		queryParams["username"] = username
+	}
+	if global {
+		queryParams["global"] = "true"
+	}
+	req.SetQueryParams(queryParams)
+	resp, err := req.Get(url)
+	if err != nil {
+		return result, err
+	} else if resp.IsError() {
+		return result, fmt.Errorf(extractApiError(resp))
+	}
+	err = json.Unmarshal(resp.Body(), &result)
+	return result, err
+}
+
 func (client *GatewayClient) Describe(kind *schema.Kind, parentPathValue []string, name string) (resource.Resource, error) {
 	var result resource.Resource
 	url := client.baseUrl + kind.DescribePath(parentPathValue, name)
@@ -151,6 +182,46 @@ func (client *GatewayClient) DeleteKindByNameAndVCluster(kind *schema.Kind, para
 	return err
 }
 
+func (client *GatewayClient) DeleteInterceptor(kind *schema.Kind, name string, param map[string]string) error {
+	url := client.baseUrl + kind.ListPath(nil) + "/" + name
+	req := client.client.R()
+	var groupValue interface{}
+	if param["group"] == "" {
+		groupValue = nil
+	} else {
+		groupValue = param["group"]
+	}
+	var usernameValue interface{}
+	if param["username"] == "" {
+		usernameValue = nil
+	} else {
+		usernameValue = param["username"]
+	}
+	var vClusterValue interface{}
+	if param["vcluster"] == "" {
+		vClusterValue = nil
+	} else {
+		vClusterValue = param["vcluster"]
+	}
+	req.SetBody(
+		map[string]interface{}{
+			"vCluster": vClusterValue,
+			"group":    groupValue,
+			"username": usernameValue,
+		},
+	)
+	resp, err := req.Delete(url)
+	if err != nil {
+		return err
+	} else if resp.IsError() {
+		return fmt.Errorf(extractApiError(resp))
+	} else {
+		fmt.Printf("%s/%s deleted\n", kind.GetName(), param)
+	}
+
+	return err
+}
+
 func (client *GatewayClient) Apply(resource *resource.Resource, dryMode bool) (string, error) {
 	kinds := client.GetKinds()
 	kind, ok := kinds[resource.Kind]
@@ -173,13 +244,13 @@ func (client *GatewayClient) Apply(resource *resource.Resource, dryMode bool) (s
 		return "", fmt.Errorf(extractApiError(resp))
 	}
 	bodyBytes := resp.Body()
-	var upsertResponse string
+	var upsertResponse UpsertResponse
 	err = json.Unmarshal(bodyBytes, &upsertResponse)
 	//in case backend format change (not json string anymore). Let not fail the client for that
 	if err != nil {
 		return resp.String(), nil
 	}
-	return upsertResponse, nil
+	return upsertResponse.UpsertResult, nil
 }
 
 func (client *GatewayClient) GetOpenApi() ([]byte, error) {
