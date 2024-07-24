@@ -1,0 +1,14 @@
+---
+apiVersion: gateway/v2
+kind: VClusters
+metadata:
+  name: vcluster1
+spec:
+  prefix: vcluster1
+---
+apiVersion: gateway/v2
+kind: VClusters
+metadata:
+  name: vcluster2
+spec:
+  prefix: vcluster2

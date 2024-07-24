@@ -1,0 +1,56 @@
+[
+  {
+    "httpRequest": {
+      "method": "Get",
+      "path": "/gateway/v2/vclusters/vcluster1",
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "{ \"metadata\": { \"name\":\"vcluster1\" }, \"spec\":{\"prefix\":\"vcluster1\"} }",
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Put",
+      "path": "/gateway/v2/vclusters",
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "\"Created\"",
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Delete",
+      "path": "/gateway/v2/vclusters/vcluster1",
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "\"Deleted\"",
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  }
+]
