@@ -74,7 +74,6 @@ func buildKindVersion(path, kind string, order int, put *v3high.Operation, stric
 
 		}
 	}
-
 	if strict {
 		err := checkThatPathParamAreInSpec(newKind, put.RequestBody)
 		if err != nil {
