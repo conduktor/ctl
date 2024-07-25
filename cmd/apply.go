@@ -37,7 +37,7 @@ func initApply(kinds schema.KindCatalog) {
 			for _, resource := range resources {
 				var upsertResult string
 				var err error
-				if isGatewayResource(resource) {
+				if isGatewayResource(resource, kinds) {
 					upsertResult, err = gatewayApiClient().Apply(&resource, *dryRun)
 				} else {
 					upsertResult, err = apiClient().Apply(&resource, *dryRun)

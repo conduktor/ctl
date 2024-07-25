@@ -10,8 +10,9 @@ func isGatewayKind(kind schema.Kind) bool {
 	return strings.Contains(kind.GetLatestKindVersion().ListPath, "gateway")
 }
 
-func isGatewayResource(resource resource.Resource) bool {
-	return strings.Contains(resource.Kind, "gateway")
+func isGatewayResource(resource resource.Resource, kinds schema.KindCatalog) bool {
+	kind, ok := kinds[resource.Kind]
+	return ok && isGatewayKind(kind)
 }
 
 func isResourceIdentifiedByName(resource resource.Resource) bool {
