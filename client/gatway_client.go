@@ -161,6 +161,111 @@ func (client *GatewayClient) Delete(kind *schema.Kind, parentPathValue []string,
 	return err
 }
 
+func (client *GatewayClient) DeleteResourceByName(resource *resource.Resource) error {
+	kinds := client.GetKinds()
+	kind, ok := kinds[resource.Kind]
+	if !ok {
+		return fmt.Errorf("kind %s not found", resource.Kind)
+	}
+	deletePath, err := kind.DeletePath(resource)
+	if err != nil {
+		return err
+	}
+	url := client.baseUrl + deletePath
+	resp, err := client.client.R().Delete(url)
+	if err != nil {
+		return err
+	} else if resp.IsError() {
+		return fmt.Errorf(extractApiError(resp))
+	} else {
+		fmt.Printf("%s/%s deleted\n", kind.GetName(), resource.Name)
+	}
+
+	return err
+}
+
+func (client *GatewayClient) DeleteResourceByNameAndVCluster(resource *resource.Resource) error {
+	kinds := client.GetKinds()
+	kind, ok := kinds[resource.Kind]
+	name := resource.Name
+	vCluster := resource.Metadata["vCluster"]
+	if vCluster == nil {
+		vCluster = "passthrough"
+	}
+	if !ok {
+		return fmt.Errorf("kind %s not found", resource.Kind)
+	}
+	deletePath := kind.ListPath(nil)
+	url := client.baseUrl + deletePath
+	resp, err := client.client.R().SetBody(map[string]string{"name": name, "vCluster": vCluster.(string)}).Delete(url)
+	if err != nil {
+		return err
+	} else if resp.IsError() {
+		return fmt.Errorf(extractApiError(resp))
+	} else {
+		fmt.Printf("%s/%s deleted\n", kind.GetName(), resource.Name)
+	}
+
+	return err
+}
+
+type DeleteInterceptorPayload struct {
+	VCluster *string `json:"vCluster"`
+	Group    *string `json:"group"`
+	Username *string `json:"username"`
+}
+
+func (client *GatewayClient) DeleteResourceInterceptors(resource *resource.Resource) error {
+	kinds := client.GetKinds()
+	kind, ok := kinds[resource.Kind]
+	scope := resource.Metadata["scope"]
+	passthrough := "passthrough"
+	var deleteInterceptorPayload DeleteInterceptorPayload
+	if scope == nil {
+		deleteInterceptorPayload = DeleteInterceptorPayload{
+			VCluster: &passthrough,
+			Group:    nil,
+			Username: nil,
+		}
+	} else {
+		vCluster := scope.(map[string]interface{})["vCluster"]
+		var vClusterValue string
+		if vCluster != nil && vCluster.(string) != "" {
+			vClusterValue = vCluster.(string)
+			deleteInterceptorPayload.VCluster = &vClusterValue
+		} else {
+			deleteInterceptorPayload.VCluster = &passthrough
+		}
+		group := scope.(map[string]interface{})["group"]
+		var groupValue string
+		if group != nil && group.(string) != "" {
+			groupValue = group.(string)
+			deleteInterceptorPayload.Group = &groupValue
+		}
+		username := scope.(map[string]interface{})["username"]
+		var usernameValue string
+		if username != nil && username.(string) != "" {
+			usernameValue = username.(string)
+			deleteInterceptorPayload.Username = &usernameValue
+		}
+	}
+	if !ok {
+		return fmt.Errorf("kind %s not found", resource.Kind)
+	}
+	deletePath, err := kind.DeletePath(resource)
+	url := client.baseUrl + deletePath
+	resp, err := client.client.R().SetBody(deleteInterceptorPayload).Delete(url)
+	if err != nil {
+		return err
+	} else if resp.IsError() {
+		return fmt.Errorf(extractApiError(resp))
+	} else {
+		fmt.Printf("%s/%s deleted\n", kind.GetName(), resource.Name)
+	}
+
+	return err
+}
+
 func (client *GatewayClient) DeleteKindByNameAndVCluster(kind *schema.Kind, param map[string]string) error {
 	url := client.baseUrl + kind.ListPath(nil)
 	req := client.client.R()

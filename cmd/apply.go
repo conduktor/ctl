@@ -2,12 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"os"
-	"strings"
-
 	"github.com/conduktor/ctl/resource"
 	"github.com/conduktor/ctl/schema"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 var dryRun *bool
@@ -39,7 +37,7 @@ func initApply(kinds schema.KindCatalog) {
 			for _, resource := range resources {
 				var upsertResult string
 				var err error
-				if strings.Contains(resource.Version, "gateway") {
+				if isGatewayResource(resource) {
 					upsertResult, err = gatewayApiClient().Apply(&resource, *dryRun)
 				} else {
 					upsertResult, err = apiClient().Apply(&resource, *dryRun)

@@ -25,10 +25,10 @@ func initGet(kinds schema.KindCatalog) {
 	rootCmd.AddCommand(getCmd)
 
 	for name, kind := range kinds {
-		if name == "AliasTopics" || name == "ConcentrationRules" || name == "ServiceAccounts" {
-			aliasTopicGetCmd := buildListFilteredByVClusterOrNameCmd(kind)
-			getCmd.AddCommand(aliasTopicGetCmd)
-		} else if name == "Interceptors" {
+		if isKindIdentifiedByNameAndVCluster(kind) {
+			byVClusterAndNamGetCmd := buildListFilteredByVClusterOrNameCmd(kind)
+			getCmd.AddCommand(byVClusterAndNamGetCmd)
+		} else if isKindInterceptor(kind) {
 			interceptorsGetCmd := buildListFilteredIntercpetorsCmd(kind)
 			getCmd.AddCommand(interceptorsGetCmd)
 		} else {
@@ -48,7 +48,7 @@ func initGet(kinds schema.KindCatalog) {
 					var err error
 					if len(args) == 0 {
 						var result []resource.Resource
-						if strings.Contains(kind.GetLatestKindVersion().ListPath, "gateway") {
+						if isGatewayKind(kind) {
 							result, err = gatewayApiClient().Get(&kind, parentValue)
 						} else {
 							result, err = apiClient().Get(&kind, parentValue)
@@ -59,7 +59,7 @@ func initGet(kinds schema.KindCatalog) {
 						}
 					} else if len(args) == 1 {
 						var result resource.Resource
-						if strings.Contains(kind.GetLatestKindVersion().ListPath, "gateway") {
+						if isKindInterceptor(kind) {
 							result, err = gatewayApiClient().Describe(&kind, parentValue, args[0])
 						} else {
 							result, err = apiClient().Describe(&kind, parentValue, args[0])

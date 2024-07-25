@@ -22,7 +22,19 @@ func initDelete(kinds schema.KindCatalog) {
 			schema.SortResourcesForDelete(kinds, resources, *debug)
 			allSuccess := true
 			for _, resource := range resources {
-				err := apiClient().DeleteResource(&resource)
+				var err error
+				kind := kinds[resource.Kind]
+				if isGatewayKind(kind) {
+					if isResourceIdentifiedByName(resource) {
+						err = gatewayApiClient().DeleteResourceByName(&resource)
+					} else if isResourceIdentifiedByNameAndVCluster(resource) {
+						err = gatewayApiClient().DeleteResourceByNameAndVCluster(&resource)
+					} else if isResourceInterceptor(resource) {
+						err = gatewayApiClient().DeleteResourceInterceptors(&resource)
+					}
+				} else {
+					err = apiClient().DeleteResource(&resource)
+				}
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "Could not delete resource %s/%s: %s\n", resource.Kind, resource.Name, err)
 					allSuccess = false
@@ -41,10 +53,10 @@ func initDelete(kinds schema.KindCatalog) {
 	deleteCmd.MarkFlagRequired("file")
 
 	for name, kind := range kinds {
-		if name == "AliasTopics" || name == "ConcentrationRules" || name == "ServiceAccounts" {
+		if isKindIdentifiedByNameAndVCluster(kind) {
 			byVClusterAndNameDeleteCmd := buildDeleteByVClusterAndNameCmd(kind)
 			deleteCmd.AddCommand(byVClusterAndNameDeleteCmd)
-		} else if name == "Interceptors" {
+		} else if isKindInterceptor(kind) {
 			interceptorsDeleteCmd := buildDeleteInterceptorsCmd(kind)
 			deleteCmd.AddCommand(interceptorsDeleteCmd)
 		} else {
@@ -61,7 +73,7 @@ func initDelete(kinds schema.KindCatalog) {
 						parentValue[i] = *v
 					}
 					var err error
-					if strings.Contains(kind.GetLatestKindVersion().ListPath, "gateway") {
+					if isGatewayKind(kind) {
 						err = gatewayApiClient().Delete(&kind, parentValue, args[0])
 					} else {
 						err = apiClient().Delete(&kind, parentValue, args[0])
