@@ -59,7 +59,7 @@ func initGet(kinds schema.KindCatalog) {
 						}
 					} else if len(args) == 1 {
 						var result resource.Resource
-						if isKindInterceptor(kind) {
+						if isGatewayKind(kind) {
 							result, err = gatewayApiClient().Describe(&kind, parentValue, args[0])
 						} else {
 							result, err = apiClient().Describe(&kind, parentValue, args[0])
