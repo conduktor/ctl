@@ -52,5 +52,95 @@
         ]
       }
     }
+  },
+  {
+    "httpRequest": {
+      "method": "Put",
+      "path": "/gateway/v2/alias-topics",
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "\"Created\"",
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Put",
+      "path": "/gateway/v2/concentration-rules",
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "\"Created\"",
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Put",
+      "path": "/gateway/v2/gateway-groups",
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "\"Created\"",
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Put",
+      "path": "/gateway/v2/service-accounts",
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "\"Created\"",
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Put",
+      "path": "/gateway/v2/interceptors",
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "\"Created\"",
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
   }
 ]

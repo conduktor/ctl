@@ -12,3 +12,126 @@ metadata:
   name: vcluster2
 spec:
   prefix: vcluster2
+---
+apiVersion: gateway/v2
+kind: AliasTopics
+metadata:
+  name: alias1
+  vCluster: vcluster1
+spec:
+  physicalName: vcluster1backtopic
+---
+apiVersion: gateway/v2
+kind: AliasTopics
+metadata:
+  name: alias2
+  vCluster: vcluster1
+spec:
+  physicalName: vcluster1backtopic
+---
+apiVersion: gateway/v2
+kind: AliasTopics
+metadata:
+  name: alias
+spec:
+  physicalName: vcluster1backtopic
+---
+apiVersion: gateway/v2
+kind: ConcentrationRules
+metadata:
+  name: rule1
+  vCluster: vcluster1
+spec:
+  logicalTopicNamePattern: toto.*
+  physicalTopicName: yolo
+  autoManaged: true
+---
+apiVersion: gateway/v2
+kind: ConcentrationRules
+metadata:
+  name: rule2
+  vCluster: vcluster1
+spec:
+  logicalTopicNamePattern: toto.*
+  physicalTopicName: yolo
+---
+apiVersion: gateway/v2
+kind: GatewayGroups
+metadata:
+  name: group1
+spec:
+  members:
+    - vCluster: vcluster1
+      name: toto1
+  externalGroups: ["ext_g1", "ext_g2"]
+---
+apiVersion: gateway/v2
+kind: GatewayGroups
+metadata:
+  name: group2
+spec:
+  members:
+    - vCluster: vcluster3
+      name: toto1
+  externalGroups: ["ext_g1", "ext_g2"]
+---
+kind: Interceptors
+apiVersion: gateway/v2
+metadata:
+  name: enforce-partition-limit
+spec:
+  pluginClass: "io.conduktor.gateway.interceptor.safeguard.ReadOnlyTopicPolicyPlugin"
+  priority: 100
+  config:
+    topic: "client_topic_toto"
+    action: "BLOCK"
+---
+kind: Interceptors
+apiVersion: gateway/v2
+metadata:
+  name: fieldlevelencryption
+  scope:
+    vCluster: vcluster1
+    username: toto
+spec:
+  pluginClass: "io.conduktor.gateway.interceptor.EncryptPlugin"
+  priority: 100
+  config: {
+    "schemaRegistryConfig": {
+      "host": "http://localhost:8081"
+    },
+    "fields": [
+      {
+        "fieldName": "number",
+        "keySecretId": "number-secret"
+      },
+      {
+        "fieldName": "shipping_address",
+        "keySecretId": "shipping_address-secret"
+      }
+    ]
+  }
+---
+apiVersion: gateway/v2
+kind: ServiceAccounts
+metadata:
+  name: user1
+spec:
+  type: Local
+---
+apiVersion: gateway/v2
+kind: ServiceAccounts
+metadata:
+  name: user1
+  vCluster: vcluster1
+spec:
+  type: Local
+---
+apiVersion: gateway/v2
+kind: ServiceAccounts
+metadata:
+  name: user2
+  vCluster: vcluster1
+spec:
+  type: External
+  principal: ext_user2
