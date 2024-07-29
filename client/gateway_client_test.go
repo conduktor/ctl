@@ -19,7 +19,7 @@ var aVClusterResource = resource.Resource{
 func TestGwApplyShouldWork(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
-	gatewayClient, err := MakeGateaway(GatewayApiParameter{
+	gatewayClient, err := MakeGateway(GatewayApiParameter{
 		BaseUrl:            baseUrl,
 		Debug:              false,
 		CdkGatewayUser:     "admin",
@@ -55,7 +55,7 @@ func TestGwApplyShouldWork(t *testing.T) {
 func TestGwApplyWithDryModeShouldWork(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
-	gatewayClient, err := MakeGateaway(GatewayApiParameter{
+	gatewayClient, err := MakeGateway(GatewayApiParameter{
 		BaseUrl:            baseUrl,
 		Debug:              false,
 		CdkGatewayUser:     "admin",
@@ -90,7 +90,7 @@ func TestGwApplyWithDryModeShouldWork(t *testing.T) {
 func TestGwApplyShouldFailIfNo2xx(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
-	gatewayClient, err := MakeGateaway(GatewayApiParameter{
+	gatewayClient, err := MakeGateway(GatewayApiParameter{
 		BaseUrl:            baseUrl,
 		Debug:              false,
 		CdkGatewayUser:     "admin",
@@ -126,7 +126,7 @@ func TestGwApplyShouldFailIfNo2xx(t *testing.T) {
 func TestGwGetShouldWork(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
-	gatewayClient, err := MakeGateaway(GatewayApiParameter{
+	gatewayClient, err := MakeGateway(GatewayApiParameter{
 		BaseUrl:            baseUrl,
 		Debug:              false,
 		CdkGatewayUser:     "admin",
@@ -165,7 +165,7 @@ func TestGwGetShouldWork(t *testing.T) {
 func TestGwGetShouldFailIfN2xx(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
-	gatewayClient, err := MakeGateaway(GatewayApiParameter{
+	gatewayClient, err := MakeGateway(GatewayApiParameter{
 		BaseUrl:            baseUrl,
 		Debug:              false,
 		CdkGatewayUser:     "admin",
@@ -200,7 +200,7 @@ func TestGwGetShouldFailIfN2xx(t *testing.T) {
 func TestGwDeleteShouldWork(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
-	gatewayClient, err := MakeGateaway(GatewayApiParameter{
+	gatewayClient, err := MakeGateway(GatewayApiParameter{
 		BaseUrl:            baseUrl,
 		Debug:              false,
 		CdkGatewayUser:     "admin",
@@ -236,7 +236,7 @@ func TestGwDeleteShouldWork(t *testing.T) {
 func TestGwDeleteShouldFailOnNot2XX(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
-	gatewayClient, err := MakeGateaway(GatewayApiParameter{
+	gatewayClient, err := MakeGateway(GatewayApiParameter{
 		BaseUrl:            baseUrl,
 		Debug:              false,
 		CdkGatewayUser:     "admin",

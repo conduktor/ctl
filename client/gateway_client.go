@@ -15,7 +15,7 @@ import (
 
 type GatewayClient struct {
 	cdkGatewayUser     string
-	CdkGatewayPassword string
+	cdkGatewayPassword string
 	baseUrl            string
 	client             *resty.Client
 	kinds              schema.KindCatalog
@@ -28,7 +28,7 @@ type GatewayApiParameter struct {
 	CdkGatewayPassword string
 }
 
-func MakeGateaway(apiParameter GatewayApiParameter) (*GatewayClient, error) {
+func MakeGateway(apiParameter GatewayApiParameter) (*GatewayClient, error) {
 	restyClient := resty.New().SetDebug(apiParameter.Debug).SetHeader("X-CDK-CLIENT", "CLI/"+utils.GetConduktorVersion())
 
 	if apiParameter.BaseUrl == "" {
@@ -41,7 +41,7 @@ func MakeGateaway(apiParameter GatewayApiParameter) (*GatewayClient, error) {
 
 	result := &GatewayClient{
 		cdkGatewayUser:     apiParameter.CdkGatewayUser,
-		CdkGatewayPassword: apiParameter.CdkGatewayPassword,
+		cdkGatewayPassword: apiParameter.CdkGatewayPassword,
 		baseUrl:            apiParameter.BaseUrl,
 		client:             restyClient,
 		kinds:              nil,
@@ -68,7 +68,7 @@ func MakeGatewayClientFromEnv() (*GatewayClient, error) {
 		CdkGatewayPassword: os.Getenv("CDK_GATEWAY_PASSWORD"),
 	}
 
-	client, err := MakeGateaway(apiParameter)
+	client, err := MakeGateway(apiParameter)
 	if err != nil {
 		return nil, fmt.Errorf("Cannot create client: %s", err)
 	}
@@ -253,6 +253,9 @@ func (client *GatewayClient) DeleteResourceInterceptors(resource *resource.Resou
 		return fmt.Errorf("kind %s not found", resource.Kind)
 	}
 	deletePath, err := kind.DeletePath(resource)
+	if err != nil {
+		return err
+	}
 	url := client.baseUrl + deletePath
 	resp, err := client.client.R().SetBody(deleteInterceptorPayload).Delete(url)
 	if err != nil {
