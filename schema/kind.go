@@ -27,16 +27,27 @@ type Kind struct {
 
 type KindCatalog = map[string]Kind
 
-//go:embed default-schema.json
-var defaultByteSchema []byte
+//go:embed console-default-schema.json
+var consoleDefaultByteSchema []byte
 
-func DefaultKind() KindCatalog {
+//go:embed gateway-default-schema.json
+var gatewayDefaultByteSchema []byte
+
+func buildKindCatalogFromByteSchema(byteSchema []byte) KindCatalog {
 	var result KindCatalog
-	err := json.Unmarshal(defaultByteSchema, &result)
+	err := json.Unmarshal(byteSchema, &result)
 	if err != nil {
 		panic(err)
 	}
 	return result
+}
+
+func ConsoleDefaultKind() KindCatalog {
+	return buildKindCatalogFromByteSchema(consoleDefaultByteSchema)
+}
+
+func GatewayDefaultKind() KindCatalog {
+	return buildKindCatalogFromByteSchema(gatewayDefaultByteSchema)
 }
 
 func NewKind(version int, kindVersion *KindVersion) Kind {

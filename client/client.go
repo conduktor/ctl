@@ -97,7 +97,7 @@ func Make(apiParameter ApiParameter) (*Client, error) {
 	err := result.initKindFromApi()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Cannot access the Conduktor API: %s\nUsing offline defaults.\n", err)
-		result.kinds = schema.DefaultKind()
+		result.kinds = schema.ConsoleDefaultKind()
 	}
 
 	return result, nil

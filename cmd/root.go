@@ -64,14 +64,17 @@ func init() {
 	if apiClientError == nil {
 		kinds = apiClient_.GetKinds()
 	} else {
-		kinds = schema.DefaultKind()
+		kinds = schema.ConsoleDefaultKind()
 	}
 	gatewayApiClient_, gatewayApiClientError = client.MakeGatewayClientFromEnv()
+	var gatewayKinds schema.KindCatalog
 	if gatewayApiClientError == nil {
-		var gatewayKinds = gatewayApiClient().GetKinds()
-		for k, v := range gatewayKinds {
-			kinds[k] = v
-		}
+		gatewayKinds = gatewayApiClient().GetKinds()
+	} else {
+		gatewayKinds = schema.GatewayDefaultKind()
+	}
+	for k, v := range gatewayKinds {
+		kinds[k] = v
 	}
 	debug = rootCmd.PersistentFlags().BoolP("verbose", "v", false, "show more information for debugging")
 	initGet(kinds)
