@@ -25,7 +25,7 @@ func resourcePriority(catalog KindCatalog, resource resource.Resource, debug, fa
 		}
 		return DefaultPriority
 	} else {
-		order := kindVersion.Order
+		order := kindVersion.GetOrder()
 		if order == DefaultPriority && fallbackToDefaultCatalog {
 			defaultCatalog := ConsoleDefaultKind() //TODO: handle gateway
 			orderFromDefaultCatalog := resourcePriority(defaultCatalog, resource, false, false)
@@ -34,7 +34,7 @@ func resourcePriority(catalog KindCatalog, resource resource.Resource, debug, fa
 			}
 			return orderFromDefaultCatalog
 		} else {
-			return kindVersion.Order
+			return kindVersion.GetOrder()
 		}
 	}
 }

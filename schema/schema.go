@@ -31,7 +31,7 @@ func New(schema []byte) (*Schema, error) {
 	}, nil
 }
 
-func (s *Schema) GetKinds(strict bool) (map[string]Kind, error) {
+func getKinds[T KindVersion](s *Schema, strict bool, buildKindVersion func(path, kind string, order int, put *v3high.Operation, strict bool) (T, error)) (map[string]Kind, error) {
 	result := make(map[string]Kind, 0)
 	for path := s.doc.Model.Paths.PathItems.First(); path != nil; path = path.Next() {
 		put := path.Value().Put
@@ -61,8 +61,16 @@ func (s *Schema) GetKinds(strict bool) (map[string]Kind, error) {
 	return result, nil
 }
 
-func buildKindVersion(path, kind string, order int, put *v3high.Operation, strict bool) (*KindVersion, error) {
-	newKind := &KindVersion{
+func (s *Schema) GetConsoleKinds(strict bool) (map[string]Kind, error) {
+	return getKinds(s, strict, buildConsoleKindVersion)
+}
+
+func (s *Schema) GetGatewayKinds(strict bool) (map[string]Kind, error) {
+	return getKinds(s, strict, buildGatewayKindVersion)
+}
+
+func buildConsoleKindVersion(path, kind string, order int, put *v3high.Operation, strict bool) (*ConsoleKindVersion, error) {
+	newKind := &ConsoleKindVersion{
 		Name:            kind,
 		ListPath:        path,
 		ParentPathParam: make([]string, 0, len(put.Parameters)),
@@ -86,6 +94,20 @@ func buildKindVersion(path, kind string, order int, put *v3high.Operation, stric
 		}
 	}
 	return newKind, nil
+}
+
+func buildGatewayKindVersion(path, kind string, order int, put *v3high.Operation, strict bool) (*GatewayKindVersion, error) {
+	//for the moment there is the same but this might evolve latter
+	consokeKind, err := buildConsoleKindVersion(path, kind, order, put, strict)
+	if err != nil {
+		return nil, err
+	}
+	return &GatewayKindVersion{
+		Name:            consokeKind.Name,
+		ListPath:        consokeKind.ListPath,
+		ParentPathParam: consokeKind.ParentPathParam,
+		Order:           consokeKind.Order,
+	}, nil
 }
 
 type tagParseResult struct {
@@ -124,7 +146,10 @@ func parseTag(tag string) (tagParseResult, error) {
 	return tagParseResult{kind: utils.KebabToUpperCamel(kind), version: version, order: order}, nil
 }
 
-func checkThatPathParamAreInSpec(kind *KindVersion, requestBody *v3high.RequestBody) error {
+func checkThatPathParamAreInSpec(kind *ConsoleKindVersion, requestBody *v3high.RequestBody) error {
+	if len(kind.ParentPathParam) == 0 {
+		return nil
+	}
 	jsonContent, ok := requestBody.Content.Get("application/json")
 	if !ok {
 		return fmt.Errorf("No application/json content for kind %s", kind.Name)
@@ -148,7 +173,7 @@ func checkThatPathParamAreInSpec(kind *KindVersion, requestBody *v3high.RequestB
 	return nil
 }
 
-func checkThatOrderArePresent(kind *KindVersion) error {
+func checkThatOrderArePresent(kind *ConsoleKindVersion) error {
 	if kind.Order == DefaultPriority {
 		return fmt.Errorf("No priority set in schema for kind %s", kind.Name)
 	}

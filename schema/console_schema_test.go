@@ -21,7 +21,7 @@ func TestGetKindWithYamlFromOldConsolePlusWithoutOrder(t *testing.T) {
 			t.Fatalf("failed creating new schema: %s", err)
 		}
 
-		kinds, err := schema.GetKinds(false)
+		kinds, err := schema.GetConsoleKinds(false)
 		if err != nil {
 			t.Fatalf("failed getting kinds: %s", err)
 		}
@@ -29,7 +29,7 @@ func TestGetKindWithYamlFromOldConsolePlusWithoutOrder(t *testing.T) {
 		expected := KindCatalog{
 			"Application": {
 				Versions: map[int]KindVersion{
-					1: {
+					1: &ConsoleKindVersion{
 						Name:            "Application",
 						ListPath:        "/public/self-serve/v1/application",
 						ParentPathParam: make([]string, 0),
@@ -39,7 +39,7 @@ func TestGetKindWithYamlFromOldConsolePlusWithoutOrder(t *testing.T) {
 			},
 			"ApplicationInstance": {
 				Versions: map[int]KindVersion{
-					1: {
+					1: &ConsoleKindVersion{
 						Name:            "ApplicationInstance",
 						ListPath:        "/public/self-serve/v1/application-instance",
 						ParentPathParam: make([]string, 0),
@@ -49,7 +49,7 @@ func TestGetKindWithYamlFromOldConsolePlusWithoutOrder(t *testing.T) {
 			},
 			"ApplicationInstancePermission": {
 				Versions: map[int]KindVersion{
-					1: {
+					1: &ConsoleKindVersion{
 						Name:            "ApplicationInstancePermission",
 						ListPath:        "/public/self-serve/v1/application-instance-permission",
 						ParentPathParam: make([]string, 0),
@@ -59,7 +59,7 @@ func TestGetKindWithYamlFromOldConsolePlusWithoutOrder(t *testing.T) {
 			},
 			"TopicPolicy": {
 				Versions: map[int]KindVersion{
-					1: {
+					1: &ConsoleKindVersion{
 						Name:            "TopicPolicy",
 						ListPath:        "/public/self-serve/v1/topic-policy",
 						ParentPathParam: make([]string, 0),
@@ -69,7 +69,7 @@ func TestGetKindWithYamlFromOldConsolePlusWithoutOrder(t *testing.T) {
 			},
 			"Topic": {
 				Versions: map[int]KindVersion{
-					2: {
+					2: &ConsoleKindVersion{
 						Name:            "Topic",
 						ListPath:        "/public/kafka/v2/cluster/{cluster}/topic",
 						ParentPathParam: []string{"cluster"},
@@ -96,7 +96,7 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 			t.Fatalf("failed creating new schema: %s", err)
 		}
 
-		kinds, err := schema.GetKinds(true)
+		kinds, err := schema.GetConsoleKinds(true)
 		if err != nil {
 			t.Fatalf("failed getting kinds: %s", err)
 		}
@@ -104,7 +104,7 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 		expected := KindCatalog{
 			"Application": {
 				Versions: map[int]KindVersion{
-					1: {
+					1: &ConsoleKindVersion{
 						Name:            "Application",
 						ListPath:        "/public/self-serve/v1/application",
 						ParentPathParam: []string{},
@@ -114,7 +114,7 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 			},
 			"ApplicationInstance": {
 				Versions: map[int]KindVersion{
-					1: {
+					1: &ConsoleKindVersion{
 						Name:            "ApplicationInstance",
 						ListPath:        "/public/self-serve/v1/application-instance",
 						ParentPathParam: []string{},
@@ -124,7 +124,7 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 			},
 			"ApplicationInstancePermission": {
 				Versions: map[int]KindVersion{
-					1: {
+					1: &ConsoleKindVersion{
 						Name:            "ApplicationInstancePermission",
 						ListPath:        "/public/self-serve/v1/application-instance-permission",
 						ParentPathParam: []string{},
@@ -134,7 +134,7 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 			},
 			"ApplicationGroup": {
 				Versions: map[int]KindVersion{
-					1: {
+					1: &ConsoleKindVersion{
 						Name:            "ApplicationGroup",
 						ListPath:        "/public/self-serve/v1/application-group",
 						ParentPathParam: []string{},
@@ -144,7 +144,7 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 			},
 			"TopicPolicy": {
 				Versions: map[int]KindVersion{
-					1: {
+					1: &ConsoleKindVersion{
 						Name:            "TopicPolicy",
 						ListPath:        "/public/self-serve/v1/topic-policy",
 						ParentPathParam: []string{},
@@ -154,7 +154,7 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 			},
 			"Topic": {
 				Versions: map[int]KindVersion{
-					2: {
+					2: &ConsoleKindVersion{
 						Name:            "Topic",
 						ListPath:        "/public/kafka/v2/cluster/{cluster}/topic",
 						ParentPathParam: []string{"cluster"},
@@ -164,7 +164,7 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 			},
 			"Subject": {
 				Versions: map[int]KindVersion{
-					2: {
+					2: &ConsoleKindVersion{
 						Name:            "Subject",
 						ListPath:        "/public/kafka/v2/cluster/{cluster}/subject",
 						ParentPathParam: []string{"cluster"},
@@ -174,7 +174,7 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 			},
 			"User": {
 				Versions: map[int]KindVersion{
-					2: {
+					2: &ConsoleKindVersion{
 						Name:            "User",
 						ListPath:        "/public/iam/v2/user",
 						ParentPathParam: []string{},
@@ -184,7 +184,7 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 			},
 			"Group": {
 				Versions: map[int]KindVersion{
-					2: {
+					2: &ConsoleKindVersion{
 						Name:            "Group",
 						ListPath:        "/public/iam/v2/group",
 						ParentPathParam: []string{},
@@ -194,7 +194,7 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 			},
 			"KafkaCluster": {
 				Versions: map[int]KindVersion{
-					2: {
+					2: &ConsoleKindVersion{
 						Name:            "KafkaCluster",
 						ListPath:        "/public/console/v2/kafka-cluster",
 						ParentPathParam: []string{},
@@ -221,7 +221,7 @@ func TestGetKindWithMultipleVersion(t *testing.T) {
 			t.Fatalf("failed creating new schema: %s", err)
 		}
 
-		kinds, err := schema.GetKinds(false)
+		kinds, err := schema.GetConsoleKinds(false)
 		if err != nil {
 			t.Fatalf("failed getting kinds: %s", err)
 		}
@@ -229,13 +229,13 @@ func TestGetKindWithMultipleVersion(t *testing.T) {
 		expected := KindCatalog{
 			"Topic": {
 				Versions: map[int]KindVersion{
-					1: {
+					1: &ConsoleKindVersion{
 						Name:            "Topic",
 						ListPath:        "/public/v1/cluster/{cluster}/topic",
 						ParentPathParam: []string{"cluster"},
 						Order:           DefaultPriority,
 					},
-					2: {
+					2: &ConsoleKindVersion{
 						Name:            "Topic",
 						ListPath:        "/public/v2/cluster/{cluster}/sa/{sa}/topic",
 						ParentPathParam: []string{"cluster", "sa"},
@@ -261,7 +261,7 @@ func TestKindWithMissingMetadataField(t *testing.T) {
 			t.Fatalf("failed creating new schema: %s", err)
 		}
 
-		_, err = schema.GetKinds(true)
+		_, err = schema.GetConsoleKinds(true)
 		if !strings.Contains(err.Error(), "Parent path param sa not found in metadata for kind Topic") {
 			t.Fatalf("Not expected error: %s", err)
 		}
@@ -279,7 +279,7 @@ func TestKindNotRequiredMetadataField(t *testing.T) {
 			t.Fatalf("failed creating new schema: %s", err)
 		}
 
-		_, err = schema.GetKinds(true)
+		_, err = schema.GetConsoleKinds(true)
 		if !strings.Contains(err.Error(), "Parent path param sa in metadata for kind Topic not required") {
 			t.Fatalf("Not expected error: %s", err)
 		}

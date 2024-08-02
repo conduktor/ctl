@@ -3,9 +3,9 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/conduktor/ctl/client"
+	"github.com/conduktor/ctl/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -16,7 +16,7 @@ var loginCmd = &cobra.Command{
 	Long:  `Use must use CDK_USER CDK_PASSWORD environment variables to login`,
 	Args:  cobra.RangeArgs(0, 0),
 	Run: func(cmd *cobra.Command, args []string) {
-		specificApiClient, err := client.Make(client.ApiParameter{BaseUrl: os.Getenv("CDK_BASE_URL"), Debug: strings.ToLower(os.Getenv("CDK_DEBUG")) == "true"})
+		specificApiClient, err := client.Make(client.ApiParameter{BaseUrl: os.Getenv("CDK_BASE_URL"), Debug: utils.CdkDebug()})
 		if *debug {
 			specificApiClient.ActivateDebug()
 		}

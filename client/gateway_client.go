@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/conduktor/ctl/resource"
 	"github.com/conduktor/ctl/schema"
@@ -63,7 +62,7 @@ func MakeGateway(apiParameter GatewayApiParameter) (*GatewayClient, error) {
 func MakeGatewayClientFromEnv() (*GatewayClient, error) {
 	apiParameter := GatewayApiParameter{
 		BaseUrl:            os.Getenv("CDK_GATEWAY_BASE_URL"),
-		Debug:              strings.ToLower(os.Getenv("CDK_DEBUG")) == "true",
+		Debug:              utils.CdkDebug(),
 		CdkGatewayUser:     os.Getenv("CDK_GATEWAY_USER"),
 		CdkGatewayPassword: os.Getenv("CDK_GATEWAY_PASSWORD"),
 	}
@@ -330,6 +329,10 @@ func (client *GatewayClient) DeleteInterceptor(kind *schema.Kind, name string, p
 	return err
 }
 
+func (client *GatewayClient) ActivateDebug() {
+	client.client.SetDebug(true)
+}
+
 func (client *GatewayClient) Apply(resource *resource.Resource, dryMode bool) (string, error) {
 	kinds := client.GetKinds()
 	kind, ok := kinds[resource.Kind]
@@ -382,7 +385,7 @@ func (client *GatewayClient) initKindFromApi() error {
 		return fmt.Errorf("Cannot parse openapi: %s", err)
 	}
 	strict := false
-	client.kinds, err = schema.GetKinds(strict)
+	client.kinds, err = schema.GetGatewayKinds(strict)
 	if err != nil {
 		fmt.Errorf("Cannot extract kinds from openapi: %s", err)
 	}

@@ -106,7 +106,7 @@ func Make(apiParameter ApiParameter) (*Client, error) {
 func MakeFromEnv() (*Client, error) {
 	apiParameter := ApiParameter{
 		BaseUrl:     os.Getenv("CDK_BASE_URL"),
-		Debug:       strings.ToLower(os.Getenv("CDK_DEBUG")) == "true",
+		Debug:       utils.CdkDebug(),
 		Cert:        os.Getenv("CDK_CERT"),
 		Cacert:      os.Getenv("CDK_CACERT"),
 		ApiKey:      os.Getenv("CDK_API_KEY"),
@@ -310,7 +310,7 @@ func (client *Client) initKindFromApi() error {
 		return fmt.Errorf("Cannot parse openapi: %s", err)
 	}
 	strict := false
-	client.kinds, err = schema.GetKinds(strict)
+	client.kinds, err = schema.GetConsoleKinds(strict)
 	if err != nil {
 		fmt.Errorf("Cannot extract kinds from openapi: %s", err)
 	}

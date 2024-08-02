@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/conduktor/ctl/schema"
 	"github.com/spf13/cobra"
@@ -15,11 +14,11 @@ func buildDeleteByVClusterAndNameCmd(kind schema.Kind) *cobra.Command {
 	name := kind.GetName()
 	var nameValue string
 	var vClusterValue string
-	var aliasTopicDeleteCmd = &cobra.Command{
+	var deleteCmd = &cobra.Command{
 		Use:     fmt.Sprintf("%s [name]", name),
 		Short:   "Delete resource of kind " + name,
 		Args:    cobra.ExactArgs(0),
-		Aliases: []string{strings.ToLower(name), strings.ToLower(name) + "s", name + "s"},
+		Aliases: buildAlias(name),
 		Run: func(cmd *cobra.Command, args []string) {
 			var err error
 			queryParams := make(map[string]string)
@@ -40,12 +39,12 @@ func buildDeleteByVClusterAndNameCmd(kind schema.Kind) *cobra.Command {
 		},
 	}
 
-	aliasTopicDeleteCmd.Flags().StringVar(&nameValue, nameFlag, "", "name of the "+name)
-	aliasTopicDeleteCmd.Flags().StringVar(&vClusterValue, vClusterFlag, "", "vCluster of the "+name)
+	deleteCmd.Flags().StringVar(&nameValue, nameFlag, "", "name of the "+name)
+	deleteCmd.Flags().StringVar(&vClusterValue, vClusterFlag, "", "vCluster of the "+name)
 
-	aliasTopicDeleteCmd.MarkFlagRequired(nameFlag)
+	deleteCmd.MarkFlagRequired(nameFlag)
 
-	return aliasTopicDeleteCmd
+	return deleteCmd
 }
 
 func buildDeleteInterceptorsCmd(kind schema.Kind) *cobra.Command {
@@ -62,7 +61,7 @@ func buildDeleteInterceptorsCmd(kind schema.Kind) *cobra.Command {
 		Use:     fmt.Sprintf("%s [name]", name),
 		Short:   "Delete resource of kind " + name,
 		Args:    cobra.ExactArgs(0),
-		Aliases: []string{strings.ToLower(name), strings.ToLower(name) + "s", name + "s"},
+		Aliases: buildAlias(name),
 		Run: func(cmd *cobra.Command, args []string) {
 			var err error
 			queryParams := make(map[string]string)

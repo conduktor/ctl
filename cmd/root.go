@@ -15,7 +15,7 @@ var apiClientError error
 var gatewayApiClient_ *client.GatewayClient
 var gatewayApiClientError error
 
-func apiClient() *client.Client {
+func consoleApiClient() *client.Client {
 	if apiClientError != nil {
 		fmt.Fprintf(os.Stderr, "Cannot create client: %s", apiClientError)
 		os.Exit(1)
@@ -40,7 +40,8 @@ Additionally, you can configure client TLS authentication by providing your cert
 For server TLS authentication, you can ignore the certificate by setting CDK_INSECURE=true, or provide a certificate authority using CDK_CACERT.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		if *debug {
-			apiClient().ActivateDebug()
+			consoleApiClient().ActivateDebug()
+			gatewayApiClient().ActivateDebug()
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
@@ -80,6 +81,7 @@ func init() {
 	initGet(kinds)
 	initDelete(kinds)
 	initApply(kinds)
-	initMkKind()
+	initConsoleMkKind()
+	initGatewayMkKind()
 	initPrintKind(kinds)
 }

@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/conduktor/ctl/schema"
 	"github.com/spf13/cobra"
@@ -33,7 +32,7 @@ func initDelete(kinds schema.KindCatalog) {
 						err = gatewayApiClient().DeleteResourceInterceptors(&resource)
 					}
 				} else {
-					err = apiClient().DeleteResource(&resource)
+					err = consoleApiClient().DeleteResource(&resource)
 				}
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "Could not delete resource %s/%s: %s\n", resource.Kind, resource.Name, err)
@@ -66,7 +65,7 @@ func initDelete(kinds schema.KindCatalog) {
 				Use:     fmt.Sprintf("%s [name]", name),
 				Short:   "Delete resource of kind " + name,
 				Args:    cobra.MatchAll(cobra.ExactArgs(1)),
-				Aliases: []string{strings.ToLower(name), strings.ToLower(name) + "s", name + "s"},
+				Aliases: buildAlias(name),
 				Run: func(cmd *cobra.Command, args []string) {
 					parentValue := make([]string, len(parentFlagValue))
 					for i, v := range parentFlagValue {
@@ -76,7 +75,7 @@ func initDelete(kinds schema.KindCatalog) {
 					if isGatewayKind(kind) {
 						err = gatewayApiClient().Delete(&kind, parentValue, args[0])
 					} else {
-						err = apiClient().Delete(&kind, parentValue, args[0])
+						err = consoleApiClient().Delete(&kind, parentValue, args[0])
 					}
 					if err != nil {
 						fmt.Fprintf(os.Stderr, "%s\n", err)

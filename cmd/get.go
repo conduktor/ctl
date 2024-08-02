@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/conduktor/ctl/resource"
 	"github.com/conduktor/ctl/schema"
@@ -39,7 +38,7 @@ func initGet(kinds schema.KindCatalog) {
 				Short:   "Get resource of kind " + name,
 				Args:    cobra.MatchAll(cobra.MaximumNArgs(1)),
 				Long:    `If name not provided it will list all resource`,
-				Aliases: []string{strings.ToLower(name), strings.ToLower(name) + "s", name + "s"},
+				Aliases: buildAlias(name),
 				Run: func(cmd *cobra.Command, args []string) {
 					parentValue := make([]string, len(parentFlagValue))
 					for i, v := range parentFlagValue {
@@ -51,7 +50,7 @@ func initGet(kinds schema.KindCatalog) {
 						if isGatewayKind(kind) {
 							result, err = gatewayApiClient().Get(&kind, parentValue)
 						} else {
-							result, err = apiClient().Get(&kind, parentValue)
+							result, err = consoleApiClient().Get(&kind, parentValue)
 						}
 						for _, r := range result {
 							r.PrintPreservingOriginalFieldOrder()
@@ -62,7 +61,7 @@ func initGet(kinds schema.KindCatalog) {
 						if isGatewayKind(kind) {
 							result, err = gatewayApiClient().Describe(&kind, parentValue, args[0])
 						} else {
-							result, err = apiClient().Describe(&kind, parentValue, args[0])
+							result, err = consoleApiClient().Describe(&kind, parentValue, args[0])
 						}
 						result.PrintPreservingOriginalFieldOrder()
 					}

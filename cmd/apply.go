@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/conduktor/ctl/resource"
 	"github.com/conduktor/ctl/schema"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 var dryRun *bool
@@ -40,7 +41,7 @@ func initApply(kinds schema.KindCatalog) {
 				if isGatewayResource(resource, kinds) {
 					upsertResult, err = gatewayApiClient().Apply(&resource, *dryRun)
 				} else {
-					upsertResult, err = apiClient().Apply(&resource, *dryRun)
+					upsertResult, err = consoleApiClient().Apply(&resource, *dryRun)
 				}
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "Could not apply resource %s/%s: %s\n", resource.Kind, resource.Name, err)

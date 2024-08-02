@@ -10,6 +10,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func removeTrailingSIfAny(name string) string {
+	return strings.TrimSuffix(name, "s")
+}
+
+func buildAlias(name string) []string {
+	return []string{strings.ToLower(name), removeTrailingSIfAny(strings.ToLower(name)), removeTrailingSIfAny(name)}
+}
+
 func buildListFilteredByVClusterOrNameCmd(kind schema.Kind) *cobra.Command {
 	const nameFlag = "name"
 	const vClusterFlag = "vcluster"
@@ -18,11 +26,11 @@ func buildListFilteredByVClusterOrNameCmd(kind schema.Kind) *cobra.Command {
 	var vClusterValue string
 	var showDefaultsValue string
 	name := kind.GetName()
-	var aliasTopicGetCmd = &cobra.Command{
+	var getCmd = &cobra.Command{
 		Use:     fmt.Sprintf("%s [name]", name),
 		Short:   "Get resource of kind " + kind.GetName(),
 		Args:    cobra.ExactArgs(0),
-		Aliases: []string{strings.ToLower(name), strings.ToLower(name) + "s", name + "s"},
+		Aliases: buildAlias(name),
 		Run: func(cmd *cobra.Command, args []string) {
 			var result []resource.Resource
 			var err error
@@ -49,11 +57,11 @@ func buildListFilteredByVClusterOrNameCmd(kind schema.Kind) *cobra.Command {
 		},
 	}
 
-	aliasTopicGetCmd.Flags().StringVar(&nameValue, nameFlag, "", "filter the "+name+" result list by name")
-	aliasTopicGetCmd.Flags().StringVar(&vClusterValue, vClusterFlag, "", "filter the "+name+" result list by vcluster")
-	aliasTopicGetCmd.Flags().StringVar(&showDefaultsValue, "showDefaults", "", "Toggle show defaults values (true|false, default false)")
+	getCmd.Flags().StringVar(&nameValue, nameFlag, "", "filter the "+name+" result list by name")
+	getCmd.Flags().StringVar(&vClusterValue, vClusterFlag, "", "filter the "+name+" result list by vcluster")
+	getCmd.Flags().StringVar(&showDefaultsValue, "showDefaults", "", "Toggle show defaults values (true|false, default false)")
 
-	return aliasTopicGetCmd
+	return getCmd
 }
 
 func buildListFilteredIntercpetorsCmd(kind schema.Kind) *cobra.Command {
@@ -68,11 +76,11 @@ func buildListFilteredIntercpetorsCmd(kind schema.Kind) *cobra.Command {
 	var usernameValue string
 	var globalValue bool
 	name := kind.GetName()
-	var aliasTopicGetCmd = &cobra.Command{
+	var getCmd = &cobra.Command{
 		Use:     fmt.Sprintf("%s [name]", name),
 		Short:   "Get resource of kind " + name,
 		Args:    cobra.ExactArgs(0),
-		Aliases: []string{strings.ToLower(name), strings.ToLower(name) + "s", name + "s"},
+		Aliases: buildAlias(name),
 		Run: func(cmd *cobra.Command, args []string) {
 			var result []resource.Resource
 			var err error
@@ -93,11 +101,11 @@ func buildListFilteredIntercpetorsCmd(kind schema.Kind) *cobra.Command {
 		},
 	}
 
-	aliasTopicGetCmd.Flags().StringVar(&nameValue, nameFlag, "", "filter the "+name+" result list by name")
-	aliasTopicGetCmd.Flags().StringVar(&vClusterValue, vClusterFlag, "", "filter the "+name+" result list by vcluster")
-	aliasTopicGetCmd.Flags().StringVar(&groupValue, groupFlag, "", "filter the "+name+" result list by group")
-	aliasTopicGetCmd.Flags().StringVar(&usernameValue, usernameFlag, "", "filter the "+name+" result list by username")
-	aliasTopicGetCmd.Flags().Bool(globalFlag, false, "Keep only global interceptors")
+	getCmd.Flags().StringVar(&nameValue, nameFlag, "", "filter the "+name+" result list by name")
+	getCmd.Flags().StringVar(&vClusterValue, vClusterFlag, "", "filter the "+name+" result list by vcluster")
+	getCmd.Flags().StringVar(&groupValue, groupFlag, "", "filter the "+name+" result list by group")
+	getCmd.Flags().StringVar(&usernameValue, usernameFlag, "", "filter the "+name+" result list by username")
+	getCmd.Flags().Bool(globalFlag, false, "Keep only global interceptors")
 
-	return aliasTopicGetCmd
+	return getCmd
 }

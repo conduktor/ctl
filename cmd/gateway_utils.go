@@ -1,13 +1,15 @@
 package cmd
 
 import (
+	"strings"
+
 	"github.com/conduktor/ctl/resource"
 	"github.com/conduktor/ctl/schema"
-	"strings"
 )
 
 func isGatewayKind(kind schema.Kind) bool {
-	return strings.Contains(kind.GetLatestKindVersion().ListPath, "gateway")
+	_, ok := kind.GetLatestKindVersion().(*schema.GatewayKindVersion)
+	return ok
 }
 
 func isGatewayResource(resource resource.Resource, kinds schema.KindCatalog) bool {
