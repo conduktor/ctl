@@ -201,11 +201,15 @@ func (client *Client) Apply(resource *resource.Resource, dryMode bool) (string, 
 	return upsertResponse.UpsertResult, nil
 }
 
-func (client *Client) Get(kind *schema.Kind, parentPathValue []string) ([]resource.Resource, error) {
+func (client *Client) Get(kind *schema.Kind, parentPathValue []string, queryParams map[string]string) ([]resource.Resource, error) {
 	var result []resource.Resource
 	client.setApiKeyFromEnvIfNeeded()
 	url := client.baseUrl + kind.ListPath(parentPathValue)
-	resp, err := client.client.R().Get(url)
+	requestBuilder := client.client.R()
+	if queryParams != nil {
+		requestBuilder = requestBuilder.SetQueryParams(queryParams)
+	}
+	resp, err := requestBuilder.Get(url)
 	if err != nil {
 		return result, err
 	} else if resp.IsError() {

@@ -59,7 +59,7 @@ func initDelete(kinds schema.KindCatalog) {
 			interceptorsDeleteCmd := buildDeleteInterceptorsCmd(kind)
 			deleteCmd.AddCommand(interceptorsDeleteCmd)
 		} else {
-			flags := kind.GetFlag()
+			flags := kind.GetParentFlag()
 			parentFlagValue := make([]*string, len(flags))
 			kindCmd := &cobra.Command{
 				Use:     fmt.Sprintf("%s [name]", name),
@@ -83,7 +83,7 @@ func initDelete(kinds schema.KindCatalog) {
 					}
 				},
 			}
-			for i, flag := range kind.GetFlag() {
+			for i, flag := range kind.GetParentFlag() {
 				parentFlagValue[i] = kindCmd.Flags().String(flag, "", "Parent "+flag)
 				kindCmd.MarkFlagRequired(flag)
 			}

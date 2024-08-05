@@ -15,7 +15,7 @@ func TestKindGetFlag(t *testing.T) {
 			},
 		}
 
-		got := kind.GetFlag()
+		got := kind.GetParentFlag()
 		want := []string{"param-1", "param-2", "param-3"}
 
 		if len(got) != len(want) {
@@ -40,7 +40,7 @@ func TestKindGetFlagWhenNoFlag(t *testing.T) {
 			},
 		}
 
-		got := kind.GetFlag()
+		got := kind.GetParentFlag()
 
 		if len(got) != 0 {
 			t.Fatalf("got %d flags, want %d", len(got), 0)

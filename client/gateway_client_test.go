@@ -153,7 +153,7 @@ func TestGwGetShouldWork(t *testing.T) {
 	)
 
 	vClusterKind := gatewayClient.GetKinds()["VClusters"]
-	result, err := gatewayClient.Get(&vClusterKind, []string{})
+	result, err := gatewayClient.Get(&vClusterKind, []string{}, nil)
 	if err != nil {
 		t.Error(err)
 	}
@@ -191,7 +191,7 @@ func TestGwGetShouldFailIfN2xx(t *testing.T) {
 	)
 
 	vClusterKind := gatewayClient.GetKinds()["VClusters"]
-	_, err = gatewayClient.Get(&vClusterKind, []string{})
+	_, err = gatewayClient.Get(&vClusterKind, []string{}, nil)
 	if err == nil {
 		t.Failed()
 	}

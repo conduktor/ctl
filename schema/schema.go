@@ -31,7 +31,7 @@ func New(schema []byte) (*Schema, error) {
 	}, nil
 }
 
-func getKinds[T KindVersion](s *Schema, strict bool, buildKindVersion func(path, kind string, order int, put *v3high.Operation, get *v3high.Operation, strict bool) (T, error)) (map[string]Kind, error) {
+func getKinds[T KindVersion](s *Schema, strict bool, buildKindVersion func(s *Schema, path, kind string, order int, put *v3high.Operation, get *v3high.Operation, strict bool) (T, error)) (map[string]Kind, error) {
 	result := make(map[string]Kind, 0)
 	for path := s.doc.Model.Paths.PathItems.First(); path != nil; path = path.Next() {
 		put := path.Value().Put
@@ -43,7 +43,7 @@ func getKinds[T KindVersion](s *Schema, strict bool, buildKindVersion func(path,
 				if err != nil {
 					return nil, err
 				}
-				newKind, err := buildKindVersion(path.Key(), tagParsed.kind, tagParsed.order, put, get, strict)
+				newKind, err := buildKindVersion(s, path.Key(), tagParsed.kind, tagParsed.order, put, get, strict)
 				if err != nil {
 					return nil, err
 				}
@@ -70,7 +70,7 @@ func (s *Schema) GetGatewayKinds(strict bool) (map[string]Kind, error) {
 	return getKinds(s, strict, buildGatewayKindVersion)
 }
 
-func buildConsoleKindVersion(path, kind string, order int, put *v3high.Operation, get *v3high.Operation, strict bool) (*ConsoleKindVersion, error) {
+func buildConsoleKindVersion(s *Schema, path, kind string, order int, put *v3high.Operation, get *v3high.Operation, strict bool) (*ConsoleKindVersion, error) {
 	newKind := &ConsoleKindVersion{
 		Name:              kind,
 		ListPath:          path,
@@ -112,18 +112,26 @@ func buildConsoleKindVersion(path, kind string, order int, put *v3high.Operation
 	return newKind, nil
 }
 
-func buildGatewayKindVersion(path, kind string, order int, put *v3high.Operation, get *v3high.Operation, strict bool) (*GatewayKindVersion, error) {
+func buildGatewayKindVersion(s *Schema, path, kind string, order int, put *v3high.Operation, get *v3high.Operation, strict bool) (*GatewayKindVersion, error) {
 	//for the moment there is the same but this might evolve latter
-	consokeKind, err := buildConsoleKindVersion(path, kind, order, put, get, strict)
+	consoleKind, err := buildConsoleKindVersion(s, path, kind, order, put, get, strict)
 	if err != nil {
 		return nil, err
 	}
+	var getAvailable = false
+	for path := s.doc.Model.Paths.PathItems.First(); path != nil; path = path.Next() {
+		get := path.Value().Get
+		if get != nil && strings.HasPrefix(path.Key(), consoleKind.ListPath+"/{") {
+			getAvailable = true
+		}
+	}
 	return &GatewayKindVersion{
-		Name:               consokeKind.Name,
-		ListPath:           consokeKind.ListPath,
-		ParentPathParam:    consokeKind.ParentPathParam,
-		ListQueryParameter: consokeKind.ListQueryParamter,
-		Order:              consokeKind.Order,
+		Name:               consoleKind.Name,
+		ListPath:           consoleKind.ListPath,
+		ParentPathParam:    consoleKind.ParentPathParam,
+		ListQueryParameter: consoleKind.ListQueryParamter,
+		GetAvailable:       getAvailable,
+		Order:              consoleKind.Order,
 	}, nil
 }
 

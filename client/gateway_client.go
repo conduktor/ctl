@@ -74,56 +74,14 @@ func MakeGatewayClientFromEnv() (*GatewayClient, error) {
 	return client, nil
 }
 
-func (client *GatewayClient) Get(kind *schema.Kind, parentPathValue []string) ([]resource.Resource, error) {
+func (client *GatewayClient) Get(kind *schema.Kind, parentPathValue []string, queryParams map[string]string) ([]resource.Resource, error) {
 	var result []resource.Resource
 	url := client.baseUrl + kind.ListPath(parentPathValue)
-	resp, err := client.client.R().Get(url)
-	if err != nil {
-		return result, err
-	} else if resp.IsError() {
-		return result, fmt.Errorf(extractApiError(resp))
+	requestBuilder := client.client.R()
+	if queryParams != nil {
+		requestBuilder = requestBuilder.SetQueryParams(queryParams)
 	}
-	err = json.Unmarshal(resp.Body(), &result)
-	return result, err
-}
-
-func (client *GatewayClient) ListKindWithFilters(kind *schema.Kind, param map[string]string) ([]resource.Resource, error) {
-	var result []resource.Resource
-	url := client.baseUrl + kind.ListPath(nil)
-	req := client.client.R()
-	req.SetQueryParams(param)
-	resp, err := req.Get(url)
-	if err != nil {
-		return result, err
-	} else if resp.IsError() {
-		return result, fmt.Errorf(extractApiError(resp))
-	}
-	err = json.Unmarshal(resp.Body(), &result)
-	return result, err
-}
-
-func (client *GatewayClient) ListInterceptorsFilters(kind *schema.Kind, name string, global bool, vCluster string, group string, username string) ([]resource.Resource, error) {
-	var result []resource.Resource
-	url := client.baseUrl + kind.ListPath(nil)
-	req := client.client.R()
-	queryParams := make(map[string]string)
-	if name != "" {
-		queryParams["name"] = name
-	}
-	if vCluster != "" {
-		queryParams["vCluster"] = vCluster
-	}
-	if group != "" {
-		queryParams["group"] = group
-	}
-	if username != "" {
-		queryParams["username"] = username
-	}
-	if global {
-		queryParams["global"] = "true"
-	}
-	req.SetQueryParams(queryParams)
-	resp, err := req.Get(url)
+	resp, err := requestBuilder.Get(url)
 	if err != nil {
 		return result, err
 	} else if resp.IsError() {

@@ -188,7 +188,7 @@ func TestGetShouldWork(t *testing.T) {
 	)
 
 	app := client.GetKinds()["Application"]
-	result, err := client.Get(&app, []string{})
+	result, err := client.Get(&app, []string{}, nil)
 	if err != nil {
 		t.Error(err)
 	}
@@ -225,7 +225,7 @@ func TestGetShouldFailIfN2xx(t *testing.T) {
 	)
 
 	app := client.GetKinds()["Application"]
-	_, err = client.Get(&app, []string{})
+	_, err = client.Get(&app, []string{}, nil)
 	if err == nil {
 		t.Failed()
 	}

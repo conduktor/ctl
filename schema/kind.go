@@ -18,6 +18,7 @@ type KindVersion interface {
 	GetName() string
 	GetParentPathParam() []string
 	GetOrder() int
+	GetListQueryParamter() map[string]QueryParameterOption
 }
 
 // two logics: uniformize flag name and kebab case
@@ -56,6 +57,10 @@ func (c *ConsoleKindVersion) GetOrder() int {
 	return c.Order
 }
 
+func (c *ConsoleKindVersion) GetListQueryParamter() map[string]QueryParameterOption {
+	return c.ListQueryParamter
+}
+
 type GetParameter struct {
 	Name      string
 	Mandatory bool
@@ -66,23 +71,28 @@ type GatewayKindVersion struct {
 	Name               string
 	ParentPathParam    []string
 	ListQueryParameter map[string]QueryParameterOption
+	GetAvailable       bool
 	Order              int `json:1000` //same value DefaultPriority
 }
 
-func (c *GatewayKindVersion) GetListPath() string {
-	return c.ListPath
+func (g *GatewayKindVersion) GetListPath() string {
+	return g.ListPath
 }
 
-func (c *GatewayKindVersion) GetName() string {
-	return c.Name
+func (g *GatewayKindVersion) GetName() string {
+	return g.Name
 }
 
-func (c *GatewayKindVersion) GetParentPathParam() []string {
-	return c.ParentPathParam
+func (g *GatewayKindVersion) GetParentPathParam() []string {
+	return g.ParentPathParam
 }
 
-func (c *GatewayKindVersion) GetOrder() int {
-	return c.Order
+func (g *GatewayKindVersion) GetOrder() int {
+	return g.Order
+}
+
+func (g *GatewayKindVersion) GetListQueryParamter() map[string]QueryParameterOption {
+	return g.ListQueryParameter
 }
 
 const DefaultPriority = 1000 //update  json annotation for Order when changing this value
@@ -166,11 +176,14 @@ func (kind *Kind) AddVersion(version int, kindVersion KindVersion) error {
 	return nil
 }
 
-func (kind *Kind) GetFlag() []string {
+func (kind *Kind) GetParentFlag() []string {
 	kindVersion := kind.GetLatestKindVersion()
-	result := make([]string, len(kindVersion.GetParentPathParam()))
-	copy(result, kindVersion.GetParentPathParam())
-	return result
+	return kindVersion.GetParentPathParam()
+}
+
+func (kind *Kind) GetListFlag() map[string]QueryParameterOption {
+	kindVersion := kind.GetLatestKindVersion()
+	return kindVersion.GetListQueryParamter()
 }
 
 func (kind *Kind) MaxVersion() int {
