@@ -9,29 +9,24 @@ import (
 )
 
 func buildDeleteByVClusterAndNameCmd(kind schema.Kind) *cobra.Command {
-	const nameFlag = "name"
 	const vClusterFlag = "vcluster"
 	name := kind.GetName()
-	var nameValue string
 	var vClusterValue string
 	var deleteCmd = &cobra.Command{
 		Use:     fmt.Sprintf("%s [name]", name),
 		Short:   "Delete resource of kind " + name,
-		Args:    cobra.ExactArgs(0),
+		Args:    cobra.ExactArgs(1),
 		Aliases: buildAlias(name),
 		Run: func(cmd *cobra.Command, args []string) {
 			var err error
-			queryParams := make(map[string]string)
+			bodyParams := make(map[string]string)
+			nameValue := args[0]
 			if nameValue != "" {
-				queryParams[nameFlag] = nameValue
+				bodyParams["name"] = nameValue
 			}
-			if vClusterValue != "" {
-				queryParams[vClusterFlag] = vClusterValue
-			} else {
-				queryParams[vClusterFlag] = "passthrough"
-			}
+			bodyParams["vCluster"] = vClusterValue
 
-			err = gatewayApiClient().DeleteKindByNameAndVCluster(&kind, queryParams)
+			err = gatewayApiClient().DeleteKindByNameAndVCluster(&kind, bodyParams)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "%s\n", err)
 				os.Exit(1)
@@ -39,20 +34,15 @@ func buildDeleteByVClusterAndNameCmd(kind schema.Kind) *cobra.Command {
 		},
 	}
 
-	deleteCmd.Flags().StringVar(&nameValue, nameFlag, "", "name of the "+name)
-	deleteCmd.Flags().StringVar(&vClusterValue, vClusterFlag, "", "vCluster of the "+name)
-
-	deleteCmd.MarkFlagRequired(nameFlag)
+	deleteCmd.Flags().StringVar(&vClusterValue, vClusterFlag, "passthrough", "vCluster of the "+name)
 
 	return deleteCmd
 }
 
 func buildDeleteInterceptorsCmd(kind schema.Kind) *cobra.Command {
-	const nameFlag = "name"
 	const vClusterFlag = "vcluster"
 	const groupFlag = "group"
 	const usernameFlag = "username"
-	var nameValue string
 	var vClusterValue string
 	var groupValue string
 	var usernameValue string
@@ -60,25 +50,23 @@ func buildDeleteInterceptorsCmd(kind schema.Kind) *cobra.Command {
 	var interceptorDeleteCmd = &cobra.Command{
 		Use:     fmt.Sprintf("%s [name]", name),
 		Short:   "Delete resource of kind " + name,
-		Args:    cobra.ExactArgs(0),
+		Args:    cobra.ExactArgs(1),
 		Aliases: buildAlias(name),
 		Run: func(cmd *cobra.Command, args []string) {
 			var err error
-			queryParams := make(map[string]string)
-			if nameValue != "" {
-				queryParams[nameFlag] = nameValue
-			}
+			bodyParams := make(map[string]string)
+			nameValue := args[0]
 			if vClusterValue != "" {
-				queryParams[vClusterFlag] = vClusterValue
+				bodyParams["vCluster"] = vClusterValue
 			}
 			if groupValue != "" {
-				queryParams[groupFlag] = groupValue
+				bodyParams["group"] = groupValue
 			}
 			if usernameValue != "" {
-				queryParams[usernameFlag] = usernameValue
+				bodyParams["username"] = usernameValue
 			}
 
-			err = gatewayApiClient().DeleteInterceptor(&kind, nameValue, queryParams)
+			err = gatewayApiClient().DeleteInterceptor(&kind, nameValue, bodyParams)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "%s\n", err)
 				os.Exit(1)
@@ -86,12 +74,9 @@ func buildDeleteInterceptorsCmd(kind schema.Kind) *cobra.Command {
 		},
 	}
 
-	interceptorDeleteCmd.Flags().StringVar(&nameValue, nameFlag, "", "name of the "+name)
 	interceptorDeleteCmd.Flags().StringVar(&vClusterValue, vClusterFlag, "", "vCluster of the "+name)
 	interceptorDeleteCmd.Flags().StringVar(&groupValue, groupFlag, "", "group of the "+name)
 	interceptorDeleteCmd.Flags().StringVar(&usernameValue, usernameFlag, "", "username of the "+name)
-
-	interceptorDeleteCmd.MarkFlagRequired(nameFlag)
 
 	return interceptorDeleteCmd
 }

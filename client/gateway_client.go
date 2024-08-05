@@ -271,12 +271,7 @@ func (client *GatewayClient) DeleteResourceInterceptors(resource *resource.Resou
 func (client *GatewayClient) DeleteKindByNameAndVCluster(kind *schema.Kind, param map[string]string) error {
 	url := client.baseUrl + kind.ListPath(nil)
 	req := client.client.R()
-	req.SetBody(
-		map[string]interface{}{
-			"name":     param["name"],
-			"vCluster": param["vcluster"],
-		},
-	)
+	req.SetBody(param)
 	resp, err := req.Delete(url)
 	if err != nil {
 		return err
@@ -292,31 +287,15 @@ func (client *GatewayClient) DeleteKindByNameAndVCluster(kind *schema.Kind, para
 func (client *GatewayClient) DeleteInterceptor(kind *schema.Kind, name string, param map[string]string) error {
 	url := client.baseUrl + kind.ListPath(nil) + "/" + name
 	req := client.client.R()
-	var groupValue interface{}
-	if param["group"] == "" {
-		groupValue = nil
-	} else {
-		groupValue = param["group"]
+	var bodyParams = make(map[string]interface{})
+	for k, v := range param {
+		if v == "" {
+			bodyParams[k] = nil
+		} else {
+			bodyParams[k] = v
+		}
 	}
-	var usernameValue interface{}
-	if param["username"] == "" {
-		usernameValue = nil
-	} else {
-		usernameValue = param["username"]
-	}
-	var vClusterValue interface{}
-	if param["vcluster"] == "" {
-		vClusterValue = nil
-	} else {
-		vClusterValue = param["vcluster"]
-	}
-	req.SetBody(
-		map[string]interface{}{
-			"vCluster": vClusterValue,
-			"group":    groupValue,
-			"username": usernameValue,
-		},
-	)
+	req.SetBody(bodyParams)
 	resp, err := req.Delete(url)
 	if err != nil {
 		return err

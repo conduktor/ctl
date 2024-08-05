@@ -24,7 +24,7 @@ func buildListFilteredByVClusterOrNameCmd(kind schema.Kind) *cobra.Command {
 	const showDefaultsFlag = "showDefaults"
 	var nameValue string
 	var vClusterValue string
-	var showDefaultsValue string
+	var showDefaultsValue bool
 	name := kind.GetName()
 	var getCmd = &cobra.Command{
 		Use:     fmt.Sprintf("%s [name]", name),
@@ -41,8 +41,8 @@ func buildListFilteredByVClusterOrNameCmd(kind schema.Kind) *cobra.Command {
 			if vClusterValue != "" {
 				queryParams[vClusterFlag] = vClusterValue
 			}
-			if showDefaultsValue != "" {
-				queryParams[showDefaultsFlag] = showDefaultsValue
+			if showDefaultsValue {
+				queryParams[showDefaultsFlag] = "true"
 			}
 
 			result, err = gatewayApiClient().ListKindWithFilters(&kind, queryParams)
@@ -59,12 +59,12 @@ func buildListFilteredByVClusterOrNameCmd(kind schema.Kind) *cobra.Command {
 
 	getCmd.Flags().StringVar(&nameValue, nameFlag, "", "filter the "+name+" result list by name")
 	getCmd.Flags().StringVar(&vClusterValue, vClusterFlag, "", "filter the "+name+" result list by vcluster")
-	getCmd.Flags().StringVar(&showDefaultsValue, "showDefaults", "", "Toggle show defaults values (true|false, default false)")
+	getCmd.Flags().BoolVar(&showDefaultsValue, "show-defaults", false, "Toggle show defaults values (default false)")
 
 	return getCmd
 }
 
-func buildListFilteredIntercpetorsCmd(kind schema.Kind) *cobra.Command {
+func buildListFilteredInterceptorCmd(kind schema.Kind) *cobra.Command {
 	const nameFlag = "name"
 	const globalFlag = "global"
 	const vClusterFlag = "vcluster"

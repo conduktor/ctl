@@ -28,7 +28,7 @@ func initGet(kinds schema.KindCatalog) {
 			byVClusterAndNamGetCmd := buildListFilteredByVClusterOrNameCmd(kind)
 			getCmd.AddCommand(byVClusterAndNamGetCmd)
 		} else if isKindInterceptor(kind) {
-			interceptorsGetCmd := buildListFilteredIntercpetorsCmd(kind)
+			interceptorsGetCmd := buildListFilteredInterceptorCmd(kind)
 			getCmd.AddCommand(interceptorsGetCmd)
 		} else {
 			flags := kind.GetFlag()
