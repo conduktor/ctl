@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/conduktor/ctl/resource"
+	"github.com/conduktor/ctl/utils"
 )
 
 type KindVersion interface {
@@ -19,11 +20,24 @@ type KindVersion interface {
 	GetOrder() int
 }
 
+// two logics: uniformize flag name and kebab case
+func ComputeFlagName(name string) string {
+	kebab := utils.UpperCamelToKebab(name)
+	kebab = strings.TrimPrefix(kebab, "filter-by-")
+	return strings.Replace(kebab, "app-instance", "application-instance", 1)
+}
+
+type QueryParameterOption struct {
+	FlagName string
+	Required bool
+	Type     string
+}
 type ConsoleKindVersion struct {
-	ListPath        string
-	Name            string
-	ParentPathParam []string
-	Order           int `json:1000` //same value DefaultPriority
+	ListPath          string
+	Name              string
+	ParentPathParam   []string
+	ListQueryParamter map[string]QueryParameterOption
+	Order             int `json:1000` //same value DefaultPriority
 }
 
 func (c *ConsoleKindVersion) GetListPath() string {
@@ -42,11 +56,17 @@ func (c *ConsoleKindVersion) GetOrder() int {
 	return c.Order
 }
 
+type GetParameter struct {
+	Name      string
+	Mandatory bool
+}
+
 type GatewayKindVersion struct {
-	ListPath        string
-	Name            string
-	ParentPathParam []string
-	Order           int `json:1000` //same value DefaultPriority
+	ListPath           string
+	Name               string
+	ParentPathParam    []string
+	ListQueryParameter map[string]QueryParameterOption
+	Order              int `json:1000` //same value DefaultPriority
 }
 
 func (c *GatewayKindVersion) GetListPath() string {

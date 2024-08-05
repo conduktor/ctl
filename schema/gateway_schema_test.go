@@ -26,13 +26,14 @@ func TestGetKindWithYamlFromGateway(t *testing.T) {
 		}
 
 		expected := KindCatalog{
-			"Vclusters": {
+			"VClusters": {
 				Versions: map[int]KindVersion{
 					2: &GatewayKindVersion{
-						Name:            "Vclusters",
-						ListPath:        "/gateway/v2/vclusters",
-						ParentPathParam: []string{},
-						Order:           7,
+						Name:               "VClusters",
+						ListPath:           "/gateway/v2/vclusters",
+						ParentPathParam:    []string{},
+						ListQueryParameter: map[string]QueryParameterOption{},
+						Order:              7,
 					},
 				},
 			},
@@ -42,7 +43,24 @@ func TestGetKindWithYamlFromGateway(t *testing.T) {
 						Name:            "AliasTopics",
 						ListPath:        "/gateway/v2/alias-topics",
 						ParentPathParam: []string{},
-						Order:           8,
+						ListQueryParameter: map[string]QueryParameterOption{
+							"name": {
+								FlagName: "name",
+								Required: false,
+								Type:     "string",
+							},
+							"vcluster": {
+								FlagName: "vcluster",
+								Required: false,
+								Type:     "string",
+							},
+							"showDefaults": {
+								FlagName: "show-defaults",
+								Required: false,
+								Type:     "boolean",
+							},
+						},
+						Order: 8,
 					},
 				},
 			},
@@ -52,7 +70,24 @@ func TestGetKindWithYamlFromGateway(t *testing.T) {
 						Name:            "ConcentrationRules",
 						ListPath:        "/gateway/v2/concentration-rules",
 						ParentPathParam: []string{},
-						Order:           9,
+						ListQueryParameter: map[string]QueryParameterOption{
+							"vcluster": {
+								FlagName: "vcluster",
+								Required: false,
+								Type:     "string",
+							},
+							"name": {
+								FlagName: "name",
+								Required: false,
+								Type:     "string",
+							},
+							"showDefaults": {
+								FlagName: "show-defaults",
+								Required: false,
+								Type:     "boolean",
+							},
+						},
+						Order: 9,
 					},
 				},
 			},
@@ -62,7 +97,14 @@ func TestGetKindWithYamlFromGateway(t *testing.T) {
 						Name:            "GatewayGroups",
 						ListPath:        "/gateway/v2/gateway-groups",
 						ParentPathParam: []string{},
-						Order:           10,
+						ListQueryParameter: map[string]QueryParameterOption{
+							"showDefaults": {
+								FlagName: "show-defaults",
+								Required: false,
+								Type:     "boolean",
+							},
+						},
+						Order: 10,
 					},
 				},
 			},
@@ -72,7 +114,29 @@ func TestGetKindWithYamlFromGateway(t *testing.T) {
 						Name:            "ServiceAccounts",
 						ListPath:        "/gateway/v2/service-accounts",
 						ParentPathParam: []string{},
-						Order:           11,
+						ListQueryParameter: map[string]QueryParameterOption{
+							"name": {
+								FlagName: "name",
+								Required: false,
+								Type:     "string",
+							},
+							"type": {
+								FlagName: "type",
+								Required: false,
+								Type:     "string",
+							},
+							"vcluster": {
+								FlagName: "vcluster",
+								Required: false,
+								Type:     "string",
+							},
+							"showDefaults": {
+								FlagName: "show-defaults",
+								Required: false,
+								Type:     "boolean",
+							},
+						},
+						Order: 11,
 					},
 				},
 			},
@@ -82,7 +146,34 @@ func TestGetKindWithYamlFromGateway(t *testing.T) {
 						Name:            "Interceptors",
 						ListPath:        "/gateway/v2/interceptors",
 						ParentPathParam: []string{},
-						Order:           12,
+						ListQueryParameter: map[string]QueryParameterOption{
+							"username": {
+								FlagName: "username",
+								Required: false,
+								Type:     "string",
+							},
+							"name": {
+								FlagName: "name",
+								Required: false,
+								Type:     "string",
+							},
+							"global": {
+								FlagName: "global",
+								Required: false,
+								Type:     "boolean",
+							},
+							"vcluster": {
+								FlagName: "vcluster",
+								Required: false,
+								Type:     "string",
+							},
+							"group": {
+								FlagName: "group",
+								Required: false,
+								Type:     "string",
+							},
+						},
+						Order: 12,
 					},
 				},
 			},

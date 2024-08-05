@@ -30,10 +30,11 @@ func TestGetKindWithYamlFromOldConsolePlusWithoutOrder(t *testing.T) {
 			"Application": {
 				Versions: map[int]KindVersion{
 					1: &ConsoleKindVersion{
-						Name:            "Application",
-						ListPath:        "/public/self-serve/v1/application",
-						ParentPathParam: make([]string, 0),
-						Order:           DefaultPriority,
+						Name:              "Application",
+						ListPath:          "/public/self-serve/v1/application",
+						ParentPathParam:   make([]string, 0),
+						ListQueryParamter: map[string]QueryParameterOption{},
+						Order:             DefaultPriority,
 					},
 				},
 			},
@@ -43,7 +44,14 @@ func TestGetKindWithYamlFromOldConsolePlusWithoutOrder(t *testing.T) {
 						Name:            "ApplicationInstance",
 						ListPath:        "/public/self-serve/v1/application-instance",
 						ParentPathParam: make([]string, 0),
-						Order:           DefaultPriority,
+						ListQueryParamter: map[string]QueryParameterOption{
+							"application": {
+								FlagName: "application",
+								Required: false,
+								Type:     "string",
+							},
+						},
+						Order: DefaultPriority,
 					},
 				},
 			},
@@ -53,7 +61,24 @@ func TestGetKindWithYamlFromOldConsolePlusWithoutOrder(t *testing.T) {
 						Name:            "ApplicationInstancePermission",
 						ListPath:        "/public/self-serve/v1/application-instance-permission",
 						ParentPathParam: make([]string, 0),
-						Order:           DefaultPriority,
+						ListQueryParamter: map[string]QueryParameterOption{
+							"filterByApplication": {
+								FlagName: "application",
+								Required: false,
+								Type:     "string",
+							},
+							"filterByApplicationInstance": {
+								FlagName: "application-instance",
+								Required: false,
+								Type:     "string",
+							},
+							"filterByGrantedTo": {
+								FlagName: "granted-to",
+								Required: false,
+								Type:     "string",
+							},
+						},
+						Order: DefaultPriority,
 					},
 				},
 			},
@@ -63,17 +88,25 @@ func TestGetKindWithYamlFromOldConsolePlusWithoutOrder(t *testing.T) {
 						Name:            "TopicPolicy",
 						ListPath:        "/public/self-serve/v1/topic-policy",
 						ParentPathParam: make([]string, 0),
-						Order:           DefaultPriority,
+						ListQueryParamter: map[string]QueryParameterOption{
+							"app-instance": {
+								FlagName: "application-instance",
+								Required: false,
+								Type:     "string",
+							},
+						},
+						Order: DefaultPriority,
 					},
 				},
 			},
 			"Topic": {
 				Versions: map[int]KindVersion{
 					2: &ConsoleKindVersion{
-						Name:            "Topic",
-						ListPath:        "/public/kafka/v2/cluster/{cluster}/topic",
-						ParentPathParam: []string{"cluster"},
-						Order:           DefaultPriority,
+						Name:              "Topic",
+						ListPath:          "/public/kafka/v2/cluster/{cluster}/topic",
+						ParentPathParam:   []string{"cluster"},
+						ListQueryParamter: map[string]QueryParameterOption{},
+						Order:             DefaultPriority,
 					},
 				},
 			},
@@ -105,10 +138,11 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 			"Application": {
 				Versions: map[int]KindVersion{
 					1: &ConsoleKindVersion{
-						Name:            "Application",
-						ListPath:        "/public/self-serve/v1/application",
-						ParentPathParam: []string{},
-						Order:           6,
+						Name:              "Application",
+						ListPath:          "/public/self-serve/v1/application",
+						ParentPathParam:   []string{},
+						ListQueryParamter: map[string]QueryParameterOption{},
+						Order:             6,
 					},
 				},
 			},
@@ -118,7 +152,14 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 						Name:            "ApplicationInstance",
 						ListPath:        "/public/self-serve/v1/application-instance",
 						ParentPathParam: []string{},
-						Order:           7,
+						ListQueryParamter: map[string]QueryParameterOption{
+							"application": {
+								FlagName: "application",
+								Required: false,
+								Type:     "string",
+							},
+						},
+						Order: 7,
 					},
 				},
 			},
@@ -128,17 +169,35 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 						Name:            "ApplicationInstancePermission",
 						ListPath:        "/public/self-serve/v1/application-instance-permission",
 						ParentPathParam: []string{},
-						Order:           8,
+						ListQueryParamter: map[string]QueryParameterOption{
+							"filterByApplication": {
+								FlagName: "application",
+								Required: false,
+								Type:     "string",
+							},
+							"filterByApplicationInstance": {
+								FlagName: "application-instance",
+								Required: false,
+								Type:     "string",
+							},
+							"filterByGrantedTo": {
+								FlagName: "granted-to",
+								Required: false,
+								Type:     "string",
+							},
+						},
+						Order: 8,
 					},
 				},
 			},
 			"ApplicationGroup": {
 				Versions: map[int]KindVersion{
 					1: &ConsoleKindVersion{
-						Name:            "ApplicationGroup",
-						ListPath:        "/public/self-serve/v1/application-group",
-						ParentPathParam: []string{},
-						Order:           9,
+						Name:              "ApplicationGroup",
+						ListPath:          "/public/self-serve/v1/application-group",
+						ParentPathParam:   []string{},
+						ListQueryParamter: map[string]QueryParameterOption{},
+						Order:             9,
 					},
 				},
 			},
@@ -148,63 +207,75 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 						Name:            "TopicPolicy",
 						ListPath:        "/public/self-serve/v1/topic-policy",
 						ParentPathParam: []string{},
-						Order:           5,
+						ListQueryParamter: map[string]QueryParameterOption{
+							"app-instance": {
+								FlagName: "application-instance",
+								Required: false,
+								Type:     "string",
+							},
+						},
+						Order: 5,
 					},
 				},
 			},
 			"Topic": {
 				Versions: map[int]KindVersion{
 					2: &ConsoleKindVersion{
-						Name:            "Topic",
-						ListPath:        "/public/kafka/v2/cluster/{cluster}/topic",
-						ParentPathParam: []string{"cluster"},
-						Order:           3,
+						Name:              "Topic",
+						ListPath:          "/public/kafka/v2/cluster/{cluster}/topic",
+						ParentPathParam:   []string{"cluster"},
+						ListQueryParamter: map[string]QueryParameterOption{},
+						Order:             3,
 					},
 				},
 			},
 			"Subject": {
 				Versions: map[int]KindVersion{
 					2: &ConsoleKindVersion{
-						Name:            "Subject",
-						ListPath:        "/public/kafka/v2/cluster/{cluster}/subject",
-						ParentPathParam: []string{"cluster"},
-						Order:           4,
+						Name:              "Subject",
+						ListPath:          "/public/kafka/v2/cluster/{cluster}/subject",
+						ParentPathParam:   []string{"cluster"},
+						ListQueryParamter: map[string]QueryParameterOption{},
+						Order:             4,
 					},
 				},
 			},
 			"User": {
 				Versions: map[int]KindVersion{
 					2: &ConsoleKindVersion{
-						Name:            "User",
-						ListPath:        "/public/iam/v2/user",
-						ParentPathParam: []string{},
-						Order:           0,
+						Name:              "User",
+						ListPath:          "/public/iam/v2/user",
+						ParentPathParam:   []string{},
+						ListQueryParamter: map[string]QueryParameterOption{},
+						Order:             0,
 					},
 				},
 			},
 			"Group": {
 				Versions: map[int]KindVersion{
 					2: &ConsoleKindVersion{
-						Name:            "Group",
-						ListPath:        "/public/iam/v2/group",
-						ParentPathParam: []string{},
-						Order:           1,
+						Name:              "Group",
+						ListPath:          "/public/iam/v2/group",
+						ParentPathParam:   []string{},
+						ListQueryParamter: map[string]QueryParameterOption{},
+						Order:             1,
 					},
 				},
 			},
 			"KafkaCluster": {
 				Versions: map[int]KindVersion{
 					2: &ConsoleKindVersion{
-						Name:            "KafkaCluster",
-						ListPath:        "/public/console/v2/kafka-cluster",
-						ParentPathParam: []string{},
-						Order:           2,
+						Name:              "KafkaCluster",
+						ListPath:          "/public/console/v2/kafka-cluster",
+						ParentPathParam:   []string{},
+						ListQueryParamter: map[string]QueryParameterOption{},
+						Order:             2,
 					},
 				},
 			},
 		}
 		if !reflect.DeepEqual(kinds, expected) {
-			t.Error(spew.Printf("got kinds %v, want %v", kinds["Subject"], expected["Subject"]))
+			t.Error(spew.Printf("got kinds %v, want %v", kinds, expected))
 		}
 	})
 }
@@ -230,16 +301,18 @@ func TestGetKindWithMultipleVersion(t *testing.T) {
 			"Topic": {
 				Versions: map[int]KindVersion{
 					1: &ConsoleKindVersion{
-						Name:            "Topic",
-						ListPath:        "/public/v1/cluster/{cluster}/topic",
-						ParentPathParam: []string{"cluster"},
-						Order:           DefaultPriority,
+						Name:              "Topic",
+						ListPath:          "/public/v1/cluster/{cluster}/topic",
+						ParentPathParam:   []string{"cluster"},
+						ListQueryParamter: map[string]QueryParameterOption{},
+						Order:             DefaultPriority,
 					},
 					2: &ConsoleKindVersion{
-						Name:            "Topic",
-						ListPath:        "/public/v2/cluster/{cluster}/sa/{sa}/topic",
-						ParentPathParam: []string{"cluster", "sa"},
-						Order:           42,
+						Name:              "Topic",
+						ListPath:          "/public/v2/cluster/{cluster}/sa/{sa}/topic",
+						ParentPathParam:   []string{"cluster", "sa"},
+						ListQueryParamter: map[string]QueryParameterOption{},
+						Order:             42,
 					},
 				},
 			},
