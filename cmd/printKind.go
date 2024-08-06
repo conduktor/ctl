@@ -3,7 +3,9 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/conduktor/ctl/schema"
+	"github.com/conduktor/ctl/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -16,7 +18,7 @@ func initPrintKind(kinds schema.KindCatalog) {
 		Short:  "Print kind catalog used",
 		Long:   ``,
 		Args:   cobra.NoArgs,
-		Hidden: true,
+		Hidden: !utils.CdkDebug(),
 		Run: func(cmd *cobra.Command, args []string) {
 			var payload []byte
 			var err error

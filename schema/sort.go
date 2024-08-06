@@ -25,16 +25,16 @@ func resourcePriority(catalog KindCatalog, resource resource.Resource, debug, fa
 		}
 		return DefaultPriority
 	} else {
-		order := kindVersion.Order
+		order := kindVersion.GetOrder()
 		if order == DefaultPriority && fallbackToDefaultCatalog {
-			defaultCatalog := DefaultKind()
+			defaultCatalog := ConsoleDefaultKind() //TODO: handle gateway
 			orderFromDefaultCatalog := resourcePriority(defaultCatalog, resource, false, false)
 			if orderFromDefaultCatalog != DefaultPriority && debug {
 				fmt.Fprintf(os.Stderr, "Could not find version: %d of kind %s in catalog, but find it in default catalog with priority %d\n", version, resource.Kind, orderFromDefaultCatalog)
 			}
 			return orderFromDefaultCatalog
 		} else {
-			return kindVersion.Order
+			return kindVersion.GetOrder()
 		}
 	}
 }

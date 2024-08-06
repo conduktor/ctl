@@ -97,7 +97,7 @@ func Make(apiParameter ApiParameter) (*Client, error) {
 	err := result.initKindFromApi()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Cannot access the Conduktor API: %s\nUsing offline defaults.\n", err)
-		result.kinds = schema.DefaultKind()
+		result.kinds = schema.ConsoleDefaultKind()
 	}
 
 	return result, nil
@@ -106,7 +106,7 @@ func Make(apiParameter ApiParameter) (*Client, error) {
 func MakeFromEnv() (*Client, error) {
 	apiParameter := ApiParameter{
 		BaseUrl:     os.Getenv("CDK_BASE_URL"),
-		Debug:       strings.ToLower(os.Getenv("CDK_DEBUG")) == "true",
+		Debug:       utils.CdkDebug(),
 		Cert:        os.Getenv("CDK_CERT"),
 		Cacert:      os.Getenv("CDK_CACERT"),
 		ApiKey:      os.Getenv("CDK_API_KEY"),
@@ -201,11 +201,15 @@ func (client *Client) Apply(resource *resource.Resource, dryMode bool) (string, 
 	return upsertResponse.UpsertResult, nil
 }
 
-func (client *Client) Get(kind *schema.Kind, parentPathValue []string) ([]resource.Resource, error) {
+func (client *Client) Get(kind *schema.Kind, parentPathValue []string, queryParams map[string]string) ([]resource.Resource, error) {
 	var result []resource.Resource
 	client.setApiKeyFromEnvIfNeeded()
 	url := client.baseUrl + kind.ListPath(parentPathValue)
-	resp, err := client.client.R().Get(url)
+	requestBuilder := client.client.R()
+	if queryParams != nil {
+		requestBuilder = requestBuilder.SetQueryParams(queryParams)
+	}
+	resp, err := requestBuilder.Get(url)
 	if err != nil {
 		return result, err
 	} else if resp.IsError() {
@@ -310,7 +314,7 @@ func (client *Client) initKindFromApi() error {
 		return fmt.Errorf("Cannot parse openapi: %s", err)
 	}
 	strict := false
-	client.kinds, err = schema.GetKinds(strict)
+	client.kinds, err = schema.GetConsoleKinds(strict)
 	if err != nil {
 		fmt.Errorf("Cannot extract kinds from openapi: %s", err)
 	}

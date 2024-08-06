@@ -1,0 +1,404 @@
+[
+  {
+    "httpRequest": {
+      "method": "Get",
+      "path": "/gateway/v2/vclusters/vcluster1",
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "{ \"metadata\": { \"name\":\"vcluster1\" }, \"spec\":{\"prefix\":\"vcluster1\"} }",
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Get",
+      "path": "/gateway/v2/gateway-groups",
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "[]",
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Get",
+      "path": "/gateway/v2/gateway-groups/g1",
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "{ \"metadata\": { \"name\":\"g1\" }, \"spec\":{} }",
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Get",
+      "path": "/gateway/v2/vclusters",
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "[]",
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Put",
+      "path": "/gateway/v2/vclusters",
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "\"Created\"",
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Delete",
+      "path": "/gateway/v2/vclusters/vcluster1",
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "\"Deleted\"",
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Put",
+      "path": "/gateway/v2/alias-topics",
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "\"Created\"",
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Put",
+      "path": "/gateway/v2/concentration-rules",
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "\"Created\"",
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Put",
+      "path": "/gateway/v2/gateway-groups",
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "\"Created\"",
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Put",
+      "path": "/gateway/v2/service-accounts",
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "\"Created\"",
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Put",
+      "path": "/gateway/v2/interceptors",
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "\"Created\"",
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "GET",
+      "path": "/gateway/v2/alias-topics",
+      "queryStringParameters": {
+        "vcluster": "mycluster1",
+        "showDefaults": "true",
+        "name": "yo"
+      },
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": [],
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "GET",
+      "path": "/gateway/v2/concentration-rules",
+      "queryStringParameters": {
+        "vcluster": "mycluster1",
+        "showDefaults": "true",
+        "name": "yo"
+      },
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": [],
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "GET",
+      "path": "/gateway/v2/service-accounts",
+      "queryStringParameters": {
+        "vcluster": "mycluster1",
+        "showDefaults": "true",
+        "name": "yo"
+      },
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": [],
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "GET",
+      "path": "/gateway/v2/interceptors",
+      "queryStringParameters": {
+        "vcluster": "mycluster1",
+        "username": "me",
+        "name": "yo",
+        "group": "g1"
+      },
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": [],
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Delete",
+      "path": "/gateway/v2/alias-topics",
+      "body": {
+        "name": "aliastopicname",
+        "vCluster": "v1"
+      },
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "\"Deleted\"",
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Delete",
+      "path": "/gateway/v2/concentration-rules",
+      "body": {
+        "name": "cr1",
+        "vCluster": "v1"
+      },
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "\"Deleted\"",
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Delete",
+      "path": "/gateway/v2/service-accounts",
+      "body": {
+        "name": "s1",
+        "vCluster": "v1"
+      },
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "\"Deleted\"",
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Delete",
+      "path": "/gateway/v2/service-accounts",
+      "body": {
+        "name": "s1",
+        "vCluster": "v1"
+      },
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "\"Deleted\"",
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Delete",
+      "path": "/gateway/v2/interceptors/i1",
+      "body": {
+        "username": "me",
+        "group": "g1",
+        "vCluster": "c1"
+      },
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "\"Deleted\"",
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  }
+]

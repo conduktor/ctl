@@ -9,13 +9,13 @@ func TestKindGetFlag(t *testing.T) {
 
 		kind := Kind{
 			Versions: map[int]KindVersion{
-				1: {
+				1: &ConsoleKindVersion{
 					ParentPathParam: []string{"param-1", "param-2", "param-3"},
 				},
 			},
 		}
 
-		got := kind.GetFlag()
+		got := kind.GetParentFlag()
 		want := []string{"param-1", "param-2", "param-3"}
 
 		if len(got) != len(want) {
@@ -34,13 +34,13 @@ func TestKindGetFlagWhenNoFlag(t *testing.T) {
 	t.Run("converts parent parameters to flags", func(t *testing.T) {
 		kind := Kind{
 			Versions: map[int]KindVersion{
-				1: {
+				1: &ConsoleKindVersion{
 					ParentPathParam: []string{},
 				},
 			},
 		}
 
-		got := kind.GetFlag()
+		got := kind.GetParentFlag()
 
 		if len(got) != 0 {
 			t.Fatalf("got %d flags, want %d", len(got), 0)
@@ -52,7 +52,7 @@ func TestKindListPath(t *testing.T) {
 	t.Run("replaces parent parameters in ListPath", func(t *testing.T) {
 		kind := Kind{
 			Versions: map[int]KindVersion{
-				1: {
+				1: &ConsoleKindVersion{
 					ListPath:        "/ListPath/{param-1}/{param-2}",
 					ParentPathParam: []string{"param-1", "param-2"},
 				},
@@ -70,7 +70,7 @@ func TestKindListPath(t *testing.T) {
 	t.Run("panics when parent paths and parameters length mismatch", func(t *testing.T) {
 		kind := Kind{
 			Versions: map[int]KindVersion{
-				1: {
+				1: &ConsoleKindVersion{
 					ListPath:        "/ListPath/{param1}/{param2}",
 					ParentPathParam: []string{"param1", "param2"},
 				},

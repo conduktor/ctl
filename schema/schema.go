@@ -31,18 +31,19 @@ func New(schema []byte) (*Schema, error) {
 	}, nil
 }
 
-func (s *Schema) GetKinds(strict bool) (map[string]Kind, error) {
+func getKinds[T KindVersion](s *Schema, strict bool, buildKindVersion func(s *Schema, path, kind string, order int, put *v3high.Operation, get *v3high.Operation, strict bool) (T, error)) (map[string]Kind, error) {
 	result := make(map[string]Kind, 0)
 	for path := s.doc.Model.Paths.PathItems.First(); path != nil; path = path.Next() {
 		put := path.Value().Put
-		if put != nil {
+		get := path.Value().Get
+		if put != nil && get != nil {
 			cliTag := findCliTag(path.Value().Put.Tags)
 			if cliTag != "" {
 				tagParsed, err := parseTag(cliTag)
 				if err != nil {
 					return nil, err
 				}
-				newKind, err := buildKindVersion(path.Key(), tagParsed.kind, tagParsed.order, put, strict)
+				newKind, err := buildKindVersion(s, path.Key(), tagParsed.kind, tagParsed.order, put, get, strict)
 				if err != nil {
 					return nil, err
 				}
@@ -61,17 +62,40 @@ func (s *Schema) GetKinds(strict bool) (map[string]Kind, error) {
 	return result, nil
 }
 
-func buildKindVersion(path, kind string, order int, put *v3high.Operation, strict bool) (*KindVersion, error) {
-	newKind := &KindVersion{
-		Name:            kind,
-		ListPath:        path,
-		ParentPathParam: make([]string, 0, len(put.Parameters)),
-		Order:           order,
-	}
-	for _, parameter := range put.Parameters {
-		if parameter.In == "path" && *parameter.Required {
-			newKind.ParentPathParam = append(newKind.ParentPathParam, parameter.Name)
+func (s *Schema) GetConsoleKinds(strict bool) (map[string]Kind, error) {
+	return getKinds(s, strict, buildConsoleKindVersion)
+}
 
+func (s *Schema) GetGatewayKinds(strict bool) (map[string]Kind, error) {
+	return getKinds(s, strict, buildGatewayKindVersion)
+}
+
+func buildConsoleKindVersion(s *Schema, path, kind string, order int, put *v3high.Operation, get *v3high.Operation, strict bool) (*ConsoleKindVersion, error) {
+	newKind := &ConsoleKindVersion{
+		Name:              kind,
+		ListPath:          path,
+		ParentPathParam:   make([]string, 0, len(put.Parameters)),
+		ListQueryParamter: make(map[string]QueryParameterOption, len(get.Parameters)),
+		Order:             order,
+	}
+	for _, putParameter := range put.Parameters {
+		if putParameter.In == "path" && *putParameter.Required {
+			newKind.ParentPathParam = append(newKind.ParentPathParam, putParameter.Name)
+
+		}
+	}
+	for _, getParameter := range get.Parameters {
+		if getParameter.In == "query" {
+			schemaTypes := getParameter.Schema.Schema().Type
+			if len(schemaTypes) == 1 {
+				schemaType := schemaTypes[0]
+				name := getParameter.Name
+				newKind.ListQueryParamter[name] = QueryParameterOption{
+					FlagName: ComputeFlagName(name),
+					Required: *getParameter.Required,
+					Type:     schemaType,
+				}
+			}
 		}
 	}
 	if strict {
@@ -86,6 +110,29 @@ func buildKindVersion(path, kind string, order int, put *v3high.Operation, stric
 		}
 	}
 	return newKind, nil
+}
+
+func buildGatewayKindVersion(s *Schema, path, kind string, order int, put *v3high.Operation, get *v3high.Operation, strict bool) (*GatewayKindVersion, error) {
+	//for the moment there is the same but this might evolve latter
+	consoleKind, err := buildConsoleKindVersion(s, path, kind, order, put, get, strict)
+	if err != nil {
+		return nil, err
+	}
+	var getAvailable = false
+	for path := s.doc.Model.Paths.PathItems.First(); path != nil; path = path.Next() {
+		get := path.Value().Get
+		if get != nil && strings.HasPrefix(path.Key(), consoleKind.ListPath+"/{") {
+			getAvailable = true
+		}
+	}
+	return &GatewayKindVersion{
+		Name:               consoleKind.Name,
+		ListPath:           consoleKind.ListPath,
+		ParentPathParam:    consoleKind.ParentPathParam,
+		ListQueryParameter: consoleKind.ListQueryParamter,
+		GetAvailable:       getAvailable,
+		Order:              consoleKind.Order,
+	}, nil
 }
 
 type tagParseResult struct {
@@ -121,10 +168,17 @@ func parseTag(tag string) (tagParseResult, error) {
 		return tagParseResult{}, fmt.Errorf("Invalid order number in tag: %s", orderStr)
 	}
 
-	return tagParseResult{kind: utils.KebabToUpperCamel(kind), version: version, order: order}, nil
+	finalKind := utils.KebabToUpperCamel(kind)
+	if finalKind == "Vclusters" {
+		finalKind = "VClusters"
+	}
+	return tagParseResult{kind: finalKind, version: version, order: order}, nil
 }
 
-func checkThatPathParamAreInSpec(kind *KindVersion, requestBody *v3high.RequestBody) error {
+func checkThatPathParamAreInSpec(kind *ConsoleKindVersion, requestBody *v3high.RequestBody) error {
+	if len(kind.ParentPathParam) == 0 {
+		return nil
+	}
 	jsonContent, ok := requestBody.Content.Get("application/json")
 	if !ok {
 		return fmt.Errorf("No application/json content for kind %s", kind.Name)
@@ -148,7 +202,7 @@ func checkThatPathParamAreInSpec(kind *KindVersion, requestBody *v3high.RequestB
 	return nil
 }
 
-func checkThatOrderArePresent(kind *KindVersion) error {
+func checkThatOrderArePresent(kind *ConsoleKindVersion) error {
 	if kind.Order == DefaultPriority {
 		return fmt.Errorf("No priority set in schema for kind %s", kind.Name)
 	}

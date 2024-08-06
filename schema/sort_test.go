@@ -11,18 +11,18 @@ func TestSortResources(t *testing.T) {
 	catalog := KindCatalog{
 		"kind1": Kind{
 			Versions: map[int]KindVersion{
-				1: {Order: 1},
+				1: &ConsoleKindVersion{Order: 1},
 			},
 		},
 		"kind2": Kind{
 			Versions: map[int]KindVersion{
-				1: {Order: 2},
+				1: &ConsoleKindVersion{Order: 2},
 			},
 		},
 		"kind3": Kind{
 			Versions: map[int]KindVersion{
-				1: {Order: 3},
-				2: {Order: 4},
+				1: &ConsoleKindVersion{Order: 3},
+				2: &ConsoleKindVersion{Order: 4},
 			},
 		},
 	}

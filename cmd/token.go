@@ -30,7 +30,7 @@ var listAdminCmd = &cobra.Command{
 	Use:  "admin",
 	Args: cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		result, err := apiClient().ListAdminToken()
+		result, err := consoleApiClient().ListAdminToken()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Could not list admin token: %s\n", err)
 			os.Exit(1)
@@ -48,7 +48,7 @@ var listApplicationInstanceTokenCmd = &cobra.Command{
 	Use:  "application-instance",
 	Args: cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		result, err := apiClient().ListApplicationInstanceToken(*applicationInstanceNameForList)
+		result, err := consoleApiClient().ListApplicationInstanceToken(*applicationInstanceNameForList)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Could not list application-instance token: %s\n", err)
 			os.Exit(1)
@@ -86,18 +86,18 @@ var createAdminTokenCmd = &cobra.Command{
 			fmt.Fprintln(os.Stderr, "Please set CDK_USER if you set CDK_PASSWORD")
 			os.Exit(3)
 		} else if username != "" && password != "" {
-			jwtToken, err := apiClient().Login(username, password)
+			jwtToken, err := consoleApiClient().Login(username, password)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Could not login: %s\n", err)
 				os.Exit(4)
 			}
-			apiClient().SetApiKey(jwtToken.AccessToken)
+			consoleApiClient().SetApiKey(jwtToken.AccessToken)
 		} else if os.Getenv("CDK_API_KEY") == "" {
 			fmt.Fprintln(os.Stderr, "Please set CDK_API_KEY or CDK_USER and CDK_PASSWORD")
 			os.Exit(5)
 		}
 
-		result, err := apiClient().CreateAdminToken(args[0])
+		result, err := consoleApiClient().CreateAdminToken(args[0])
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Could not create admin token: %s\n", err)
 			os.Exit(4)
@@ -110,7 +110,7 @@ var createApplicationInstanceTokenCmd = &cobra.Command{
 	Use:  "application-instance --application-instance=myappinstance <token-name>",
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		result, err := apiClient().CreateApplicationInstanceToken(*applicationInstanceNameForCreate, args[0])
+		result, err := consoleApiClient().CreateApplicationInstanceToken(*applicationInstanceNameForCreate, args[0])
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Could not create application-instance token: %s\n", err)
 			os.Exit(1)
@@ -123,7 +123,7 @@ var deleteTokenCmd = &cobra.Command{
 	Use:  "delete <token-uuid>",
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		err := apiClient().DeleteToken(args[0])
+		err := consoleApiClient().DeleteToken(args[0])
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Could not delete token: %s\n", err)
 			os.Exit(1)
