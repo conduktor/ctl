@@ -113,3 +113,11 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduc
 ## License
 
 This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
+
+## Note about `v` in version
+
+Before v0.2.6, versions used to follow the following format `X.Y.Z` like any other conduktor product.
+When the conduktor team started to work on a terraform plugin, we wanted it to use gomod to reuse the client part of the CLI.
+We realize that gomod requires version tags to start with a `v` (see: https://github.com/golang/go/issues/32945).
+Therefore now, conduktor ctl version like any other go project starts with a v
+
