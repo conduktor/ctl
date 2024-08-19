@@ -26,11 +26,11 @@ func TestGetKindWithYamlFromGateway(t *testing.T) {
 		}
 
 		expected := KindCatalog{
-			"VClusters": {
+			"VirtualCluster": {
 				Versions: map[int]KindVersion{
 					2: &GatewayKindVersion{
-						Name:               "VClusters",
-						ListPath:           "/gateway/v2/vclusters",
+						Name:               "VirtualCluster",
+						ListPath:           "/gateway/v2/virtual-cluster",
 						ParentPathParam:    []string{},
 						ListQueryParameter: map[string]QueryParameterOption{},
 						GetAvailable:       true,
@@ -38,11 +38,11 @@ func TestGetKindWithYamlFromGateway(t *testing.T) {
 					},
 				},
 			},
-			"AliasTopics": {
+			"AliasTopic": {
 				Versions: map[int]KindVersion{
 					2: &GatewayKindVersion{
-						Name:            "AliasTopics",
-						ListPath:        "/gateway/v2/alias-topics",
+						Name:            "AliasTopic",
+						ListPath:        "/gateway/v2/alias-topic",
 						ParentPathParam: []string{},
 						ListQueryParameter: map[string]QueryParameterOption{
 							"name": {
@@ -66,11 +66,11 @@ func TestGetKindWithYamlFromGateway(t *testing.T) {
 					},
 				},
 			},
-			"ConcentrationRules": {
+			"ConcentrationRule": {
 				Versions: map[int]KindVersion{
 					2: &GatewayKindVersion{
-						Name:            "ConcentrationRules",
-						ListPath:        "/gateway/v2/concentration-rules",
+						Name:            "ConcentrationRule",
+						ListPath:        "/gateway/v2/concentration-rule",
 						ParentPathParam: []string{},
 						ListQueryParameter: map[string]QueryParameterOption{
 							"vcluster": {
@@ -94,11 +94,11 @@ func TestGetKindWithYamlFromGateway(t *testing.T) {
 					},
 				},
 			},
-			"GatewayGroups": {
+			"GatewayGroup": {
 				Versions: map[int]KindVersion{
 					2: &GatewayKindVersion{
-						Name:            "GatewayGroups",
-						ListPath:        "/gateway/v2/gateway-groups",
+						Name:            "GatewayGroup",
+						ListPath:        "/gateway/v2/group",
 						ParentPathParam: []string{},
 						ListQueryParameter: map[string]QueryParameterOption{
 							"showDefaults": {
@@ -112,11 +112,11 @@ func TestGetKindWithYamlFromGateway(t *testing.T) {
 					},
 				},
 			},
-			"ServiceAccounts": {
+			"GatewayServiceAccount": {
 				Versions: map[int]KindVersion{
 					2: &GatewayKindVersion{
-						Name:            "ServiceAccounts",
-						ListPath:        "/gateway/v2/service-accounts",
+						Name:            "GatewayServiceAccount",
+						ListPath:        "/gateway/v2/service-account",
 						ParentPathParam: []string{},
 						ListQueryParameter: map[string]QueryParameterOption{
 							"name": {
@@ -145,11 +145,11 @@ func TestGetKindWithYamlFromGateway(t *testing.T) {
 					},
 				},
 			},
-			"Interceptors": {
+			"Interceptor": {
 				Versions: map[int]KindVersion{
 					2: &GatewayKindVersion{
-						Name:            "Interceptors",
-						ListPath:        "/gateway/v2/interceptors",
+						Name:            "Interceptor",
+						ListPath:        "/gateway/v2/interceptor",
 						ParentPathParam: []string{},
 						ListQueryParameter: map[string]QueryParameterOption{
 							"username": {

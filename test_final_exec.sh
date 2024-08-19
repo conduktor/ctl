@@ -30,18 +30,18 @@ main() {
 
 	# Gateway
 	docker compose -f docker/docker-compose.yml run --rm conduktor apply -f /test_resource_gw.yml
-	docker compose -f docker/docker-compose.yml run --rm conduktor delete VClusters vcluster1
-	docker compose -f docker/docker-compose.yml run --rm conduktor get VClusters
-	docker compose -f docker/docker-compose.yml run --rm conduktor get VClusters vcluster1
-	docker compose -f docker/docker-compose.yml run --rm conduktor get GatewayGroups
-	docker compose -f docker/docker-compose.yml run --rm conduktor get GatewayGroups g1
-	docker compose -f docker/docker-compose.yml run --rm conduktor get AliasTopics --show-defaults --name=yo --vcluster=mycluster1
-	docker compose -f docker/docker-compose.yml run --rm conduktor get ConcentrationRules --show-defaults --name=yo --vcluster=mycluster1
-	docker compose -f docker/docker-compose.yml run --rm conduktor get ServiceAccounts --show-defaults --name=yo --vcluster=mycluster1
-	docker compose -f docker/docker-compose.yml run --rm conduktor get interceptors --group=g1 --name=yo --username=me --vcluster=mycluster1
+	docker compose -f docker/docker-compose.yml run --rm conduktor delete VirtualCluster vcluster1
+	docker compose -f docker/docker-compose.yml run --rm conduktor get VirtualCluster
+	docker compose -f docker/docker-compose.yml run --rm conduktor get VirtualCluster vcluster1
+	docker compose -f docker/docker-compose.yml run --rm conduktor get GatewayGroup
+	docker compose -f docker/docker-compose.yml run --rm conduktor get GatewayGroup g1
+	docker compose -f docker/docker-compose.yml run --rm conduktor get AliasTopic --show-defaults --name=yo --vcluster=mycluster1
+	docker compose -f docker/docker-compose.yml run --rm conduktor get ConcentrationRule --show-defaults --name=yo --vcluster=mycluster1
+	docker compose -f docker/docker-compose.yml run --rm conduktor get GatewayServiceAccount --show-defaults --name=yo --vcluster=mycluster1
+	docker compose -f docker/docker-compose.yml run --rm conduktor get interceptor --group=g1 --name=yo --username=me --vcluster=mycluster1
 	docker compose -f docker/docker-compose.yml run --rm conduktor delete aliastopic aliastopicname --vcluster=v1
 	docker compose -f docker/docker-compose.yml run --rm conduktor delete concentrationrule cr1 --vcluster=v1
-	docker compose -f docker/docker-compose.yml run --rm conduktor delete serviceaccounts s1 --vcluster=v1
+	docker compose -f docker/docker-compose.yml run --rm conduktor delete gatewayserviceaccount s1 --vcluster=v1
 }
 
 main "$@"

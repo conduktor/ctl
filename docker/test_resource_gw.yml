@@ -1,20 +1,20 @@
 ---
 apiVersion: gateway/v2
-kind: VClusters
+kind: VirtualCluster
 metadata:
   name: vcluster1
 spec:
   prefix: vcluster1
 ---
 apiVersion: gateway/v2
-kind: VClusters
+kind: VirtualCluster
 metadata:
   name: vcluster2
 spec:
   prefix: vcluster2
 ---
 apiVersion: gateway/v2
-kind: AliasTopics
+kind: AliasTopic
 metadata:
   name: alias1
   vCluster: vcluster1
@@ -22,7 +22,7 @@ spec:
   physicalName: vcluster1backtopic
 ---
 apiVersion: gateway/v2
-kind: AliasTopics
+kind: AliasTopic
 metadata:
   name: alias2
   vCluster: vcluster1
@@ -30,14 +30,14 @@ spec:
   physicalName: vcluster1backtopic
 ---
 apiVersion: gateway/v2
-kind: AliasTopics
+kind: AliasTopic
 metadata:
   name: alias
 spec:
   physicalName: vcluster1backtopic
 ---
 apiVersion: gateway/v2
-kind: ConcentrationRules
+kind: ConcentrationRule
 metadata:
   name: rule1
   vCluster: vcluster1
@@ -47,7 +47,7 @@ spec:
   autoManaged: true
 ---
 apiVersion: gateway/v2
-kind: ConcentrationRules
+kind: ConcentrationRule
 metadata:
   name: rule2
   vCluster: vcluster1
@@ -56,7 +56,7 @@ spec:
   physicalTopicName: yolo
 ---
 apiVersion: gateway/v2
-kind: GatewayGroups
+kind: GatewayGroup
 metadata:
   name: group1
 spec:
@@ -66,7 +66,7 @@ spec:
   externalGroups: ["ext_g1", "ext_g2"]
 ---
 apiVersion: gateway/v2
-kind: GatewayGroups
+kind: GatewayGroup
 metadata:
   name: group2
 spec:
@@ -75,7 +75,7 @@ spec:
       name: toto1
   externalGroups: ["ext_g1", "ext_g2"]
 ---
-kind: Interceptors
+kind: Interceptor
 apiVersion: gateway/v2
 metadata:
   name: enforce-partition-limit
@@ -86,7 +86,7 @@ spec:
     topic: "client_topic_toto"
     action: "BLOCK"
 ---
-kind: Interceptors
+kind: Interceptor
 apiVersion: gateway/v2
 metadata:
   name: fieldlevelencryption
@@ -113,14 +113,14 @@ spec:
   }
 ---
 apiVersion: gateway/v2
-kind: ServiceAccounts
+kind: GatewayServiceAccount
 metadata:
   name: user1
 spec:
   type: Local
 ---
 apiVersion: gateway/v2
-kind: ServiceAccounts
+kind: GatewayServiceAccount
 metadata:
   name: user1
   vCluster: vcluster1
@@ -128,7 +128,7 @@ spec:
   type: Local
 ---
 apiVersion: gateway/v2
-kind: ServiceAccounts
+kind: GatewayServiceAccount
 metadata:
   name: user2
   vCluster: vcluster1

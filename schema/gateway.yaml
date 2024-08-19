@@ -29,7 +29,7 @@ tags:
     Example:
 
     ```shell
-    curl -X GET "https://your.gateway-api.host/gateway/v2/vclusters" \
+    curl -X GET "https://your.gateway-api.host/gateway/v2/virtual-cluster" \
           -H "accept: application/json" \
           --user "admin:password"
     ```
@@ -43,15 +43,15 @@ tags:
 
     The following kinds are available in the Conduktor Gateway API:
 
-    * `VCluster`
+    * `VirtualCluster`
     * `AliasTopic`
     * `ConcentratedTopic`
     * `ConcentrationRule`
     * `Interceptor`
     * `Plugin`
-    * `ServiceAccount`
+    * `GatewayServiceAccount`
     * `Token`
-    * `Group`
+    * `GatewayGroup`
 - name: Api Groups
   description: |+
     ### Definition
@@ -59,16 +59,14 @@ tags:
     API groups a set of resources that share the same API path prefix. They are used to organize the API endpoints and the
     resources they manage.
     The versioning is set at this level, so all the resources in the same group share the same version.
-    Kinds of a same group can be nested paths in the API, for example, the `vcluster` kind can have an `alias-topic` kind
-    nested in it.
 
     ### Conduktor Api Groups
 
     The Gateway API consist of a single API group right now (`gateway`), and it manages the following resources:
 
-    | Api Group | Kinds                                                                                                                                              |
-    |-----------|----------------------------------------------------------------------------------------------------------------------------------------------------|
-    | `gateway` | `vclusters`, `alias-topics`, `concentrated-topics`, `concentration-rules`, </br> `interceptors`, `plugins`, `service-accounts`, `groups`, `tokens` |
+    | Api Group  | Version | Kinds                                                                                                                                                     |
+    |------------|---------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
+    | `/gateway` | `/v2`   | `/virtual-cluster`, `/alias-topic`, `/concentrated-topic`, `/concentration-rule`, </br> `/interceptor`, `/plugin`, `/service-account`, `/group`, `/token` |
 
 
 
@@ -101,17 +99,19 @@ tags:
 
     __Non-unique names__:
     When a `name` is not enough to uniquely identify a resource, the GET and DELETE endpoint are different
-    The GET by name is replaced by query parameters (returning lists or the searched item if the criterias are the elements of the key), and the DELETE by name is replaced by a DELETE with a body.
+    The GET by name is replaced by query parameters (returning lists or the searched item if the criteria are the elements
+    of the key), and the DELETE by name is replaced by a DELETE with a body.
     For example, an `alias-topic` is identified by its `name` and the `vCluster` gives the following endpoints:
 
-    * `GET /gateway/v2/vclusters/{name}/alias-topics?name={name}&vcluster={vcluster}`
-    * `PUT /gateway/v2/vclusters/{name}/alias-topics`
-    * `DELETE /gateway/v2/vclusters/{name}/alias-topics` with a body containing the `name` and the `vCluster`
+    * `GET /gateway/v2/alias-topic?name={name}&vcluster={vcluster}`
+    * `PUT /gateway/v2/alias-topic`
+    * `DELETE /gateway/v2/alias-topic` with a body containing the `name` and the `vCluster`
 
     ### Other conventions
 
     * All requests and responses are in JSON and should have their `content-type` header set to `application/json`
-    * Every kind has a pluralized name (e.g. `vclusters` for the `VCluster` kind) that is used in the endpoint path.
+    * Every kind has a lower-cased name (e.g. `virtual-cluster` for the `VirtualCluster` kind) that is used in the endpoint
+      path.
     * Errors have a standard format:
         * The HTTP status code is used to indicate the type of error.
         * The response body contains a common JSON object for every error:
@@ -120,12 +120,12 @@ tags:
             * `cause`: additional information about the error.
     * All timestamps are in ISO 8601 format.
 
-- name: tokens
+- name: token
   description: |+
     ### Definition
 
     The token group contains just a utility endpoint to generate a token for a given Local ServiceAccount (on a given
-    vCluster, or `passthrough` if omitted).
+    virtual cluster, or `passthrough` if omitted).
 
     This token can be used to authenticate against the Gateway API in the `sasl_plaintext` authentication mode.
     More information on this case here : https://docs.conduktor.io/gateway/concepts/Clients/#sasl_plaintext
@@ -138,7 +138,7 @@ tags:
 
     N/A.
 
-- name: cli_vclusters_gateway_v2_7
+- name: cli_virtual-cluster_gateway_v2_7
   description: |+
     ### Definition
 
@@ -157,11 +157,11 @@ tags:
 
     ### Schema
 
-    <SchemaDefinition schemaRef="#/components/schemas/VCluster" />
+    <SchemaDefinition schemaRef="#/components/schemas/VirtualCluster" />
 
 
-  x-displayName: vclusters
-- name: cli_alias-topics_gateway_v2_8
+  x-displayName: virtual-cluster
+- name: cli_alias-topic_gateway_v2_8
   description: |+
     ### Definition
 
@@ -175,15 +175,15 @@ tags:
 
     ### Identity
 
-    An alias topic is identified by the `name` inside a `vcluster` (`passthrough` if omitted).
+    An alias topic is identified by the `name` inside a `vCluster` (`passthrough` if omitted).
 
     ### Schema
 
     <SchemaDefinition schemaRef="#/components/schemas/AliasTopic" />
 
 
-  x-displayName: alias-topics
-- name: cli_concentrated-topics_gateway_v2_0
+  x-displayName: alias-topic
+- name: cli_concentrated-topic_gateway_v2_0
   description: |+
     ### Definition
 
@@ -204,8 +204,8 @@ tags:
     <SchemaDefinition schemaRef="#/components/schemas/ConcentratedTopic" />
 
 
-  x-displayName: concentrated-topics
-- name: cli_concentration-rules_gateway_v2_9
+  x-displayName: concentrated-topic
+- name: cli_concentration-rule_gateway_v2_9
   description: |+
     ### Definition
 
@@ -221,15 +221,15 @@ tags:
 
     ### Identity
 
-    A concentration rule is identified by its name inside a vCluster.
+    A concentration rule is identified by its `name` inside a `vCluster`.
 
     ### Schema
 
     <SchemaDefinition schemaRef="#/components/schemas/ConcentrationRule" />
 
 
-  x-displayName: concentration-rules
-- name: cli_interceptors_gateway_v2_12
+  x-displayName: concentration-rule
+- name: cli_interceptor_gateway_v2_12
   description: |+
     ### Definition
 
@@ -253,8 +253,8 @@ tags:
     <SchemaDefinition schemaRef="#/components/schemas/Interceptor"/>
 
 
-  x-displayName: interceptors
-- name: plugins
+  x-displayName: interceptor
+- name: plugin
   description: |+
     ### Definition
 
@@ -276,7 +276,7 @@ tags:
     <SchemaDefinition schemaRef="#/components/schemas/Plugin" />
 
 
-- name: cli_service-accounts_gateway_v2_11
+- name: cli_gateway-service-account_gateway_v2_11
   description: |+
     ### Definition
 
@@ -290,10 +290,10 @@ tags:
 
     ### Identity
 
-    The service account is identified by the `name` and the `vClusterName`.
+    The service account is identified by the `name` and the `vCluster`.
 
-    The vCluster name is not mandatory, but if omitted, the `passthrough` vCluster will be used.
-    Thus, a service account is always associated with one and only one vCluster.
+    The `vCluster` name is not mandatory, but if omitted, the `passthrough` virtual cluster will be used.
+    Thus, a service account is always associated with one and only one virtual cluster.
 
     ### Local and external service accounts
 
@@ -309,15 +309,15 @@ tags:
     To create an external service account you must provide have an `principal` that is the name of the user in the
     external system.
     It can be equal or not to the service account `name` (up to you), but note that __the `principal` must be unique
-    accross all the vClusters__.
+    across all virtual clusters__.
 
     ### Schema
 
-    <SchemaDefinition schemaRef="#/components/schemas/ServiceAccount" />
+    <SchemaDefinition schemaRef="#/components/schemas/GatewayServiceAccount" />
 
 
-  x-displayName: service-accounts
-- name: cli_gateway-groups_gateway_v2_10
+  x-displayName: service-account
+- name: cli_gateway-group_gateway_v2_10
   description: |+
     ### Definition
 
@@ -332,7 +332,7 @@ tags:
 
     ### Identity
 
-    The group is identified by its name (unique across all the vClusters).
+    The group is identified by its `name` (unique across all the virtual clusters).
 
     A group can be added external groups (coming from LDAP, OIDC claims etc.) which will allow the Gateway to bind them on the Gateway Group.
 
@@ -341,29 +341,29 @@ tags:
     <SchemaDefinition schemaRef="#/components/schemas/GatewayGroup" />
 
 
-  x-displayName: gateway-groups
+  x-displayName: group
 paths:
-  /gateway/v2/tokens:
+  /gateway/v2/token:
     post:
       tags:
-      - tokens
+      - token
       description: |2+
 
 
         [![Beta](https://img.shields.io/badge/Lifecycle-Beta-orange)](#tag/Versioning)
 
-        Create a new token for given service account and a given vcluster.
+        Create a new token for given service account and a given virtual cluster.
 
-        If the vcluster is not provided, the token will be created for the passthrough vcluster.
+        If the vcluster is not provided, the token will be created for the passthrough virtual cluster.
 
-      operationId: Generate a token for a service account on a vcluster
+      operationId: Generate a token for a service account on a virtual cluster
       requestBody:
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/TokenRequest'
             example:
-              vClusterName: vcluster1
+              vCluster: vcluster1
               username: user1
               lifeTimeSeconds: 3600
         required: true
@@ -423,21 +423,21 @@ paths:
         source: |-
           curl \
             --request POST \
-            --url 'http://localhost:8888/gateway/v2/tokens' \
+            --url 'http://localhost:8888/gateway/v2/token' \
             --header 'Authorization: Basic YWRtaW46YWRtaW4=' \
             --header 'Content-Type: application/json' \
-            --data-raw '{"vClusterName":"vcluster1","username":"user1","lifeTimeSeconds":3600000}'
-  /gateway/v2/vclusters:
+            --data-raw '{"vCluster":"vcluster1","username":"user1","lifeTimeSeconds":3600000}'
+  /gateway/v2/virtual-cluster:
     get:
       tags:
-      - cli_vclusters_gateway_v2_7
+      - cli_virtual-cluster_gateway_v2_7
       description: |2+
 
         [![Beta](https://img.shields.io/badge/Lifecycle-Beta-orange)](#tag/Versioning)
 
-        List the vclusters
+        List the virtual clusters
 
-      operationId: List the vclusters
+      operationId: List the virtual clusters
       responses:
         '200':
           description: ''
@@ -447,14 +447,18 @@ paths:
                 type: array
                 uniqueItems: true
                 items:
-                  $ref: '#/components/schemas/VCluster'
+                  $ref: '#/components/schemas/VirtualCluster'
               example:
-              - kind: VClusters
+              - kind: VirtualCluster
                 apiVersion: gateway/v2
                 metadata:
                   name: vcluster1
                 spec:
                   prefix: vcluster1
+                  aclEnabled: false
+                  superUsers:
+                  - username1
+                  - username2
         '401':
           description: The given credentials are not valid
           content:
@@ -478,18 +482,18 @@ paths:
         source: |-
           curl \
             --request GET \
-            --url 'http://localhost:8888/gateway/v2/vclusters' \
+            --url 'http://localhost:8888/gateway/v2/virtual-cluster' \
             --header 'Authorization: Basic YWRtaW46YWRtaW4='
     put:
       tags:
-      - cli_vclusters_gateway_v2_7
+      - cli_virtual-cluster_gateway_v2_7
       description: |2+
 
         [![Beta](https://img.shields.io/badge/Lifecycle-Beta-orange)](#tag/Versioning)
 
-        Upsert a vcluster
+        Upsert a virtual cluster
 
-      operationId: Upsert a vcluster
+      operationId: Upsert a virtual cluster
       parameters:
       - name: dryMode
         in: query
@@ -503,14 +507,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/VCluster'
+              $ref: '#/components/schemas/VirtualCluster'
             example:
-              kind: VClusters
+              kind: VirtualCluster
               apiVersion: gateway/v2
               metadata:
                 name: vcluster1
               spec:
                 prefix: vcluster1
+                aclEnabled: false
+                superUsers:
+                - username1
+                - username2
         required: true
       responses:
         '200':
@@ -518,15 +526,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApplyResult_VCluster'
+                $ref: '#/components/schemas/ApplyResult_VirtualCluster'
               example:
                 resource:
-                  kind: VClusters
+                  kind: VirtualCluster
                   apiVersion: gateway/v2
                   metadata:
                     name: vcluster1
                   spec:
                     prefix: vcluster1
+                    aclEnabled: false
+                    superUsers:
+                    - username1
+                    - username2
                 upsertResult: Updated
         '400':
           description: Wrong format or usage of reserved keywords (e.g. passthrough)
@@ -545,13 +557,13 @@ paths:
               example:
                 title: The given credentials are not valid
         '409':
-          description: The given prefix is already used by another vcluster
+          description: The given prefix is already used by another virtual cluster
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Conflict'
               example:
-                title: The given prefix is already used by another vcluster
+                title: The given prefix is already used by another virtual cluster
         '500':
           description: An unexpected error occurred in the server
           content:
@@ -567,34 +579,39 @@ paths:
         source: |-
           curl \
             --request PUT \
-            --url 'http://localhost:8888/gateway/v2/vclusters?dryMode=false' \
+            --url 'http://localhost:8888/gateway/v2/virtual-cluster?dryMode=false' \
             --header 'Authorization: Basic YWRtaW46YWRtaW4=' \
             --header 'Content-Type: application/json' \
             --data-raw '{
-            "kind" : "VClusters",
+            "kind" : "VirtualCluster",
             "apiVersion" : "gateway/v2",
             "metadata" : {
               "name" : "vcluster1"
             },
             "spec" : {
-              "prefix" : "vcluster1"
+              "prefix" : "vcluster1",
+              "aclEnabled" : false,
+              "superUsers" : [
+                "username1",
+                "username2"
+              ]
             }
           }'
-  /gateway/v2/vclusters/{vClusterName}:
+  /gateway/v2/virtual-cluster/{vCluster}:
     get:
       tags:
-      - cli_vclusters_gateway_v2_7
+      - cli_virtual-cluster_gateway_v2_7
       description: |2+
 
         [![Beta](https://img.shields.io/badge/Lifecycle-Beta-orange)](#tag/Versioning)
 
-        Get a vcluster
+        Get a virtual cluster
 
-      operationId: Get a vcluster
+      operationId: Get a virtual cluster
       parameters:
-      - name: vClusterName
+      - name: vCluster
         in: path
-        description: The name of the vcluster
+        description: The name of the virtual cluster
         required: true
         schema:
           type: string
@@ -604,14 +621,18 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/VCluster'
+                $ref: '#/components/schemas/VirtualCluster'
               example:
-                kind: VClusters
+                kind: VirtualCluster
                 apiVersion: gateway/v2
                 metadata:
                   name: vcluster1
                 spec:
                   prefix: vcluster1
+                  aclEnabled: false
+                  superUsers:
+                  - username1
+                  - username2
         '401':
           description: The given credentials are not valid
           content:
@@ -621,13 +642,13 @@ paths:
               example:
                 title: The given credentials are not valid
         '404':
-          description: The given vcluster does not exist
+          description: The given virtual cluster does not exist
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotFound'
               example:
-                title: The given vcluster does not exist
+                title: The given virtual cluster does not exist
         '500':
           description: An unexpected error occurred in the server
           content:
@@ -643,22 +664,22 @@ paths:
         source: |-
           curl \
             --request GET \
-            --url 'http://localhost:8888/gateway/v2/vclusters/vcluster1' \
+            --url 'http://localhost:8888/gateway/v2/virtual-cluster/vcluster1' \
             --header 'Authorization: Basic YWRtaW46YWRtaW4='
     delete:
       tags:
-      - cli_vclusters_gateway_v2_7
+      - cli_virtual-cluster_gateway_v2_7
       description: |2+
 
         [![Beta](https://img.shields.io/badge/Lifecycle-Beta-orange)](#tag/Versioning)
 
-        Delete a vcluster
+        Delete a virtual cluster
 
-      operationId: Delete a vcluster
+      operationId: Delete a virtual cluster
       parameters:
-      - name: vClusterName
+      - name: vCluster
         in: path
-        description: The name of the vcluster
+        description: The name of the virtual cluster
         required: true
         schema:
           type: string
@@ -666,13 +687,13 @@ paths:
         '204':
           description: ''
         '400':
-          description: Default passthrough vcluster cannot be deleted
+          description: Default `passthrough` virtual cluster cannot be deleted
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/BadRequest'
               example:
-                title: Default passthrough vcluster cannot be deleted
+                title: Default `passthrough` virtual cluster cannot be deleted
         '401':
           description: The given credentials are not valid
           content:
@@ -682,22 +703,22 @@ paths:
               example:
                 title: The given credentials are not valid
         '404':
-          description: The given vcluster does not exist
+          description: The given virtual cluster does not exist
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotFound'
               example:
-                title: The given vcluster does not exist
+                title: The given virtual cluster does not exist
         '409':
-          description: The given vcluster has references (logical topics, interceptors,
+          description: The given virtual cluster has references (logical topics, interceptors,
             concentration rules, service accounts) and cannot be deleted
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Conflict'
               example:
-                title: The given vcluster has references (logical topics, interceptors,
+                title: The given virtual cluster has references (logical topics, interceptors,
                   concentration rules, service accounts) and cannot be deleted
         '500':
           description: An unexpected error occurred in the server
@@ -714,23 +735,23 @@ paths:
         source: |-
           curl \
             --request DELETE \
-            --url 'http://localhost:8888/gateway/v2/vclusters/vcluster1' \
+            --url 'http://localhost:8888/gateway/v2/virtual-cluster/vcluster1' \
             --header 'Authorization: Basic YWRtaW46YWRtaW4='
-  /gateway/v2/alias-topics:
+  /gateway/v2/alias-topic:
     get:
       tags:
-      - cli_alias-topics_gateway_v2_8
+      - cli_alias-topic_gateway_v2_8
       description: |2+
 
         [![Beta](https://img.shields.io/badge/Lifecycle-Beta-orange)](#tag/Versioning)
 
-        List the alias topics of a vcluster
+        List the alias topics of a virtual cluster
 
       operationId: List the alias topics
       parameters:
       - name: vcluster
         in: query
-        description: The vCluster filter
+        description: The virtual cluster filter
         required: false
         schema:
           type: string
@@ -758,7 +779,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/AliasTopic'
               example:
-              - kind: AliasTopics
+              - kind: AliasTopic
                 apiVersion: gateway/v2
                 metadata:
                   name: name1
@@ -782,13 +803,13 @@ paths:
               example:
                 title: The given credentials are not valid
         '404':
-          description: The given vCluster does not exist
+          description: The given virtual cluster does not exist
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotFound'
               example:
-                title: The given vCluster does not exist
+                title: The given virtual cluster does not exist
         '500':
           description: An unexpected error occurred in the server
           content:
@@ -804,16 +825,16 @@ paths:
         source: |-
           curl \
             --request GET \
-            --url 'http://localhost:8888/gateway/v2/alias-topics?showDefaults=false' \
+            --url 'http://localhost:8888/gateway/v2/alias-topic?showDefaults=false' \
             --header 'Authorization: Basic YWRtaW46YWRtaW4='
     put:
       tags:
-      - cli_alias-topics_gateway_v2_8
+      - cli_alias-topic_gateway_v2_8
       description: |2+
 
         [![Beta](https://img.shields.io/badge/Lifecycle-Beta-orange)](#tag/Versioning)
 
-        Upsert an alias topic in a vcluster
+        Upsert an alias topic in a virtual cluster
 
       operationId: Upsert an alias topic
       parameters:
@@ -831,7 +852,7 @@ paths:
             schema:
               $ref: '#/components/schemas/AliasTopic'
             example:
-              kind: AliasTopics
+              kind: AliasTopic
               apiVersion: gateway/v2
               metadata:
                 name: name1
@@ -848,7 +869,7 @@ paths:
                 $ref: '#/components/schemas/ApplyResult_AliasTopic'
               example:
                 resource:
-                  kind: AliasTopics
+                  kind: AliasTopic
                   apiVersion: gateway/v2
                   metadata:
                     name: name1
@@ -873,13 +894,13 @@ paths:
               example:
                 title: The given credentials are not valid
         '404':
-          description: The given vCluster does not exist
+          description: The given virtual cluster does not exist
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotFound'
               example:
-                title: The given vCluster does not exist
+                title: The given virtual cluster does not exist
         '500':
           description: An unexpected error occurred in the server
           content:
@@ -895,11 +916,11 @@ paths:
         source: |-
           curl \
             --request PUT \
-            --url 'http://localhost:8888/gateway/v2/alias-topics?dryMode=false' \
+            --url 'http://localhost:8888/gateway/v2/alias-topic?dryMode=false' \
             --header 'Authorization: Basic YWRtaW46YWRtaW4=' \
             --header 'Content-Type: application/json' \
             --data-raw '{
-            "kind" : "AliasTopics",
+            "kind" : "AliasTopic",
             "apiVersion" : "gateway/v2",
             "metadata" : {
               "name" : "name1",
@@ -911,12 +932,12 @@ paths:
           }'
     delete:
       tags:
-      - cli_alias-topics_gateway_v2_8
+      - cli_alias-topic_gateway_v2_8
       description: |2+
 
         [![Beta](https://img.shields.io/badge/Lifecycle-Beta-orange)](#tag/Versioning)
 
-        Delete an alias topic in a vcluster
+        Delete an alias topic in a virtual cluster
 
       operationId: Delete an alias topic
       requestBody:
@@ -945,13 +966,13 @@ paths:
               example:
                 title: The given credentials are not valid
         '404':
-          description: The given name does not exist in the given vCluster
+          description: The given name does not exist in the given virtual cluster
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotFound'
               example:
-                title: The given name does not exist in the given vCluster
+                title: The given name does not exist in the given virtual cluster
         '500':
           description: An unexpected error occurred in the server
           content:
@@ -967,17 +988,17 @@ paths:
         source: |-
           curl \
             --request DELETE \
-            --url 'http://localhost:8888/gateway/v2/alias-topics' \
+            --url 'http://localhost:8888/gateway/v2/alias-topic' \
             --header 'Authorization: Basic YWRtaW46YWRtaW4=' \
             --header 'Content-Type: application/json' \
             --data-raw '{
             "name" : "name1",
             "vCluster" : "vCluster1"
           }'
-  /gateway/v2/concentrated-topics:
+  /gateway/v2/concentrated-topic:
     get:
       tags:
-      - cli_concentrated-topics_gateway_v2_0
+      - cli_concentrated-topic_gateway_v2_0
       description: |2+
 
         [![Beta](https://img.shields.io/badge/Lifecycle-Beta-orange)](#tag/Versioning)
@@ -988,7 +1009,7 @@ paths:
       parameters:
       - name: vcluster
         in: query
-        description: The vCluster filter
+        description: The virtual cluster filter
         required: false
         schema:
           type: string
@@ -1016,7 +1037,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/ConcentratedTopic'
               example:
-              - kind: concentrated-topics
+              - kind: ConcentratedTopic
                 apiVersion: gateway/v2
                 metadata:
                   name: name1
@@ -1040,13 +1061,13 @@ paths:
               example:
                 title: The given credentials are not valid
         '404':
-          description: The given vCluster does not exist
+          description: The given virtual cluster does not exist
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotFound'
               example:
-                title: The given vCluster does not exist
+                title: The given virtual cluster does not exist
         '500':
           description: An unexpected error occurred in the server
           content:
@@ -1062,12 +1083,12 @@ paths:
         source: |-
           curl \
             --request GET \
-            --url 'http://localhost:8888/gateway/v2/concentrated-topics?showDefaults=false' \
+            --url 'http://localhost:8888/gateway/v2/concentrated-topic?showDefaults=false' \
             --header 'Authorization: Basic YWRtaW46YWRtaW4='
-  /gateway/v2/concentration-rules:
+  /gateway/v2/concentration-rule:
     get:
       tags:
-      - cli_concentration-rules_gateway_v2_9
+      - cli_concentration-rule_gateway_v2_9
       description: |2+
 
         [![Beta](https://img.shields.io/badge/Lifecycle-Beta-orange)](#tag/Versioning)
@@ -1078,7 +1099,7 @@ paths:
       parameters:
       - name: vcluster
         in: query
-        description: The vCluster filter
+        description: The virtual cluster filter
         required: false
         schema:
           type: string
@@ -1106,7 +1127,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/ConcentrationRule'
               example:
-              - kind: ConcentrationRules
+              - kind: ConcentrationRule
                 apiVersion: gateway/v2
                 metadata:
                   name: concentrationRule1
@@ -1134,13 +1155,13 @@ paths:
               example:
                 title: The given credentials are not valid
         '404':
-          description: The given vCluster does not exist
+          description: The given virtual cluster does not exist
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotFound'
               example:
-                title: The given vCluster does not exist
+                title: The given virtual cluster does not exist
         '500':
           description: An unexpected error occurred in the server
           content:
@@ -1156,11 +1177,11 @@ paths:
         source: |-
           curl \
             --request GET \
-            --url 'http://localhost:8888/gateway/v2/concentration-rules?showDefaults=false' \
+            --url 'http://localhost:8888/gateway/v2/concentration-rule?showDefaults=false' \
             --header 'Authorization: Basic YWRtaW46YWRtaW4='
     put:
       tags:
-      - cli_concentration-rules_gateway_v2_9
+      - cli_concentration-rule_gateway_v2_9
       description: |2+
 
         [![Beta](https://img.shields.io/badge/Lifecycle-Beta-orange)](#tag/Versioning)
@@ -1183,7 +1204,7 @@ paths:
             schema:
               $ref: '#/components/schemas/ConcentrationRule'
             example:
-              kind: ConcentrationRules
+              kind: ConcentrationRule
               apiVersion: gateway/v2
               metadata:
                 name: concentrationRule1
@@ -1204,7 +1225,7 @@ paths:
                 $ref: '#/components/schemas/ApplyResult_ConcentrationRule'
               example:
                 resource:
-                  kind: ConcentrationRules
+                  kind: ConcentrationRule
                   apiVersion: gateway/v2
                   metadata:
                     name: concentrationRule1
@@ -1233,13 +1254,13 @@ paths:
               example:
                 title: The given credentials are not valid
         '404':
-          description: The given vCluster does not exist
+          description: The given virtual cluster does not exist
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotFound'
               example:
-                title: The given vCluster does not exist
+                title: The given virtual cluster does not exist
         '500':
           description: An unexpected error occurred in the server
           content:
@@ -1255,11 +1276,11 @@ paths:
         source: |-
           curl \
             --request PUT \
-            --url 'http://localhost:8888/gateway/v2/concentration-rules?dryMode=false' \
+            --url 'http://localhost:8888/gateway/v2/concentration-rule?dryMode=false' \
             --header 'Authorization: Basic YWRtaW46YWRtaW4=' \
             --header 'Content-Type: application/json' \
             --data-raw '{
-            "kind" : "ConcentrationRules",
+            "kind" : "ConcentrationRule",
             "apiVersion" : "gateway/v2",
             "metadata" : {
               "name" : "concentrationRule1",
@@ -1275,7 +1296,7 @@ paths:
           }'
     delete:
       tags:
-      - cli_concentration-rules_gateway_v2_9
+      - cli_concentration-rule_gateway_v2_9
       description: |2+
 
         [![Beta](https://img.shields.io/badge/Lifecycle-Beta-orange)](#tag/Versioning)
@@ -1312,13 +1333,13 @@ paths:
               example:
                 title: The given credentials are not valid
         '404':
-          description: The given vCluster does not exist
+          description: The given name does not exist in the given virtual cluster
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotFound'
               example:
-                title: The given vCluster does not exist
+                title: The given name does not exist in the given virtual cluster
         '500':
           description: An unexpected error occurred in the server
           content:
@@ -1334,17 +1355,17 @@ paths:
         source: |-
           curl \
             --request DELETE \
-            --url 'http://localhost:8888/gateway/v2/concentration-rules' \
+            --url 'http://localhost:8888/gateway/v2/concentration-rule' \
             --header 'Authorization: Basic YWRtaW46YWRtaW4=' \
             --header 'Content-Type: application/json' \
             --data-raw '{
             "name" : "concentrationRule1",
             "vCluster" : "vCluster1"
           }'
-  /gateway/v2/interceptors:
+  /gateway/v2/interceptor:
     get:
       tags:
-      - cli_interceptors_gateway_v2_12
+      - cli_interceptor_gateway_v2_12
       description: |2+
 
         [![Beta](https://img.shields.io/badge/Lifecycle-Beta-orange)](#tag/Versioning)
@@ -1367,7 +1388,7 @@ paths:
           type: boolean
       - name: vcluster
         in: query
-        description: Filter by vCluster
+        description: Filter by virtual cluster
         required: false
         schema:
           type: string
@@ -1379,7 +1400,7 @@ paths:
           type: string
       - name: username
         in: query
-        description: Filter by service-account
+        description: Filter by service account
         required: false
         schema:
           type: string
@@ -1394,7 +1415,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/Interceptor'
               example:
-              - kind: interceptors
+              - kind: Interceptor
                 apiVersion: gateway/v2
                 metadata:
                   name: yellow_cars_filter
@@ -1439,11 +1460,11 @@ paths:
         source: |-
           curl \
             --request GET \
-            --url 'http://localhost:8888/gateway/v2/interceptors?name=interceptor-name&global=true&vcluster=passthrough&group=group1&username=user1' \
+            --url 'http://localhost:8888/gateway/v2/interceptor?name=interceptor-name&global=true&vcluster=passthrough&group=group1&username=user1' \
             --header 'Authorization: Basic YWRtaW46YWRtaW4='
     put:
       tags:
-      - cli_interceptors_gateway_v2_12
+      - cli_interceptor_gateway_v2_12
       description: |2+
 
         [![Beta](https://img.shields.io/badge/Lifecycle-Beta-orange)](#tag/Versioning)
@@ -1466,7 +1487,7 @@ paths:
             schema:
               $ref: '#/components/schemas/Interceptor'
             example:
-              kind: interceptors
+              kind: Interceptor
               apiVersion: gateway/v2
               metadata:
                 name: yellow_cars_filter
@@ -1490,7 +1511,7 @@ paths:
                 $ref: '#/components/schemas/ApplyResult_Interceptor'
               example:
                 resource:
-                  kind: interceptors
+                  kind: Interceptor
                   apiVersion: gateway/v2
                   metadata:
                     name: yellow_cars_filter
@@ -1522,13 +1543,15 @@ paths:
               example:
                 title: The given credentials are not valid
         '404':
-          description: The vCluster or the group specified in the scope does not exist
+          description: The virtual cluster or the group specified in the scope does
+            not exist
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotFound'
               example:
-                title: The vCluster or the group specified in the scope does not exist
+                title: The virtual cluster or the group specified in the scope does
+                  not exist
         '500':
           description: An unexpected error occurred in the server
           content:
@@ -1544,11 +1567,11 @@ paths:
         source: |-
           curl \
             --request PUT \
-            --url 'http://localhost:8888/gateway/v2/interceptors?dryMode=false' \
+            --url 'http://localhost:8888/gateway/v2/interceptor?dryMode=false' \
             --header 'Authorization: Basic YWRtaW46YWRtaW4=' \
             --header 'Content-Type: application/json' \
             --data-raw '{
-            "kind" : "interceptors",
+            "kind" : "Interceptor",
             "apiVersion" : "gateway/v2",
             "metadata" : {
               "name" : "yellow_cars_filter",
@@ -1568,10 +1591,10 @@ paths:
               }
             }
           }'
-  /gateway/v2/interceptors/{name}:
+  /gateway/v2/interceptor/{name}:
     delete:
       tags:
-      - cli_interceptors_gateway_v2_12
+      - cli_interceptor_gateway_v2_12
       description: |2+
 
         [![Beta](https://img.shields.io/badge/Lifecycle-Beta-orange)](#tag/Versioning)
@@ -1633,7 +1656,7 @@ paths:
         source: |-
           curl \
             --request DELETE \
-            --url 'http://localhost:8888/gateway/v2/interceptors/yellow_cars_filter' \
+            --url 'http://localhost:8888/gateway/v2/interceptor/yellow_cars_filter' \
             --header 'Authorization: Basic YWRtaW46YWRtaW4=' \
             --header 'Content-Type: application/json' \
             --data-raw '{
@@ -1641,15 +1664,15 @@ paths:
             "group" : null,
             "username" : null
           }'
-  /gateway/v2/interceptors/resolve:
+  /gateway/v2/interceptor/resolve:
     post:
       tags:
-      - cli_interceptors_gateway_v2_12
+      - cli_interceptor_gateway_v2_12
       description: |2+
 
         [![Beta](https://img.shields.io/badge/Lifecycle-Beta-orange)](#tag/Versioning)
 
-        A utility endpoint to resolve the interceptors for a given vCluster, groups and username.
+        A utility endpoint to resolve the interceptors for a given virtual cluster, groups and username.
         Helps to understand which interceptors will be applied for a given request.
 
       operationId: Resolve interceptors
@@ -1670,7 +1693,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/Interceptor'
               example:
-              - kind: interceptors
+              - kind: Interceptor
                 apiVersion: gateway/v2
                 metadata:
                   name: yellow_cars_filter
@@ -1715,7 +1738,7 @@ paths:
         source: |-
           curl \
             --request POST \
-            --url 'http://localhost:8888/gateway/v2/interceptors/resolve' \
+            --url 'http://localhost:8888/gateway/v2/interceptor/resolve' \
             --header 'Authorization: Basic YWRtaW46YWRtaW4=' \
             --header 'Content-Type: application/json' \
             --data-raw '{
@@ -1726,10 +1749,10 @@ paths:
             ],
             "username" : "user1"
           }'
-  /gateway/v2/plugins:
+  /gateway/v2/plugin:
     get:
       tags:
-      - plugins
+      - plugin
       description: |2+
 
         [![Beta](https://img.shields.io/badge/Lifecycle-Beta-orange)](#tag/Versioning)
@@ -1821,12 +1844,12 @@ paths:
         source: |-
           curl \
             --request GET \
-            --url 'http://localhost:8888/gateway/v2/plugins' \
+            --url 'http://localhost:8888/gateway/v2/plugin' \
             --header 'Authorization: Basic YWRtaW46YWRtaW4='
-  /gateway/v2/service-accounts:
+  /gateway/v2/service-account:
     get:
       tags:
-      - cli_service-accounts_gateway_v2_11
+      - cli_gateway-service-account_gateway_v2_11
       description: |2+
 
 
@@ -1838,7 +1861,7 @@ paths:
       parameters:
       - name: vcluster
         in: query
-        description: Filter by vCluster
+        description: Filter by virtual cluster
         required: false
         schema:
           type: string
@@ -1870,9 +1893,9 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ServiceAccount'
+                  $ref: '#/components/schemas/GatewayServiceAccount'
               example:
-              - kind: service-accounts
+              - kind: GatewayServiceAccount
                 apiVersion: gateway/v2
                 metadata:
                   name: user1
@@ -1880,7 +1903,7 @@ paths:
                 spec:
                   type: External
                   principal: aliasUser1
-              - kind: service-accounts
+              - kind: GatewayServiceAccount
                 apiVersion: gateway/v2
                 metadata:
                   name: user1
@@ -1918,11 +1941,11 @@ paths:
         source: |-
           curl \
             --request GET \
-            --url 'http://localhost:8888/gateway/v2/service-accounts?vcluster=vCluster1&name=user1&type=External&showDefaults=false' \
+            --url 'http://localhost:8888/gateway/v2/service-account?vcluster=vCluster1&name=user1&type=External&showDefaults=false' \
             --header 'Authorization: Basic YWRtaW46YWRtaW4='
     put:
       tags:
-      - cli_service-accounts_gateway_v2_11
+      - cli_gateway-service-account_gateway_v2_11
       description: |2+
 
 
@@ -1944,9 +1967,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ServiceAccount'
+              $ref: '#/components/schemas/GatewayServiceAccount'
             example:
-              kind: service-accounts
+              kind: GatewayServiceAccount
               apiVersion: gateway/v2
               metadata:
                 name: user1
@@ -1961,10 +1984,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApplyResult_ServiceAccount'
+                $ref: '#/components/schemas/ApplyResult_GatewayServiceAccount'
               example:
                 resource:
-                  kind: service-accounts
+                  kind: GatewayServiceAccount
                   apiVersion: gateway/v2
                   metadata:
                     name: user1
@@ -1990,13 +2013,15 @@ paths:
               example:
                 title: The given credentials are not valid
         '404':
-          description: The given service account references a non-existing vCluster
+          description: The given service account references a non-existing virtual
+            cluster
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotFound'
               example:
-                title: The given service account references a non-existing vCluster
+                title: The given service account references a non-existing virtual
+                  cluster
         '409':
           description: The service account already exist
           content:
@@ -2020,11 +2045,11 @@ paths:
         source: |-
           curl \
             --request PUT \
-            --url 'http://localhost:8888/gateway/v2/service-accounts?dryMode=false' \
+            --url 'http://localhost:8888/gateway/v2/service-account?dryMode=false' \
             --header 'Authorization: Basic YWRtaW46YWRtaW4=' \
             --header 'Content-Type: application/json' \
             --data-raw '{
-            "kind" : "service-accounts",
+            "kind" : "GatewayServiceAccount",
             "apiVersion" : "gateway/v2",
             "metadata" : {
               "name" : "user1",
@@ -2037,7 +2062,7 @@ paths:
           }'
     delete:
       tags:
-      - cli_service-accounts_gateway_v2_11
+      - cli_gateway-service-account_gateway_v2_11
       description: |2+
 
 
@@ -2050,7 +2075,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ServiceAccountId'
+              $ref: '#/components/schemas/GatewayServiceAccountId'
         required: true
       responses:
         '204':
@@ -2100,16 +2125,16 @@ paths:
         source: |-
           curl \
             --request DELETE \
-            --url 'http://localhost:8888/gateway/v2/service-accounts' \
+            --url 'http://localhost:8888/gateway/v2/service-account' \
             --header 'Authorization: Basic YWRtaW46YWRtaW4=' \
             --header 'Content-Type: application/json' \
             --data-raw '{
             "name" : "user1"
           }'
-  /gateway/v2/gateway-groups:
+  /gateway/v2/group:
     get:
       tags:
-      - cli_gateway-groups_gateway_v2_10
+      - cli_gateway-group_gateway_v2_10
       description: |2+
 
         [![Beta](https://img.shields.io/badge/Lifecycle-Beta-orange)](#tag/Versioning)
@@ -2136,7 +2161,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/GatewayGroup'
               example:
-              - kind: GatewayGroups
+              - kind: GatewayGroup
                 apiVersion: gateway/v2
                 metadata:
                   name: group1
@@ -2180,11 +2205,11 @@ paths:
         source: |-
           curl \
             --request GET \
-            --url 'http://localhost:8888/gateway/v2/gateway-groups?showDefaults=false' \
+            --url 'http://localhost:8888/gateway/v2/group?showDefaults=false' \
             --header 'Authorization: Basic YWRtaW46YWRtaW4='
     put:
       tags:
-      - cli_gateway-groups_gateway_v2_10
+      - cli_gateway-group_gateway_v2_10
       description: |2+
 
         [![Beta](https://img.shields.io/badge/Lifecycle-Beta-orange)](#tag/Versioning)
@@ -2207,7 +2232,7 @@ paths:
             schema:
               $ref: '#/components/schemas/GatewayGroup'
             example:
-              kind: GatewayGroups
+              kind: GatewayGroup
               apiVersion: gateway/v2
               metadata:
                 name: group1
@@ -2232,7 +2257,7 @@ paths:
                 $ref: '#/components/schemas/ApplyResult_GatewayGroup'
               example:
                 resource:
-                  kind: GatewayGroups
+                  kind: GatewayGroup
                   apiVersion: gateway/v2
                   metadata:
                     name: group1
@@ -2287,11 +2312,11 @@ paths:
         source: |-
           curl \
             --request PUT \
-            --url 'http://localhost:8888/gateway/v2/gateway-groups?dryMode=false' \
+            --url 'http://localhost:8888/gateway/v2/group?dryMode=false' \
             --header 'Authorization: Basic YWRtaW46YWRtaW4=' \
             --header 'Content-Type: application/json' \
             --data-raw '{
-            "kind" : "GatewayGroups",
+            "kind" : "GatewayGroup",
             "apiVersion" : "gateway/v2",
             "metadata" : {
               "name" : "group1"
@@ -2317,10 +2342,10 @@ paths:
               ]
             }
           }'
-  /gateway/v2/gateway-groups/{name}:
+  /gateway/v2/group/{name}:
     get:
       tags:
-      - cli_gateway-groups_gateway_v2_10
+      - cli_gateway-group_gateway_v2_10
       description: |2+
 
         [![Beta](https://img.shields.io/badge/Lifecycle-Beta-orange)](#tag/Versioning)
@@ -2350,7 +2375,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/GatewayGroup'
               example:
-                kind: GatewayGroups
+                kind: GatewayGroup
                 apiVersion: gateway/v2
                 metadata:
                   name: group1
@@ -2402,11 +2427,11 @@ paths:
         source: |-
           curl \
             --request GET \
-            --url 'http://localhost:8888/gateway/v2/gateway-groups/group1?showDefaults=false' \
+            --url 'http://localhost:8888/gateway/v2/group/group1?showDefaults=false' \
             --header 'Authorization: Basic YWRtaW46YWRtaW4='
     delete:
       tags:
-      - cli_gateway-groups_gateway_v2_10
+      - cli_gateway-group_gateway_v2_10
       description: |2+
 
         [![Beta](https://img.shields.io/badge/Lifecycle-Beta-orange)](#tag/Versioning)
@@ -2462,7 +2487,7 @@ paths:
         source: |-
           curl \
             --request DELETE \
-            --url 'http://localhost:8888/gateway/v2/gateway-groups/group1' \
+            --url 'http://localhost:8888/gateway/v2/group/group1' \
             --header 'Authorization: Basic YWRtaW46YWRtaW4='
 components:
   schemas:
@@ -2495,7 +2520,7 @@ components:
           description: The name of the alias topic
           type: string
         vCluster:
-          description: 'The vCluster name of the alias topic (default: passthrough)'
+          description: 'The virtual cluster of the alias topic (default: `passthrough`)'
           type: string
     AliasTopicMetadata:
       title: AliasTopicMetadata
@@ -2509,7 +2534,7 @@ components:
           type: string
           format: ^[a-zA-Z0-9._-]+$
         vCluster:
-          description: 'The vCluster name of the alias topic (default: passthrough)'
+          description: 'The virtual cluster of the alias topic (default: `passthrough`)'
           type: string
           format: ^[a-zA-Z0-9_-]+$
     AliasTopicSpec:
@@ -2559,6 +2584,18 @@ components:
           description: The resource that was upserted
         upsertResult:
           $ref: '#/components/schemas/UpsertResult'
+    ApplyResult_GatewayServiceAccount:
+      title: ApplyResult_GatewayServiceAccount
+      type: object
+      required:
+      - resource
+      - upsertResult
+      properties:
+        resource:
+          $ref: '#/components/schemas/GatewayServiceAccount'
+          description: The resource that was upserted
+        upsertResult:
+          $ref: '#/components/schemas/UpsertResult'
     ApplyResult_Interceptor:
       title: ApplyResult_Interceptor
       type: object
@@ -2571,27 +2608,15 @@ components:
           description: The resource that was upserted
         upsertResult:
           $ref: '#/components/schemas/UpsertResult'
-    ApplyResult_ServiceAccount:
-      title: ApplyResult_ServiceAccount
+    ApplyResult_VirtualCluster:
+      title: ApplyResult_VirtualCluster
       type: object
       required:
       - resource
       - upsertResult
       properties:
         resource:
-          $ref: '#/components/schemas/ServiceAccount'
-          description: The resource that was upserted
-        upsertResult:
-          $ref: '#/components/schemas/UpsertResult'
-    ApplyResult_VCluster:
-      title: ApplyResult_VCluster
-      type: object
-      required:
-      - resource
-      - upsertResult
-      properties:
-        resource:
-          $ref: '#/components/schemas/VCluster'
+          $ref: '#/components/schemas/VirtualCluster'
           description: The resource that was upserted
         upsertResult:
           $ref: '#/components/schemas/UpsertResult'
@@ -2637,8 +2662,8 @@ components:
           description: The name of the concentrated topic
           type: string
         vCluster:
-          description: The vCluster of the concentrated topic. If not provided, defaulted
-            to passthrough vCluster.
+          description: The virtual cluster of the concentrated topic. If not provided,
+            defaulted to passthrough virtual cluster.
           type: string
     ConcentratedTopicSpec:
       title: ConcentratedTopicSpec
@@ -2679,7 +2704,7 @@ components:
           description: The name of the concentration rule (identifier in a vCluster)
           type: string
         vCluster:
-          description: The vCluster of the concentration rule. Default to passthrough
+          description: The virtual cluster of the concentration rule. Default to `passthrough`
             if not provided.
           type: string
     ConcentrationRuleMetadata:
@@ -2694,7 +2719,7 @@ components:
           type: string
           format: ^[a-zA-Z0-9._-]+$
         vCluster:
-          description: The vCluster of the concentration rule. Default to passthrough
+          description: The virtual cluster of the concentration rule. Default to `passthrough`
             if not provided.
           type: string
     ConcentrationRuleSpec:
@@ -2771,9 +2796,9 @@ components:
         vCluster:
           description: |2
 
-            The name of the vcluster the service account belongs to.
+            The name of the virtual cluster the service account belongs to.
 
-            If not provided, the service account will be created in the default `passthrough` vcluster.
+            If not provided, the service account will be created in the default `passthrough` virtual cluster.
           type: string
           format: ^[a-zA-Z0-9_-]+$
     ExternalSpec:
@@ -2808,6 +2833,27 @@ components:
           $ref: '#/components/schemas/GroupMetadata'
         spec:
           $ref: '#/components/schemas/GroupSpec'
+    GatewayServiceAccount:
+      title: GatewayServiceAccount
+      oneOf:
+      - $ref: '#/components/schemas/External'
+      - $ref: '#/components/schemas/Local'
+    GatewayServiceAccountId:
+      title: GatewayServiceAccountId
+      type: object
+      required:
+      - name
+      properties:
+        vCluster:
+          description: |2
+
+            The name of the virtual cluster the service account belongs to.
+
+            If not provided, the service account will be created in the default `passthrough` virtual cluster.
+          type: string
+        name:
+          description: The name of the service account (identifier)
+          type: string
     GroupMetadata:
       title: GroupMetadata
       description: The metadata of the group
@@ -2829,7 +2875,7 @@ components:
           type: array
           uniqueItems: true
           items:
-            $ref: '#/components/schemas/ServiceAccountId'
+            $ref: '#/components/schemas/GatewayServiceAccountId'
         externalGroups:
           description: The external groups (LDAP, OIDC...) mapped on the group
           type: array
@@ -2870,14 +2916,14 @@ components:
           description: |2
 
             The scope of the interceptor.
-            It can be applied to a specific vCluster or group or username.
+            It can be applied to a specific virtual cluster or group or username.
             If none of them is set, it will be applied Globally to the gateway.
     InterceptorResolverRequest:
       title: InterceptorResolverRequest
       type: object
       properties:
         vCluster:
-          description: The vCluster to test the interceptors resolution
+          description: The virtual cluster to test the interceptors resolution
           type: string
         groups:
           description: The groups to test the interceptors resolution
@@ -2954,9 +3000,9 @@ components:
         vCluster:
           description: |2
 
-            The name of the vcluster the service account belongs to.
+            The name of the virtual cluster the service account belongs to.
 
-            If not provided, the service account will be created in the default `passthrough` vcluster.
+            If not provided, the service account will be created in the default `passthrough` virtual cluster.
           type: string
           format: ^[a-zA-Z0-9_-]+$
     LocalSpec:
@@ -3027,27 +3073,6 @@ components:
           type: string
         cause:
           type: string
-    ServiceAccount:
-      title: ServiceAccount
-      oneOf:
-      - $ref: '#/components/schemas/External'
-      - $ref: '#/components/schemas/Local'
-    ServiceAccountId:
-      title: ServiceAccountId
-      type: object
-      required:
-      - name
-      properties:
-        vCluster:
-          description: |2
-
-            The name of the vcluster the service account belongs to.
-
-            If not provided, the service account will be created in the default `passthrough` vcluster.
-          type: string
-        name:
-          description: The name of the service account (identifier)
-          type: string
     TokenRequest:
       title: TokenRequest
       type: object
@@ -3055,8 +3080,8 @@ components:
       - username
       - lifeTimeSeconds
       properties:
-        vClusterName:
-          description: 'The name of the vcluster to create the token for. "passthrough
+        vCluster:
+          description: 'The name of the virtual cluster to create the token for. "passthrough
             if omitted" '
           type: string
         username:
@@ -3098,8 +3123,8 @@ components:
       - $ref: '#/components/schemas/Created'
       - $ref: '#/components/schemas/NotChanged'
       - $ref: '#/components/schemas/Updated'
-    VCluster:
-      title: VCluster
+    VirtualCluster:
+      title: VirtualCluster
       type: object
       required:
       - kind
@@ -3108,29 +3133,29 @@ components:
       - spec
       properties:
         kind:
-          description: The kind of the vCluster
+          description: The kind of the virtual cluster
           type: string
         apiVersion:
-          description: The api version of the vCluster
+          description: The api version of the virtual cluster
           type: string
         metadata:
-          $ref: '#/components/schemas/VClusterMetadata'
+          $ref: '#/components/schemas/VirtualClusterMetadata'
         spec:
-          $ref: '#/components/schemas/VClusterSpec'
-    VClusterMetadata:
-      title: VClusterMetadata
-      description: Metadata of the vCluster
+          $ref: '#/components/schemas/VirtualClusterSpec'
+    VirtualClusterMetadata:
+      title: VirtualClusterMetadata
+      description: Metadata of the virtual cluster
       type: object
       required:
       - name
       properties:
         name:
-          description: The name of the vcluster
+          description: The name of the virtual cluster
           type: string
           format: ^[a-zA-Z0-9_-]+$
-    VClusterSpec:
-      title: VClusterSpec
-      description: Spec of the vCluster
+    VirtualClusterSpec:
+      title: VirtualClusterSpec
+      description: Spec of the virtual cluster
       type: object
       required:
       - prefix
@@ -3140,6 +3165,15 @@ components:
             the physical cluster
           type: string
           format: ^[a-zA-Z0-9_-]*$
+        aclEnabled:
+          description: Enable ACL for the virtual cluster
+          type: boolean
+        superUsers:
+          description: List of service account's username that are super users of
+            the virtual cluster
+          type: array
+          items:
+            type: string
   securitySchemes:
     httpAuth:
       type: http
@@ -3155,12 +3189,12 @@ x-tagGroups:
   - Conventions
 - name: 🌉 gateway/v2
   tags:
-  - cli_vclusters_gateway_v2_7
-  - cli_alias-topics_gateway_v2_8
-  - cli_concentrated-topics_gateway_v2_0
-  - cli_concentration-rules_gateway_v2_9
-  - cli_interceptors_gateway_v2_12
-  - plugins
-  - cli_service-accounts_gateway_v2_11
-  - cli_gateway-groups_gateway_v2_10
-  - tokens
+  - cli_virtual-cluster_gateway_v2_7
+  - cli_alias-topic_gateway_v2_8
+  - cli_concentrated-topic_gateway_v2_0
+  - cli_concentration-rule_gateway_v2_9
+  - cli_interceptor_gateway_v2_12
+  - plugin
+  - cli_gateway-service-account_gateway_v2_11
+  - cli_gateway-group_gateway_v2_10
+  - token

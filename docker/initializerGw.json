@@ -2,7 +2,7 @@
   {
     "httpRequest": {
       "method": "Get",
-      "path": "/gateway/v2/vclusters/vcluster1",
+      "path": "/gateway/v2/virtual-cluster/vcluster1",
       "headers": {
         "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
       }
@@ -20,7 +20,7 @@
   {
     "httpRequest": {
       "method": "Get",
-      "path": "/gateway/v2/gateway-groups",
+      "path": "/gateway/v2/group",
       "headers": {
         "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
       }
@@ -38,7 +38,7 @@
   {
     "httpRequest": {
       "method": "Get",
-      "path": "/gateway/v2/gateway-groups/g1",
+      "path": "/gateway/v2/group/g1",
       "headers": {
         "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
       }
@@ -56,7 +56,7 @@
   {
     "httpRequest": {
       "method": "Get",
-      "path": "/gateway/v2/vclusters",
+      "path": "/gateway/v2/virtual-cluster",
       "headers": {
         "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
       }
@@ -74,7 +74,7 @@
   {
     "httpRequest": {
       "method": "Put",
-      "path": "/gateway/v2/vclusters",
+      "path": "/gateway/v2/virtual-cluster",
       "headers": {
         "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
       }
@@ -92,7 +92,7 @@
   {
     "httpRequest": {
       "method": "Delete",
-      "path": "/gateway/v2/vclusters/vcluster1",
+      "path": "/gateway/v2/virtual-cluster/vcluster1",
       "headers": {
         "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
       }
@@ -110,7 +110,7 @@
   {
     "httpRequest": {
       "method": "Put",
-      "path": "/gateway/v2/alias-topics",
+      "path": "/gateway/v2/alias-topic",
       "headers": {
         "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
       }
@@ -128,7 +128,7 @@
   {
     "httpRequest": {
       "method": "Put",
-      "path": "/gateway/v2/concentration-rules",
+      "path": "/gateway/v2/concentration-rule",
       "headers": {
         "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
       }
@@ -146,7 +146,7 @@
   {
     "httpRequest": {
       "method": "Put",
-      "path": "/gateway/v2/gateway-groups",
+      "path": "/gateway/v2/group",
       "headers": {
         "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
       }
@@ -164,7 +164,7 @@
   {
     "httpRequest": {
       "method": "Put",
-      "path": "/gateway/v2/service-accounts",
+      "path": "/gateway/v2/service-account",
       "headers": {
         "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
       }
@@ -182,7 +182,7 @@
   {
     "httpRequest": {
       "method": "Put",
-      "path": "/gateway/v2/interceptors",
+      "path": "/gateway/v2/interceptor",
       "headers": {
         "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
       }
@@ -200,7 +200,7 @@
   {
     "httpRequest": {
       "method": "GET",
-      "path": "/gateway/v2/alias-topics",
+      "path": "/gateway/v2/alias-topic",
       "queryStringParameters": {
         "vcluster": "mycluster1",
         "showDefaults": "true",
@@ -223,7 +223,7 @@
   {
     "httpRequest": {
       "method": "GET",
-      "path": "/gateway/v2/concentration-rules",
+      "path": "/gateway/v2/concentration-rule",
       "queryStringParameters": {
         "vcluster": "mycluster1",
         "showDefaults": "true",
@@ -246,7 +246,7 @@
   {
     "httpRequest": {
       "method": "GET",
-      "path": "/gateway/v2/service-accounts",
+      "path": "/gateway/v2/service-account",
       "queryStringParameters": {
         "vcluster": "mycluster1",
         "showDefaults": "true",
@@ -269,7 +269,7 @@
   {
     "httpRequest": {
       "method": "GET",
-      "path": "/gateway/v2/interceptors",
+      "path": "/gateway/v2/interceptor",
       "queryStringParameters": {
         "vcluster": "mycluster1",
         "username": "me",
@@ -293,7 +293,7 @@
   {
     "httpRequest": {
       "method": "Delete",
-      "path": "/gateway/v2/alias-topics",
+      "path": "/gateway/v2/alias-topic",
       "body": {
         "name": "aliastopicname",
         "vCluster": "v1"
@@ -315,7 +315,7 @@
   {
     "httpRequest": {
       "method": "Delete",
-      "path": "/gateway/v2/concentration-rules",
+      "path": "/gateway/v2/concentration-rule",
       "body": {
         "name": "cr1",
         "vCluster": "v1"
@@ -337,7 +337,7 @@
   {
     "httpRequest": {
       "method": "Delete",
-      "path": "/gateway/v2/service-accounts",
+      "path": "/gateway/v2/service-account",
       "body": {
         "name": "s1",
         "vCluster": "v1"
@@ -359,7 +359,7 @@
   {
     "httpRequest": {
       "method": "Delete",
-      "path": "/gateway/v2/service-accounts",
+      "path": "/gateway/v2/service-account",
       "body": {
         "name": "s1",
         "vCluster": "v1"
@@ -381,7 +381,7 @@
   {
     "httpRequest": {
       "method": "Delete",
-      "path": "/gateway/v2/interceptors/i1",
+      "path": "/gateway/v2/interceptor/i1",
       "body": {
         "username": "me",
         "group": "g1",

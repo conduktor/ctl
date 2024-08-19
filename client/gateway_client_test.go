@@ -10,10 +10,10 @@ import (
 
 var aVClusterResource = resource.Resource{
 	Version:  "gateway/v2",
-	Kind:     "VClusters",
+	Kind:     "VirtualCluster",
 	Name:     "vcluster1",
 	Metadata: map[string]interface{}{"name": "vcluster1"},
-	Json:     []byte(`{"apiVersion":"v1","kind":"VClusters","metadata":{"name":"vcluster1"},"spec":{"prefix":"vcluster1_"}}`),
+	Json:     []byte(`{"apiVersion":"v1","kind":"VirtualCluster","metadata":{"name":"vcluster1"},"spec":{"prefix":"vcluster1_"}}`),
 }
 
 func TestGwApplyShouldWork(t *testing.T) {
@@ -35,7 +35,7 @@ func TestGwApplyShouldWork(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"PUT",
-		"http://baseUrl/gateway/v2/vclusters",
+		"http://baseUrl/gateway/v2/virtual-cluster",
 		nil,
 		httpmock.HeaderIs("Authorization", "Basic YWRtaW46Y29uZHVrdG9y").
 			And(httpmock.HeaderIs("X-CDK-CLIENT", "CLI/unknown")).
@@ -71,7 +71,7 @@ func TestGwApplyWithDryModeShouldWork(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"PUT",
-		"http://baseUrl/gateway/v2/vclusters",
+		"http://baseUrl/gateway/v2/virtual-cluster",
 		"dryMode=true",
 		httpmock.HeaderIs("Authorization", "Basic YWRtaW46Y29uZHVrdG9y").
 			And(httpmock.BodyContainsBytes(aVClusterResource.Json)),
@@ -110,7 +110,7 @@ func TestGwApplyShouldFailIfNo2xx(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"PUT",
-		"http://baseUrl/gateway/v2/vclusters",
+		"http://baseUrl/gateway/v2/virtual-cluster",
 		nil,
 		httpmock.HeaderIs("Authorization", "Basic YWRtaW46Y29uZHVrdG9y").
 			And(httpmock.BodyContainsBytes(aVClusterResource.Json)),
@@ -145,14 +145,14 @@ func TestGwGetShouldWork(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"GET",
-		"http://baseUrl/gateway/v2/vclusters",
+		"http://baseUrl/gateway/v2/virtual-cluster",
 		nil,
 		httpmock.HeaderIs("Authorization", "Basic YWRtaW46Y29uZHVrdG9y").
 			And(httpmock.HeaderIs("X-CDK-CLIENT", "CLI/unknown")),
 		responder,
 	)
 
-	vClusterKind := gatewayClient.GetKinds()["VClusters"]
+	vClusterKind := gatewayClient.GetKinds()["VirtualCluster"]
 	result, err := gatewayClient.Get(&vClusterKind, []string{}, nil)
 	if err != nil {
 		t.Error(err)
@@ -184,13 +184,13 @@ func TestGwGetShouldFailIfN2xx(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"GET",
-		"http://baseUrl/gateway/v2/vclusters",
+		"http://baseUrl/gateway/v2/virtual-cluster",
 		nil,
 		httpmock.HeaderIs("Authorization", "Basic changeme"),
 		responder,
 	)
 
-	vClusterKind := gatewayClient.GetKinds()["VClusters"]
+	vClusterKind := gatewayClient.GetKinds()["VirtualCluster"]
 	_, err = gatewayClient.Get(&vClusterKind, []string{}, nil)
 	if err == nil {
 		t.Failed()
@@ -219,14 +219,14 @@ func TestGwDeleteShouldWork(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"DELETE",
-		"http://baseUrl/gateway/v2/vclusters/vcluster1",
+		"http://baseUrl/gateway/v2/virtual-cluster/vcluster1",
 		nil,
 		httpmock.HeaderIs("Authorization", "Basic YWRtaW46Y29uZHVrdG9y").
 			And(httpmock.HeaderIs("X-CDK-CLIENT", "CLI/unknown")),
 		responder,
 	)
 
-	vClusters := gatewayClient.GetKinds()["VClusters"]
+	vClusters := gatewayClient.GetKinds()["VirtualCluster"]
 	err = gatewayClient.Delete(&vClusters, []string{}, "vcluster1")
 	if err != nil {
 		t.Error(err)
@@ -255,13 +255,13 @@ func TestGwDeleteShouldFailOnNot2XX(t *testing.T) {
 
 	httpmock.RegisterMatcherResponderWithQuery(
 		"DELETE",
-		"http://baseUrl/gateway/v2/vclusters/vcluster1",
+		"http://baseUrl/gateway/v2/virtual-cluster/vcluster1",
 		nil,
 		httpmock.HeaderIs("Authorization", "Basic YWRtaW46Y29uZHVrdG9y"),
 		responder,
 	)
 
-	vClusterKind := gatewayClient.GetKinds()["VClusters"]
+	vClusterKind := gatewayClient.GetKinds()["VirtualCluster"]
 	err = gatewayClient.Delete(&vClusterKind, []string{}, "vcluster1")
 	if err == nil {
 		t.Fail()
