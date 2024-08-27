@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -52,6 +53,29 @@ func buildAlias(name string) []string {
 	return []string{strings.ToLower(name), removeTrailingSIfAny(strings.ToLower(name)), removeTrailingSIfAny(name)}
 }
 
+func printResource(result interface{}, format string) error {
+	if format == "json" {
+		jsonOutput, err := json.MarshalIndent(result, "", "  ")
+		if err != nil {
+			return fmt.Errorf("error marshalling JSON: %s\n%s", err, result)
+		}
+		fmt.Println(string(jsonOutput))
+	} else {
+		switch res := result.(type) {
+		case []resource.Resource:
+			for _, r := range res {
+				fmt.Println("---") // '---' indicates the start of a new document in YAML
+				r.PrintPreservingOriginalFieldOrder()
+			}
+		case resource.Resource:
+			res.PrintPreservingOriginalFieldOrder()
+		default:
+			return fmt.Errorf("unexpected resource type")
+		}
+	}
+	return nil
+}
+
 func initGet(kinds schema.KindCatalog) {
 	rootCmd.AddCommand(getCmd)
 
@@ -80,6 +104,18 @@ func initGet(kinds schema.KindCatalog) {
 					parentValue[i] = *v
 				}
 				var err error
+
+				format, err := cmd.Flags().GetString("output")
+				if err != nil {
+					fmt.Println("Error retrieving output format:", err)
+					return
+				}
+
+				// Default to 'yaml' if not set or invalid
+				if format != "json" {
+					format = "yaml"
+				}
+
 				if len(args) == 0 {
 					var result []resource.Resource
 					if isGatewayKind {
@@ -87,9 +123,13 @@ func initGet(kinds schema.KindCatalog) {
 					} else {
 						result, err = consoleApiClient().Get(&kind, parentValue, queryParams)
 					}
-					for _, r := range result {
-						r.PrintPreservingOriginalFieldOrder()
-						fmt.Println("---")
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "Error fetching resources: %s\n", err)
+						return
+					}
+					err = printResource(result, format)
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "%s\n", err)
 					}
 				} else if len(args) == 1 {
 					var result resource.Resource
@@ -98,7 +138,14 @@ func initGet(kinds schema.KindCatalog) {
 					} else {
 						result, err = consoleApiClient().Describe(&kind, parentValue, args[0])
 					}
-					result.PrintPreservingOriginalFieldOrder()
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "Error describing resource: %s\n", err)
+						return
+					}
+					err = printResource(result, format)
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "%s\n", err)
+					}
 				}
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "%s\n", err)
@@ -127,6 +174,7 @@ func initGet(kinds schema.KindCatalog) {
 				kindCmd.MarkFlagRequired(flag.FlagName)
 			}
 		}
+		kindCmd.Flags().StringP("output", "o", "", "Output format. One of: json|yaml")
 		getCmd.AddCommand(kindCmd)
 	}
 }
