@@ -107,6 +107,7 @@ func MakeFromEnv() (*Client, error) {
 	apiParameter := ApiParameter{
 		BaseUrl:     os.Getenv("CDK_BASE_URL"),
 		Debug:       utils.CdkDebug(),
+		Key:         os.Getenv("CDK_KEY"),
 		Cert:        os.Getenv("CDK_CERT"),
 		Cacert:      os.Getenv("CDK_CACERT"),
 		ApiKey:      os.Getenv("CDK_API_KEY"),
