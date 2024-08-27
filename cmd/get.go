@@ -128,9 +128,6 @@ func initGet(kinds schema.KindCatalog) {
 						return
 					}
 					err = printResource(result, format)
-					if err != nil {
-						fmt.Fprintf(os.Stderr, "%s\n", err)
-					}
 				} else if len(args) == 1 {
 					var result resource.Resource
 					if isGatewayKind {
@@ -143,9 +140,6 @@ func initGet(kinds schema.KindCatalog) {
 						return
 					}
 					err = printResource(result, format)
-					if err != nil {
-						fmt.Fprintf(os.Stderr, "%s\n", err)
-					}
 				}
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "%s\n", err)
