@@ -17,14 +17,14 @@ main() {
 	cd "$SCRIPTDIR"
 	docker compose -f docker/docker-compose.yml build
 	docker compose -f docker/docker-compose.yml up -d mock mockGateway
-	sleep 1
+	sleep 2
 	run conduktor apply -f /test_resource.yml
 	run conduktor apply -f /
 	run conduktor delete -f /test_resource.yml
 	run conduktor apply -f /
 	run conduktor get Topic yolo --cluster=my-cluster
 	run conduktor get Topic yolo --cluster=my-cluster -o yaml
-	run conduktor get Application yolo --cluster=my-cluster -o name
+	run conduktor get Topic yolo --cluster=my-cluster -o name
 	run conduktor delete Topic yolo -v --cluster=my-cluster
 	run -e CDK_USER=admin -e CDK_PASSWORD=secret conduktor login
 	run -e CDK_USER=admin -e CDK_PASSWORD=secret -e CDK_API_KEY="" conduktor get KafkaCluster my_kafka_cluster
