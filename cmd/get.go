@@ -111,9 +111,9 @@ func initGet(kinds schema.KindCatalog) {
 					return
 				}
 
-				// Default to 'yaml' if not set or invalid
-				if format != "json" {
-					format = "yaml"
+				if format != "json" && format != "yaml" {
+					fmt.Fprintf(os.Stderr, "Invalid output format: %s. Expected 'json' or 'yaml'.\n", format)
+					return
 				}
 
 				if len(args) == 0 {
