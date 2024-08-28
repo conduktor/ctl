@@ -9,7 +9,7 @@
     },
     "httpResponse": {
       "statusCode": 200,
-      "body": "{ \"metadata\": { \"name\":\"vcluster1\" }, \"spec\":{\"prefix\":\"vcluster1\"} }",
+      "body": "{ \"metadata\": { \"name\":\"vcluster1\" }, \"spec\":{} }",
       "headers": {
         "Content-Type": [
           "application/json"
