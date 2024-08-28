@@ -60,7 +60,19 @@ func printResource(result interface{}, format string) error {
 			return fmt.Errorf("error marshalling JSON: %s\n%s", err, result)
 		}
 		fmt.Println(string(jsonOutput))
-	} else {
+	} else if format == "name" {
+		// show Kind/Name
+		switch res := result.(type) {
+		case []resource.Resource:
+			for _, r := range res {
+				fmt.Println(r.Kind + "/" + r.Name)
+			}
+		case resource.Resource:
+			fmt.Println(res.Kind + "/" + res.Name)
+		default:
+			return fmt.Errorf("unexpected resource type")
+		}
+	} else if format == "yaml" {
 		switch res := result.(type) {
 		case []resource.Resource:
 			for _, r := range res {
@@ -111,8 +123,8 @@ func initGet(kinds schema.KindCatalog) {
 					return
 				}
 
-				if format != "json" && format != "yaml" {
-					fmt.Fprintf(os.Stderr, "Invalid output format: %s. Expected 'json' or 'yaml'.\n", format)
+				if format != "json" && format != "yaml" && format != "name" {
+					fmt.Fprintf(os.Stderr, "Invalid output format: %s. Expected 'json' or 'yaml' or 'name'.\n", format)
 					return
 				}
 
@@ -168,7 +180,7 @@ func initGet(kinds schema.KindCatalog) {
 				kindCmd.MarkFlagRequired(flag.FlagName)
 			}
 		}
-		kindCmd.Flags().StringP("output", "o", "yaml", "Output format. One of: json|yaml")
+		kindCmd.Flags().StringP("output", "o", "yaml", "Output format. One of: json|yaml|name")
 		getCmd.AddCommand(kindCmd)
 	}
 }
