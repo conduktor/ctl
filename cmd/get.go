@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -10,7 +11,26 @@ import (
 	"github.com/conduktor/ctl/schema"
 	"github.com/conduktor/ctl/utils"
 	"github.com/spf13/cobra"
+	"github.com/thediveo/enumflag/v2"
 )
+
+type OutputFormat enumflag.Flag
+
+const (
+	JSON OutputFormat = iota
+	YAML
+	NAME
+)
+
+var OutputFormatIds = map[OutputFormat][]string{
+	JSON: {"json"},
+	YAML: {"yaml"},
+	NAME: {"name"},
+}
+
+func (o OutputFormat) String() string {
+	return OutputFormatIds[o][0]
+}
 
 var getCmd = &cobra.Command{
 	Use:   "get",
@@ -52,8 +72,47 @@ func buildAlias(name string) []string {
 	return []string{strings.ToLower(name), removeTrailingSIfAny(strings.ToLower(name)), removeTrailingSIfAny(name)}
 }
 
+func printResource(result interface{}, format OutputFormat) error {
+	switch format {
+	case JSON:
+		jsonOutput, err := json.MarshalIndent(result, "", "  ")
+		if err != nil {
+			return fmt.Errorf("error marshalling JSON: %s\n%s", err, result)
+		}
+		fmt.Println(string(jsonOutput))
+	case NAME:
+		// show Kind/Name
+		switch res := result.(type) {
+		case []resource.Resource:
+			for _, r := range res {
+				fmt.Println(r.Kind + "/" + r.Name)
+			}
+		case resource.Resource:
+			fmt.Println(res.Kind + "/" + res.Name)
+		default:
+			return fmt.Errorf("unexpected resource type")
+		}
+	case YAML:
+		switch res := result.(type) {
+		case []resource.Resource:
+			for _, r := range res {
+				fmt.Println("---") // '---' indicates the start of a new document in YAML
+				r.PrintPreservingOriginalFieldOrder()
+			}
+		case resource.Resource:
+			res.PrintPreservingOriginalFieldOrder()
+		default:
+			return fmt.Errorf("unexpected resource type")
+		}
+	default:
+		return fmt.Errorf("invalid output format %s", format.String())
+	}
+	return nil
+}
+
 func initGet(kinds schema.KindCatalog) {
 	rootCmd.AddCommand(getCmd)
+	var format OutputFormat = YAML
 
 	for name, kind := range kinds {
 		gatewayKind, isGatewayKind := kind.GetLatestKindVersion().(*schema.GatewayKindVersion)
@@ -80,6 +139,7 @@ func initGet(kinds schema.KindCatalog) {
 					parentValue[i] = *v
 				}
 				var err error
+
 				if len(args) == 0 {
 					var result []resource.Resource
 					if isGatewayKind {
@@ -87,10 +147,11 @@ func initGet(kinds schema.KindCatalog) {
 					} else {
 						result, err = consoleApiClient().Get(&kind, parentValue, queryParams)
 					}
-					for _, r := range result {
-						r.PrintPreservingOriginalFieldOrder()
-						fmt.Println("---")
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "Error fetching resources: %s\n", err)
+						return
 					}
+					err = printResource(result, format)
 				} else if len(args) == 1 {
 					var result resource.Resource
 					if isGatewayKind {
@@ -98,7 +159,11 @@ func initGet(kinds schema.KindCatalog) {
 					} else {
 						result, err = consoleApiClient().Describe(&kind, parentValue, args[0])
 					}
-					result.PrintPreservingOriginalFieldOrder()
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "Error describing resource: %s\n", err)
+						return
+					}
+					err = printResource(result, format)
 				}
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "%s\n", err)
@@ -127,6 +192,7 @@ func initGet(kinds schema.KindCatalog) {
 				kindCmd.MarkFlagRequired(flag.FlagName)
 			}
 		}
+		kindCmd.Flags().VarP(enumflag.New(&format, "output", OutputFormatIds, enumflag.EnumCaseInsensitive), "output", "o", "Output format. One of: json|yaml|name (default is yaml)")
 		getCmd.AddCommand(kindCmd)
 	}
 }
