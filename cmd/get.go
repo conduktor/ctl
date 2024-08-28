@@ -11,7 +11,22 @@ import (
 	"github.com/conduktor/ctl/schema"
 	"github.com/conduktor/ctl/utils"
 	"github.com/spf13/cobra"
+	"github.com/thediveo/enumflag/v2"
 )
+
+type OutputFormat enumflag.Flag
+
+const (
+	JSON OutputFormat = iota
+	YAML
+	NAME
+)
+
+var OutputFormatIds = map[OutputFormat][]string{
+	JSON: {"json"},
+	YAML: {"yaml"},
+	NAME: {"name"},
+}
 
 var getCmd = &cobra.Command{
 	Use:   "get",
@@ -53,14 +68,15 @@ func buildAlias(name string) []string {
 	return []string{strings.ToLower(name), removeTrailingSIfAny(strings.ToLower(name)), removeTrailingSIfAny(name)}
 }
 
-func printResource(result interface{}, format string) error {
-	if format == "json" {
+func printResource(result interface{}, format OutputFormat) error {
+	switch format {
+	case JSON:
 		jsonOutput, err := json.MarshalIndent(result, "", "  ")
 		if err != nil {
 			return fmt.Errorf("error marshalling JSON: %s\n%s", err, result)
 		}
 		fmt.Println(string(jsonOutput))
-	} else if format == "name" {
+	case NAME:
 		// show Kind/Name
 		switch res := result.(type) {
 		case []resource.Resource:
@@ -72,7 +88,7 @@ func printResource(result interface{}, format string) error {
 		default:
 			return fmt.Errorf("unexpected resource type")
 		}
-	} else if format == "yaml" {
+	case YAML:
 		switch res := result.(type) {
 		case []resource.Resource:
 			for _, r := range res {
@@ -84,12 +100,15 @@ func printResource(result interface{}, format string) error {
 		default:
 			return fmt.Errorf("unexpected resource type")
 		}
+	default:
+		return fmt.Errorf("invalid output format %s.\n", format)
 	}
 	return nil
 }
 
 func initGet(kinds schema.KindCatalog) {
 	rootCmd.AddCommand(getCmd)
+	var format OutputFormat = YAML
 
 	for name, kind := range kinds {
 		gatewayKind, isGatewayKind := kind.GetLatestKindVersion().(*schema.GatewayKindVersion)
@@ -116,17 +135,6 @@ func initGet(kinds schema.KindCatalog) {
 					parentValue[i] = *v
 				}
 				var err error
-
-				format, err := cmd.Flags().GetString("output")
-				if err != nil {
-					fmt.Println("Error retrieving output format:", err)
-					return
-				}
-
-				if format != "json" && format != "yaml" && format != "name" {
-					fmt.Fprintf(os.Stderr, "Invalid output format: %s. Expected 'json' or 'yaml' or 'name'.\n", format)
-					return
-				}
 
 				if len(args) == 0 {
 					var result []resource.Resource
@@ -180,7 +188,7 @@ func initGet(kinds schema.KindCatalog) {
 				kindCmd.MarkFlagRequired(flag.FlagName)
 			}
 		}
-		kindCmd.Flags().StringP("output", "o", "yaml", "Output format. One of: json|yaml|name")
+		kindCmd.Flags().VarP(enumflag.New(&format, "output", OutputFormatIds, enumflag.EnumCaseInsensitive), "output", "o", "Output format. One of: json|yaml|name (default is yaml)")
 		getCmd.AddCommand(kindCmd)
 	}
 }
