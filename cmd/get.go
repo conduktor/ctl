@@ -168,7 +168,7 @@ func initGet(kinds schema.KindCatalog) {
 				kindCmd.MarkFlagRequired(flag.FlagName)
 			}
 		}
-		kindCmd.Flags().StringP("output", "o", "", "Output format. One of: json|yaml")
+		kindCmd.Flags().StringP("output", "o", "yaml", "Output format. One of: json|yaml")
 		getCmd.AddCommand(kindCmd)
 	}
 }
