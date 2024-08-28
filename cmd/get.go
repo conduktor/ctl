@@ -28,6 +28,10 @@ var OutputFormatIds = map[OutputFormat][]string{
 	NAME: {"name"},
 }
 
+func (o OutputFormat) String() string {
+	return OutputFormatIds[o][0]
+}
+
 var getCmd = &cobra.Command{
 	Use:   "get",
 	Short: "Get resource of a given kind",
@@ -101,7 +105,7 @@ func printResource(result interface{}, format OutputFormat) error {
 			return fmt.Errorf("unexpected resource type")
 		}
 	default:
-		return fmt.Errorf("invalid output format %s.\n", format)
+		return fmt.Errorf("invalid output format %s", format.String())
 	}
 	return nil
 }
