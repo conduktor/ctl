@@ -192,7 +192,7 @@ func initGet(kinds schema.KindCatalog) {
 				kindCmd.MarkFlagRequired(flag.FlagName)
 			}
 		}
-		kindCmd.Flags().VarP(enumflag.New(&format, "output", OutputFormatIds, enumflag.EnumCaseInsensitive), "output", "o", "Output format. One of: json|yaml|name (default is yaml)")
+		kindCmd.Flags().VarP(enumflag.New(&format, "output", OutputFormatIds, enumflag.EnumCaseInsensitive), "output", "o", "Output format. One of: json|yaml|name")
 		getCmd.AddCommand(kindCmd)
 	}
 }
