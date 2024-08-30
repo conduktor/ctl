@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/conduktor/ctl/resource"
 	"github.com/conduktor/ctl/schema"
-	"github.com/conduktor/ctl/utils"
 	"github.com/spf13/cobra"
 	"github.com/thediveo/enumflag/v2"
 )
@@ -114,6 +114,44 @@ func initGet(kinds schema.KindCatalog) {
 	rootCmd.AddCommand(getCmd)
 	var format OutputFormat = YAML
 
+	var allCmd = &cobra.Command{
+		Use:   "all",
+		Short: "Get all global resources",
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			var allResources []resource.Resource
+
+			kindsByName := sortedKeys(kinds)
+
+			for _, key := range kindsByName {
+				kind := kinds[key]
+
+				// keep only the Kinds where kind.GetParentFlag() is empty and not of GatewayKind (demands extra configuration, TODO fix if config is provided)
+				if len(kind.GetParentFlag()) > 0 {
+					continue
+				}
+				if _, isGatewayKind := kind.GetLatestKindVersion().(*schema.GatewayKindVersion); isGatewayKind {
+					continue
+				}
+
+				resources, err := consoleApiClient().Get(&kind, []string{}, map[string]string{})
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Error fetching resource %s: %s\n", kind.GetName(), err)
+					continue
+				}
+				allResources = append(allResources, resources...)
+			}
+			err := printResource(allResources, format)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "%s\n", err)
+				os.Exit(1)
+			}
+		},
+	}
+	allCmd.Flags().VarP(enumflag.New(&format, "output", OutputFormatIds, enumflag.EnumCaseInsensitive), "output", "o", "Output format. One of: json|yaml|name")
+	getCmd.AddCommand(allCmd)
+
+	// Add all kinds to the 'get' command
 	for name, kind := range kinds {
 		gatewayKind, isGatewayKind := kind.GetLatestKindVersion().(*schema.GatewayKindVersion)
 		args := cobra.MaximumNArgs(1)
@@ -176,23 +214,28 @@ func initGet(kinds schema.KindCatalog) {
 			kindCmd.MarkFlagRequired(flag)
 		}
 		for key, flag := range listFlags {
-			var flagSetted = false
+			var isFlagSet bool
 			if flag.Type == "string" {
-				flagSetted = true
+				isFlagSet = true
 				listFlagValue[key] = kindCmd.Flags().String(flag.FlagName, "", "")
 			} else if flag.Type == "boolean" {
-				flagSetted = true
+				isFlagSet = true
 				listFlagValue[key] = kindCmd.Flags().Bool(flag.FlagName, false, "")
-			} else {
-				if *debug || utils.CdkDebug() {
-					fmt.Fprintf(os.Stderr, "Unknown flag type %s\n", flag.Type)
-				}
 			}
-			if flagSetted && flag.Required {
+			if isFlagSet && flag.Required {
 				kindCmd.MarkFlagRequired(flag.FlagName)
 			}
 		}
 		kindCmd.Flags().VarP(enumflag.New(&format, "output", OutputFormatIds, enumflag.EnumCaseInsensitive), "output", "o", "Output format. One of: json|yaml|name")
 		getCmd.AddCommand(kindCmd)
 	}
+}
+
+func sortedKeys(kinds schema.KindCatalog) []string {
+	keys := make([]string, 0, len(kinds))
+	for key := range kinds {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
 }
