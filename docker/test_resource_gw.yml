@@ -42,8 +42,9 @@ metadata:
   name: rule1
   vCluster: vcluster1
 spec:
-  logicalTopicNamePattern: toto.*
-  physicalTopicName: yolo
+  pattern: toto.*
+  physicalTopics:
+    delete: yolo
   autoManaged: true
 ---
 apiVersion: gateway/v2
@@ -52,8 +53,9 @@ metadata:
   name: rule2
   vCluster: vcluster1
 spec:
-  logicalTopicNamePattern: toto.*
-  physicalTopicName: yolo
+  pattern: toto.*
+  physicalTopics:
+    delete: yolo
 ---
 apiVersion: gateway/v2
 kind: GatewayGroup
@@ -130,8 +132,17 @@ spec:
 apiVersion: gateway/v2
 kind: GatewayServiceAccount
 metadata:
+  name: user1
+  vCluster: vcluster1
+spec:
+  type: Local
+---
+apiVersion: gateway/v2
+kind: GatewayServiceAccount
+metadata:
   name: user2
   vCluster: vcluster1
 spec:
   type: External
-  principal: ext_user2
+  externalNames:
+    - ext_user2
