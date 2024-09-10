@@ -51,9 +51,9 @@ CDK_API_KEY=<admin-token>
  -   Your Gateway User for the API 
  -   Your Gatway Password for the API
 ````yaml
-export CDK_GATEWAY_BASE_URL=http://localhost:8888
-export CDK_GATEWAY_USER=admin
-export CDK_GATEWAY_PASSWORD=conduktor
+CDK_GATEWAY_BASE_URL=http://localhost:8888
+CDK_GATEWAY_USER=admin
+CDK_GATEWAY_PASSWORD=conduktor
 ````
 
 ### Commands Usage
