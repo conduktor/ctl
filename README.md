@@ -36,12 +36,24 @@ To run the CLI you will need to provide the Conduktor Console URL and an API acc
 
 ### Configure
 
-To use Conduktor CLI, you need to define 2 environment variables:
--   The URL of Conduktor Console
--   Your API token (either a User Token or Application Token). You can generate an API token on `/settings/public-api-keys` page of your Console instance.
+To use Conduktor CLI, you need to:
+
+**Define 2 environment variables for Console**:
+ -   The URL of Conduktor Console
+ -   Your API token (either a User Token or Application Token). You can generate an API token on `/settings/public-api-keys` page of your Console instance, or create one through the [CLI](https://docs.conduktor.io/platform/reference/cli-reference/#admin-api-key).
 ````yaml
 CDK_BASE_URL=http://localhost:8080
 CDK_API_KEY=<admin-token>
+````
+
+**Define 3 environment variables for Gateway**:
+ -   The URL of the Conduktor Gateway API
+ -   Your Gateway User for the API 
+ -   Your Gatway Password for the API
+````yaml
+CDK_GATEWAY_BASE_URL=http://localhost:8888
+CDK_GATEWAY_USER=admin
+CDK_GATEWAY_PASSWORD=conduktor
 ````
 
 ### Commands Usage
@@ -71,7 +83,9 @@ Flags:
 Use "conduktor [command] --help" for more information about a command.
 ````
 
-You can find more usage details on our [documentation](https://docs.conduktor.io/platform/reference/cli-reference/)
+You can find more usage details on our:
+ - [Console CLI documentation](https://docs.conduktor.io/platform/reference/cli-reference/)
+ - [Gateway CLI documentation](https://docs.conduktor.io/gateway/reference/cli-reference/)
 
 
 #### How to use behind teleport
