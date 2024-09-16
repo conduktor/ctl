@@ -248,5 +248,28 @@
         ]
       }
     }
+  },
+  {
+    "httpRequest": {
+      "method": "POST",
+      "path": "/api/public/sql/v1/execute",
+      "queryStringParameters": {
+        "maxLine": ["100"]
+      },
+      "headers": {
+        "Authorization": "Bearer yo"
+      },
+      "body": "select * from \"julien-cloud_sql_test\""
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": {"header": [], "row": []},
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
   }
+
 ]

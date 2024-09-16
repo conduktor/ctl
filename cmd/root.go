@@ -84,4 +84,5 @@ func init() {
 	initConsoleMkKind()
 	initGatewayMkKind()
 	initPrintKind(kinds)
+	initSql(kinds)
 }
