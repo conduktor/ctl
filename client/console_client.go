@@ -382,6 +382,26 @@ func (client *Client) CreateApplicationInstanceToken(applicationInstanceName, na
 	}
 }
 
+type SqlResult struct {
+	Header []string        `json:"header"`
+	Row    [][]interface{} `json:"row"`
+}
+
+func (client *Client) ExecuteSql(maxLine int, sql string) (SqlResult, error) {
+	var result SqlResult
+	client.setApiKeyFromEnvIfNeeded()
+	url := client.baseUrl + "/public/sql/v1/execute"
+	resp, err := client.client.R().SetBody(sql).SetQueryParam("maxLine", fmt.Sprintf("%d", maxLine)).Post(url)
+	if err != nil {
+		return result, err
+	} else if resp.IsError() {
+		return result, fmt.Errorf(extractApiError(resp))
+	} else {
+		err = json.Unmarshal(resp.Body(), &result)
+		return result, err
+	}
+}
+
 func (client *Client) DeleteToken(uuid string) error {
 	client.setApiKeyFromEnvIfNeeded()
 	url := client.baseUrl + "/token/v1/" + uuid
