@@ -9,7 +9,19 @@ env:
   GO_VERSION: 1.22.0
 
 jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check version prefix
+        shell: bash
+        run: |
+          if [ "${{ startsWith(github.event.inputs.version, 'v') }}" == "false" ]; then
+            echo "Invalid version, need to start with a 'v'"
+            exit 1
+          fi
+
   unit-test:
+    needs: [check-version]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -20,6 +32,7 @@ jobs:
         run: go test ./...
 
   integration-test:
+    needs: [check-version]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
