@@ -83,15 +83,17 @@ jobs:
           gh version
           gh auth status
 
+          export APP_VERSION=${APP_VERSION#v} # remove 'v' prefix
+
           export BRANCH=update_console-plus_$APP_VERSION
           echo BRANCH $BRANCH
           export BASE_BRANCH=main
           echo BASE_BRANCH $BASE_BRANCH
-          VERIF_SHA=$(curl -s -L https://github.com/conduktor/ctl/archive/refs/tags/${APP_VERSION}.tar.gz | sha256sum | cut -f 1 -d " ")
+          VERIF_SHA=$(curl -s -L https://github.com/conduktor/ctl/archive/refs/tags/v${APP_VERSION}.tar.gz | sha256sum | cut -f 1 -d " ")
           echo VERIF_SHA $VERIF_SHA
 
           export TITLE="Bump conduktor-ctl version to ${APP_VERSION}"
-          export BODY="Release https://github.com/conduktor/ctl/releases/tag/${APP_VERSION}"
+          export BODY="Release https://github.com/conduktor/ctl/releases/tag/v${APP_VERSION}"
           export MESSAGE="${TITLE} .${BODY}"
           echo TITLE $TITLE
           echo BODY $BODY
