@@ -1,10 +1,35 @@
-# Conduktor ctl
-![Release](https://img.shields.io/github/v/release/conduktor/ctl?sort=semver&logo=github)
-![License](https://img.shields.io/github/license/conduktor/ctl)
-[![Roadmap](https://img.shields.io/badge/Roadmap-click%20here-blueviolet)](https://product.conduktor.help/tabs/1-in-development)
-[![twitter](https://img.shields.io/twitter/follow/getconduktor.svg?style=social)](https://twitter.com/getconduktor)
+<a name="readme-top" id="readme-top"></a>
 
-This repository contain Conduktor CLI source code. 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/conduktor/conduktor.io-public/main/logo/transparent.png" width="256px" />
+</p>
+<h1 align="center">
+    <strong>Conduktor CLI</strong>
+</h1>
+
+<p align="center">
+    <a href="https://docs.conduktor.io/"><strong>Explore the docs »</strong></a>
+    <br />
+    <br />
+    <a href="https://github.com/conduktor/ctl/issues">Report Bug</a>
+    ·
+    <a href="https://github.com/conduktor/ctl/issues">Request Feature</a>
+    ·
+    <a href="https://support.conduktor.io/">Contact support</a>
+    <br />
+    <br />
+    <a href=""><img alt="GitHub Release" src="https://img.shields.io/github/v/release/conduktor/ctl?sort=semver&logo=github&color=BCFE68"></a>
+    ·
+    <img alt="License" src="https://img.shields.io/github/license/conduktor/ctl?color=BCFE68">
+    <br />
+    <br />
+    <a href="https://conduktor.io/"><img src="https://img.shields.io/badge/Website-conduktor.io-192A4E?color=BCFE68" alt="Scale Data Streaming With Security and Control"></a>
+    ·
+    <a href="https://twitter.com/getconduktor"><img alt="X (formerly Twitter) Follow" src="https://img.shields.io/twitter/follow/getconduktor?color=BCFE68"></a>
+    ·
+    <a href="https://conduktor.io/slack"><img src="https://img.shields.io/badge/Slack-Join%20Community-BCFE68?logo=slack" alt="Slack"></a>
+</p>
+
 Conduktor CLI is a command line tool to interact with Conduktor Console. 
 It is strongly inspired by Kubernetes kubectl CLI tool and reuse some of it's concepts.
 
