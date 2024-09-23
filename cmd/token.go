@@ -11,7 +11,8 @@ var applicationInstanceNameForList *string
 var applicationInstanceNameForCreate *string
 
 var tokenCmd = &cobra.Command{
-	Use: "token",
+	Use:   "token",
+	Short: "Manage Admin and Application Instance tokens",
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Help()
 		os.Exit(1)

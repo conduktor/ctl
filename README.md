@@ -97,6 +97,8 @@ Available Commands:
   delete      Delete resource of a given kind and name
   get         Get resource of a given kind
   help        Help about any command
+  login       Login user using username password to get a JWT token
+  token       Manage Admin and Application Instance Token
   version     Display the version of conduktor
 
 Flags:
