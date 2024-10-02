@@ -94,6 +94,7 @@ func FromFolder(path string) ([]Resource, error) {
 }
 
 func FromYamlByte(data []byte) ([]Resource, error) {
+	data = expandEnv(data)
 	reader := bytes.NewReader(data)
 	var yamlData interface{}
 	results := make([]Resource, 0, 2)
@@ -116,6 +117,22 @@ func FromYamlByte(data []byte) ([]Resource, error) {
 		results = append(results, result)
 	}
 	return results, nil
+}
+
+// expandEnv replaces ${var} or $var in config according to the values of the current environment variables.
+// The replacement is case-sensitive. References to undefined variables are replaced by the empty string.
+// A default value can be given by using the form ${var:-default value}.
+func expandEnv(data []byte) []byte {
+	return []byte(os.Expand(string(data), func(key string) string {
+		keyAndDefault := strings.SplitN(key, ":-", 2)
+		key = keyAndDefault[0]
+
+		v := os.Getenv(key)
+		if v == "" && len(keyAndDefault) == 2 {
+			v = keyAndDefault[1] // Set value to the default.
+		}
+		return v
+	}))
 }
 
 func extractKeyFromMetadataMap(m map[string]interface{}, key string) (string, error) {
