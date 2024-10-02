@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -127,7 +128,11 @@ func expandEnv(data []byte) []byte {
 		keyAndDefault := strings.SplitN(key, ":-", 2)
 		key = keyAndDefault[0]
 
-		v := os.Getenv(key)
+		v, ok := os.LookupEnv(key)
+		if !ok && len(keyAndDefault) == 1 {
+			log.Fatalf("environment variable %s not found", key)
+			panic(fmt.Sprintf("environment variable %s not found", key))
+		}
 		if v == "" && len(keyAndDefault) == 2 {
 			v = keyAndDefault[1] // Set value to the default.
 		}
