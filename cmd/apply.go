@@ -11,20 +11,20 @@ import (
 
 var dryRun *bool
 
-func resourceForPath(path string) ([]resource.Resource, error) {
+func resourceForPath(path string, strict bool) ([]resource.Resource, error) {
 	directory, err := isDirectory(path)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(1)
 	}
 	if directory {
-		return resource.FromFolder(path)
+		return resource.FromFolder(path, strict)
 	} else {
-		return resource.FromFile(path)
+		return resource.FromFile(path, strict)
 	}
 }
 
-func initApply(kinds schema.KindCatalog) {
+func initApply(kinds schema.KindCatalog, strict bool) {
 	// applyCmd represents the apply command
 	var filePath *[]string
 	var applyCmd = &cobra.Command{
@@ -32,7 +32,7 @@ func initApply(kinds schema.KindCatalog) {
 		Short: "Upsert a resource on Conduktor",
 		Long:  ``,
 		Run: func(cmd *cobra.Command, args []string) {
-			resources := loadResourceFromFileFlag(*filePath)
+			resources := loadResourceFromFileFlag(*filePath, strict)
 			schema.SortResourcesForApply(kinds, resources, *debug)
 			allSuccess := true
 			for _, resource := range resources {

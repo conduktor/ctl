@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	gabs "github.com/Jeffail/gabs/v2"
@@ -65,16 +66,16 @@ type forParsingStruct struct {
 	Spec       map[string]interface{}
 }
 
-func FromFile(path string) ([]Resource, error) {
+func FromFile(path string, strict bool) ([]Resource, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	return FromYamlByte(data)
+	return FromYamlByte(data, strict)
 }
 
-func FromFolder(path string) ([]Resource, error) {
+func FromFolder(path string, strict bool) ([]Resource, error) {
 	dirEntry, err := os.ReadDir(path)
 	if err != nil {
 		return nil, err
@@ -82,7 +83,7 @@ func FromFolder(path string) ([]Resource, error) {
 	var result = make([]Resource, 0)
 	for _, entry := range dirEntry {
 		if !entry.IsDir() && (strings.HasSuffix(entry.Name(), ".yml") || strings.HasSuffix(entry.Name(), ".yaml")) {
-			resources, err := FromFile(filepath.Join(path, entry.Name()))
+			resources, err := FromFile(filepath.Join(path, entry.Name()), strict)
 			result = append(result, resources...)
 			if err != nil {
 				return nil, err
@@ -93,7 +94,8 @@ func FromFolder(path string) ([]Resource, error) {
 	return result, nil
 }
 
-func FromYamlByte(data []byte) ([]Resource, error) {
+func FromYamlByte(data []byte, strict bool) ([]Resource, error) {
+	data = expandEnvVars(data, strict)
 	reader := bytes.NewReader(data)
 	var yamlData interface{}
 	results := make([]Resource, 0, 2)
@@ -116,6 +118,47 @@ func FromYamlByte(data []byte) ([]Resource, error) {
 		results = append(results, result)
 	}
 	return results, nil
+}
+
+var envVarRegex = regexp.MustCompile(`\$\{([^}]+)\}`)
+
+// expandEnv replaces ${var} or $var in config according to the values of the current environment variables.
+// The replacement is case-sensitive. References to undefined variables are replaced by the empty string.
+// A default value can be given by using the form ${var:-default value}.
+func expandEnvVars(input []byte, strict bool) []byte {
+	missingEnvVars := make([]string, 0)
+	result := envVarRegex.ReplaceAllFunc(input, func(match []byte) []byte {
+		varName := string(match[2 : len(match)-1])
+		defaultValue := ""
+		if strings.Contains(varName, ":-") {
+			parts := strings.SplitN(varName, ":-", 2)
+			varName = parts[0]
+			defaultValue = parts[1]
+		}
+		value, isFound := os.LookupEnv(varName)
+
+		// use default value
+		if (!isFound || value == "") && defaultValue != "" {
+			return []byte(defaultValue)
+		}
+
+		if strict {
+			if (!isFound || value == "") && defaultValue == "" {
+				missingEnvVars = append(missingEnvVars, varName)
+				return []byte("")
+			}
+		} else {
+			if !isFound && defaultValue == "" {
+				missingEnvVars = append(missingEnvVars, varName)
+				return []byte("")
+			}
+		}
+		return []byte(value)
+	})
+	if len(missingEnvVars) > 0 {
+		panic(fmt.Sprintf("Missing environment variables: %s", strings.Join(missingEnvVars, ", ")))
+	}
+	return result
 }
 
 func extractKeyFromMetadataMap(m map[string]interface{}, key string) (string, error) {

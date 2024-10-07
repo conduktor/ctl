@@ -76,7 +76,7 @@ metadata:
   name: cg1
 `)
 
-	results, err := FromYamlByte(yamlByte)
+	results, err := FromYamlByte(yamlByte, true)
 	spew.Dump(results)
 	if err != nil {
 		t.Error(err)
@@ -104,7 +104,7 @@ metadata:
 }
 
 func TestFromFolder(t *testing.T) {
-	resources, err := FromFolder("yamls")
+	resources, err := FromFolder("yamls", true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -149,6 +149,53 @@ func TestFromFolder(t *testing.T) {
 	})
 }
 
+func TestResourceExpansionVariableEnv(t *testing.T) {
+	topicDesc, err := os.CreateTemp("/tmp", "topic.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer topicDesc.Close()
+	defer os.Remove(topicDesc.Name())
+	if _, err := topicDesc.Write([]byte(`This topic is awesome`)); err != nil {
+		log.Fatal(err)
+	}
+
+	yamlByte := []byte(`
+# comment
+---
+apiVersion: v1
+kind: Topic
+metadata:
+  cluster: ${CLUSTER_NAME}
+  name: ${TOPIC_NAME:-toto}
+  labels:
+    conduktor.io/descriptionFile: ` + topicDesc.Name() + `
+spec:
+  replicationFactor: 2
+  partition: 3
+`)
+	os.Setenv("CLUSTER_NAME", "cluster-a")
+
+	results, err := FromYamlByte(yamlByte, true)
+	spew.Dump(results)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(results) != 1 {
+		t.Errorf("results expected of length 1, got length %d", len(results))
+	}
+
+	checkResourceWithoutJsonOrder(t, results[0], Resource{
+		Version:  "v1",
+		Kind:     "Topic",
+		Name:     "toto",
+		Metadata: map[string]interface{}{"cluster": "cluster-a", "name": "toto", "labels": map[string]interface{}{"conduktor.io/description": "This topic is awesome"}},
+		Spec:     map[string]interface{}{"replicationFactor": 2.0, "partition": 3.0},
+		Json:     []byte(`{"apiVersion":"v1","kind":"Topic","metadata":{"cluster":"cluster-a","name":"toto","labels":{"conduktor.io/description":"This topic is awesome"}},"spec":{"replicationFactor":2,"partition":3}}`),
+	})
+}
+
 func TestResourceExpansionForTopic(t *testing.T) {
 	topicDesc, err := os.CreateTemp("/tmp", "topic.md")
 	if err != nil {
@@ -175,7 +222,7 @@ spec:
   partition: 3
 `)
 
-	results, err := FromYamlByte(yamlByte)
+	results, err := FromYamlByte(yamlByte, true)
 	spew.Dump(results)
 	if err != nil {
 		t.Error(err)
@@ -266,7 +313,7 @@ spec:
   schemaFile: ` + jsonSchema.Name() + `
 `)
 
-	results, err := FromYamlByte(yamlByte)
+	results, err := FromYamlByte(yamlByte, true)
 	spew.Dump(results)
 	if err != nil {
 		t.Error(err)
