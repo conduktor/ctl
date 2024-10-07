@@ -76,7 +76,7 @@ metadata:
   name: cg1
 `)
 
-	results, err := FromYamlByte(yamlByte)
+	results, err := FromYamlByte(yamlByte, true)
 	spew.Dump(results)
 	if err != nil {
 		t.Error(err)
@@ -104,7 +104,7 @@ metadata:
 }
 
 func TestFromFolder(t *testing.T) {
-	resources, err := FromFolder("yamls")
+	resources, err := FromFolder("yamls", true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,7 +176,7 @@ spec:
 `)
 	os.Setenv("CLUSTER_NAME", "cluster-a")
 
-	results, err := FromYamlByte(yamlByte)
+	results, err := FromYamlByte(yamlByte, true)
 	spew.Dump(results)
 	if err != nil {
 		t.Error(err)
@@ -222,7 +222,7 @@ spec:
   partition: 3
 `)
 
-	results, err := FromYamlByte(yamlByte)
+	results, err := FromYamlByte(yamlByte, true)
 	spew.Dump(results)
 	if err != nil {
 		t.Error(err)
@@ -313,7 +313,7 @@ spec:
   schemaFile: ` + jsonSchema.Name() + `
 `)
 
-	results, err := FromYamlByte(yamlByte)
+	results, err := FromYamlByte(yamlByte, true)
 	spew.Dump(results)
 	if err != nil {
 		t.Error(err)

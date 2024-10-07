@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func initDelete(kinds schema.KindCatalog) {
+func initDelete(kinds schema.KindCatalog, strict bool) {
 	var filePath *[]string
 	var deleteCmd = &cobra.Command{
 		Use:   "delete",
@@ -17,7 +17,7 @@ func initDelete(kinds schema.KindCatalog) {
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			// Root command does nothing
-			resources := loadResourceFromFileFlag(*filePath)
+			resources := loadResourceFromFileFlag(*filePath, strict)
 			schema.SortResourcesForDelete(kinds, resources, *debug)
 			allSuccess := true
 			for _, resource := range resources {

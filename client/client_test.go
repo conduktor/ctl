@@ -367,7 +367,7 @@ func TestDeleteResourceShouldWork(t *testing.T) {
 		responder,
 	)
 
-	resource, err := resource.FromYamlByte([]byte(`{"apiVersion":"v2","kind":"Topic","metadata":{"name":"toto","cluster":"local"},"spec":{}}`))
+	resource, err := resource.FromYamlByte([]byte(`{"apiVersion":"v2","kind":"Topic","metadata":{"name":"toto","cluster":"local"},"spec":{}}`), true)
 	if err != nil {
 		t.Error(err)
 	}
