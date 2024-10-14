@@ -15,7 +15,7 @@ jobs:
       - name: Check version prefix
         shell: bash
         run: |
-          if [ "${{ startsWith(github.event.inputs.version, 'v') }}" == "false" ]; then
+          if [ "${{ startsWith(github.event.release.tag_name, 'v') }}" == "false" ]; then
             echo "Invalid version, need to start with a 'v'"
             exit 1
           fi
