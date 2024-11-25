@@ -1,13 +1,13 @@
 openapi: 3.1.0
 info:
-  title: Conduktor API
+  title: Conduktor Gateway API
   version: v2
   summary: The API to interact with Conduktor Gateway programmatically
   contact:
     email: contact@conduktor.io
     url: https://docs.conduktor.io
   x-logo:
-    url: https://avatars.githubusercontent.com/u/60062294?s=200&v=4
+    url: https://raw.githubusercontent.com/conduktor/conduktor.io-public/main/logo/conduktor-gateway-api.png
     backgroundColor: '#FFFFFF'
     altText: Conduktor logo
 tags:
@@ -278,7 +278,7 @@ tags:
       <SchemaDefinition schemaRef="#/components/schemas/Plugin" />
 
 
-  - name: cli_gateway-service-account_gateway_v2_11
+  - name: cli_gateway-service-account_gateway_v2_10
     description: |+
       ### Definition
       
@@ -319,7 +319,7 @@ tags:
     
 
     x-displayName: service-account
-  - name: cli_gateway-group_gateway_v2_10
+  - name: cli_gateway-group_gateway_v2_11
     description: |+
       ### Definition
       
@@ -419,7 +419,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell
           source: |-
@@ -477,7 +477,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell
           source: |-
@@ -538,7 +538,7 @@ paths:
                     superUsers:
                       - username1
                       - username2
-                upsertResult: Updated
+                upsertResult: UPDATED
         '400':
           description: Wrong format or usage of reserved keywords (e.g. passthrough)
           content:
@@ -572,7 +572,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell
           source: |-
@@ -655,7 +655,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell
           source: |-
@@ -726,7 +726,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell
           source: |-
@@ -816,7 +816,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell
           source: |-
@@ -873,7 +873,7 @@ paths:
                     vCluster: vCluster1
                   spec:
                     physicalName: physicalName1
-                upsertResult: Updated
+                upsertResult: UPDATED
         '400':
           description: The request is not valid
           content:
@@ -907,7 +907,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell
           source: |-
@@ -979,7 +979,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell
           source: |-
@@ -1074,7 +1074,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell
           source: |-
@@ -1136,6 +1136,7 @@ paths:
                       compact: compact_topic
                       deleteCompact: compact_delete_topic
                     autoManaged: false
+                    offsetCorrectness: false
         '400':
           description: The request is not valid
           content:
@@ -1169,7 +1170,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell
           source: |-
@@ -1214,6 +1215,7 @@ paths:
                   compact: compact_topic
                   deleteCompact: compact_delete_topic
                 autoManaged: false
+                offsetCorrectness: false
         required: true
       responses:
         '200':
@@ -1236,7 +1238,8 @@ paths:
                       compact: compact_topic
                       deleteCompact: compact_delete_topic
                     autoManaged: false
-                upsertResult: Created
+                    offsetCorrectness: false
+                upsertResult: CREATED
         '400':
           description: The request is not valid
           content:
@@ -1254,13 +1257,23 @@ paths:
               example:
                 title: The given credentials are not valid
         '404':
-          description: The given virtual cluster does not exist
+          description: The given virtual cluster does not exist or one of the physical
+            topics does not exist
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotFound'
               example:
-                title: The given virtual cluster does not exist
+                title: The given virtual cluster does not exist or one of the physical
+                  topics does not exist
+        '409':
+          description: One of the physical topics exists with an incompatible cleanup.policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conflict'
+              example:
+                title: One of the physical topics exists with an incompatible cleanup.policy
         '500':
           description: An unexpected error occurred in the server
           content:
@@ -1270,7 +1283,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell
           source: |-
@@ -1293,7 +1306,8 @@ paths:
                   "compact" : "compact_topic",
                   "deleteCompact" : "compact_delete_topic"
                 },
-                "autoManaged" : false
+                "autoManaged" : false,
+                "offsetCorrectness" : false
               }
             }'
     delete:
@@ -1351,7 +1365,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell
           source: |-
@@ -1456,7 +1470,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell
           source: |-
@@ -1527,7 +1541,7 @@ paths:
                       virtualTopic: yellow_cars
                       statement: SELECT '$.type' as type, '$.price' as price FROM
                         cars WHERE '$.color' = 'yellow'
-                upsertResult: Created
+                upsertResult: CREATED
         '400':
           description: The request is not valid
           content:
@@ -1563,7 +1577,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell
           source: |-
@@ -1652,7 +1666,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell
           source: |-
@@ -1734,7 +1748,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell
           source: |-
@@ -1840,7 +1854,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell
           source: |-
@@ -1851,7 +1865,7 @@ paths:
   /gateway/v2/service-account:
     get:
       tags:
-        - cli_gateway-service-account_gateway_v2_11
+        - cli_gateway-service-account_gateway_v2_10
       description: |2+
 
 
@@ -1903,7 +1917,7 @@ paths:
                     name: user1
                     vCluster: vcluster1
                   spec:
-                    type: External
+                    type: EXTERNAL
                     externalNames:
                       - externalName
                 - kind: GatewayServiceAccount
@@ -1912,7 +1926,7 @@ paths:
                     name: user1
                     vCluster: vcluster1
                   spec:
-                    type: Local
+                    type: LOCAL
         '400':
           description: The request is not valid
           content:
@@ -1938,7 +1952,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell
           source: |-
@@ -1948,7 +1962,7 @@ paths:
               --header 'Authorization: Basic YWRtaW46Y29uZHVrdG9y'
     put:
       tags:
-        - cli_gateway-service-account_gateway_v2_11
+        - cli_gateway-service-account_gateway_v2_10
       description: |2+
 
 
@@ -1978,7 +1992,7 @@ paths:
                 name: user1
                 vCluster: vcluster1
               spec:
-                type: External
+                type: EXTERNAL
                 externalNames:
                   - externalName
         required: true
@@ -1997,10 +2011,10 @@ paths:
                     name: user1
                     vCluster: vcluster1
                   spec:
-                    type: External
+                    type: EXTERNAL
                     externalNames:
                       - externalName
-                upsertResult: Created
+                upsertResult: CREATED
         '400':
           description: The request is not valid
           content:
@@ -2044,7 +2058,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell
           source: |-
@@ -2061,7 +2075,7 @@ paths:
                 "vCluster" : "vcluster1"
               },
               "spec" : {
-                "type" : "External",
+                "type" : "EXTERNAL",
                 "externalNames" : [
                   "externalName"
                 ]
@@ -2069,7 +2083,7 @@ paths:
             }'
     delete:
       tags:
-        - cli_gateway-service-account_gateway_v2_11
+        - cli_gateway-service-account_gateway_v2_10
       description: |2+
 
 
@@ -2126,7 +2140,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell
           source: |-
@@ -2141,7 +2155,7 @@ paths:
   /gateway/v2/group:
     get:
       tags:
-        - cli_gateway-group_gateway_v2_10
+        - cli_gateway-group_gateway_v2_11
       description: |2+
 
         [![Beta](https://img.shields.io/badge/Lifecycle-Beta-orange)](#tag/Versioning)
@@ -2206,7 +2220,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell
           source: |-
@@ -2216,7 +2230,7 @@ paths:
               --header 'Authorization: Basic YWRtaW46Y29uZHVrdG9y'
     put:
       tags:
-        - cli_gateway-group_gateway_v2_10
+        - cli_gateway-group_gateway_v2_11
       description: |2+
 
         [![Beta](https://img.shields.io/badge/Lifecycle-Beta-orange)](#tag/Versioning)
@@ -2279,7 +2293,7 @@ paths:
                     externalGroups:
                       - GROUP_READER
                       - GROUP_WRITER
-                upsertResult: Updated
+                upsertResult: UPDATED
         '400':
           description: The request is not valid
           content:
@@ -2313,7 +2327,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell
           source: |-
@@ -2352,7 +2366,7 @@ paths:
   /gateway/v2/group/{name}:
     get:
       tags:
-        - cli_gateway-group_gateway_v2_10
+        - cli_gateway-group_gateway_v2_11
       description: |2+
 
         [![Beta](https://img.shields.io/badge/Lifecycle-Beta-orange)](#tag/Versioning)
@@ -2428,7 +2442,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell
           source: |-
@@ -2438,7 +2452,7 @@ paths:
               --header 'Authorization: Basic YWRtaW46Y29uZHVrdG9y'
     delete:
       tags:
-        - cli_gateway-group_gateway_v2_10
+        - cli_gateway-group_gateway_v2_11
       description: |2+
 
         [![Beta](https://img.shields.io/badge/Lifecycle-Beta-orange)](#tag/Versioning)
@@ -2488,7 +2502,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell
           source: |-
@@ -2744,6 +2758,12 @@ components:
           $ref: '#/components/schemas/PhysicalTopics'
         autoManaged:
           description: Whether the concentration rule is auto managed
+          type: boolean
+        offsetCorrectness:
+          description: |2
+
+            Set the offset management on/off for the logical topics created with this rule (default to false).
+            Setting it on can have some impacts on the performances and the memory usage.
           type: boolean
     Conflict:
       title: Conflict
@@ -3012,7 +3032,7 @@ components:
       title: Map_Json
       description: The configuration of the interceptor
       type: object
-      additionalProperties: { }
+      additionalProperties: {}
     NotChanged:
       title: NotChanged
       type: object
@@ -3036,15 +3056,24 @@ components:
         - delete
       properties:
         delete:
-          description: The physical name of the concentrated topic for delete policy
+          description: |2
+
+            The name of the physical topic to store the data of the concentrated topics created with a 'delete' policy.
+            The topic must exist in the physical kafka cluster with a 'delete' cleanup.policy (except if you use the autoManaged mode)
           type: string
           format: ^[a-zA-Z0-9._-]+$
         compact:
-          description: The physical name of the topic for compact policy
+          description: |2
+
+            The name of the physical topic to store the data of the concentrated topics created with a 'compact' policy.
+            If specified, the topic must exist in the physical kafka cluster with a 'compact' cleanup.policy (except if you use the autoManaged mode)
           type: string
           format: ^[a-zA-Z0-9._-]+$
         deleteCompact:
-          description: The physical name of the topic for delete, compact policy
+          description: |2
+
+            The name of the physical topic to store the data of the concentrated topics created with a 'delete,compact' policy.
+            If specified, the topic must exist in the physical kafka cluster with a 'delete,compact' cleanup.policy (except if you use the autoManaged mode)
           type: string
           format: ^[a-zA-Z0-9._-]+$
     Plugin:
@@ -3206,6 +3235,6 @@ x-tagGroups:
       - cli_concentration-rule_gateway_v2_9
       - cli_interceptor_gateway_v2_12
       - plugin
-      - cli_gateway-service-account_gateway_v2_11
-      - cli_gateway-group_gateway_v2_10
+      - cli_gateway-service-account_gateway_v2_10
+      - cli_gateway-group_gateway_v2_11
       - token
