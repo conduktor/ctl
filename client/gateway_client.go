@@ -176,11 +176,10 @@ func (client *GatewayClient) DeleteResourceInterceptors(resource *resource.Resou
 	kinds := client.GetKinds()
 	kind, ok := kinds[resource.Kind]
 	scope := resource.Metadata["scope"]
-	passthrough := "passthrough"
 	var deleteInterceptorPayload DeleteInterceptorPayload
 	if scope == nil {
 		deleteInterceptorPayload = DeleteInterceptorPayload{
-			VCluster: &passthrough,
+			VCluster: nil,
 			Group:    nil,
 			Username: nil,
 		}
@@ -190,8 +189,6 @@ func (client *GatewayClient) DeleteResourceInterceptors(resource *resource.Resou
 		if vCluster != nil && vCluster.(string) != "" {
 			vClusterValue = vCluster.(string)
 			deleteInterceptorPayload.VCluster = &vClusterValue
-		} else {
-			deleteInterceptorPayload.VCluster = &passthrough
 		}
 		group := scope.(map[string]interface{})["group"]
 		var groupValue string
