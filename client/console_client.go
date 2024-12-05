@@ -46,17 +46,16 @@ type Client struct {
 }
 
 type ApiParameter struct {
-	ApiKey           string
-	BaseUrl          string
-	Debug            bool
-	Key              string
-	Cert             string
-	Cacert           string
-	CdkUser          string
-	CdkPassword      string
-	ExternalUser     string
-	ExternalPassword string
-	Insecure         bool
+	ApiKey      string
+	BaseUrl     string
+	Debug       bool
+	Key         string
+	Cert        string
+	Cacert      string
+	CdkUser     string
+	CdkPassword string
+	AuthMode    string
+	Insecure    bool
 }
 
 func uniformizeBaseUrl(baseUrl string) string {
@@ -87,20 +86,8 @@ func Make(apiParameter ApiParameter) (*Client, error) {
 		return nil, fmt.Errorf("CDK_USER and CDK_PASSWORD must be provided together")
 	}
 
-	if (apiParameter.ExternalUser != "" && apiParameter.ExternalPassword == "") || (apiParameter.ExternalUser == "" && apiParameter.ExternalPassword != "") {
-		return nil, fmt.Errorf("CDK_REMOTE_AUTH_USER and CDK_REMOTE_AUTH_PASSWORD must be provided together")
-	}
-
 	if apiParameter.CdkUser != "" && apiParameter.ApiKey != "" {
 		return nil, fmt.Errorf("Can't set both CDK_USER and CDK_API_KEY")
-	}
-
-	if apiParameter.ExternalUser != "" && apiParameter.ApiKey != "" {
-		return nil, fmt.Errorf("Can't set both CDK_REMOTE_AUTH_USER and CDK_API_KEY")
-	}
-
-	if apiParameter.CdkUser != "" && apiParameter.ExternalUser != "" {
-		return nil, fmt.Errorf("Can't set both CDK_USER and CDK_REMOTE_AUTH_USER")
 	}
 
 	if apiParameter.Cacert != "" {
@@ -123,16 +110,16 @@ func Make(apiParameter ApiParameter) (*Client, error) {
 	}
 
 	if apiParameter.CdkUser != "" {
-		jwtToken, err := result.Login(apiParameter.CdkUser, apiParameter.CdkPassword)
-		if err != nil {
-			return nil, fmt.Errorf("Could not login: %s", err)
+		if strings.ToLower(apiParameter.AuthMode) == "external" {
+			result.authMethod = BasicAuth{apiParameter.CdkUser, apiParameter.CdkPassword}
+		} else {
+			jwtToken, err := result.Login(apiParameter.CdkUser, apiParameter.CdkPassword)
+			if err != nil {
+				return nil, fmt.Errorf("Could not login: %s", err)
+			}
+			bearer := BearerToken{jwtToken.AccessToken}
+			result.authMethod = &bearer
 		}
-		bearer := BearerToken{jwtToken.AccessToken}
-		result.authMethod = &bearer
-	}
-
-	if apiParameter.ExternalUser != "" {
-		result.authMethod = BasicAuth{apiParameter.ExternalUser, apiParameter.ExternalPassword}
 	}
 
 	if result.authMethod != nil {
@@ -153,17 +140,16 @@ func Make(apiParameter ApiParameter) (*Client, error) {
 
 func MakeFromEnv() (*Client, error) {
 	apiParameter := ApiParameter{
-		BaseUrl:          os.Getenv("CDK_BASE_URL"),
-		Debug:            utils.CdkDebug(),
-		Key:              os.Getenv("CDK_KEY"),
-		Cert:             os.Getenv("CDK_CERT"),
-		Cacert:           os.Getenv("CDK_CACERT"),
-		ApiKey:           os.Getenv("CDK_API_KEY"),
-		CdkUser:          os.Getenv("CDK_USER"),
-		CdkPassword:      os.Getenv("CDK_PASSWORD"),
-		ExternalUser:     os.Getenv("CDK_REMOTE_AUTH_USER"),
-		ExternalPassword: os.Getenv("CDK_REMOTE_AUTH_PASSWORD"),
-		Insecure:         strings.ToLower(os.Getenv("CDK_INSECURE")) == "true",
+		BaseUrl:     os.Getenv("CDK_BASE_URL"),
+		Debug:       utils.CdkDebug(),
+		Key:         os.Getenv("CDK_KEY"),
+		Cert:        os.Getenv("CDK_CERT"),
+		Cacert:      os.Getenv("CDK_CACERT"),
+		ApiKey:      os.Getenv("CDK_API_KEY"),
+		CdkUser:     os.Getenv("CDK_USER"),
+		CdkPassword: os.Getenv("CDK_PASSWORD"),
+		AuthMode:    os.Getenv("CDK_AUTH_MODE"),
+		Insecure:    strings.ToLower(os.Getenv("CDK_INSECURE")) == "true",
 	}
 
 	client, err := Make(apiParameter)
@@ -183,29 +169,40 @@ func (c *Client) IgnoreUntrustedCertificate() {
 
 func (c *Client) setAuthMethodFromEnvIfNeeded() {
 	if c.authMethod == nil {
+		authMode := os.Getenv("CDK_AUTH_MODE")
 		apiKey := os.Getenv("CDK_API_KEY")
-		externalUser := os.Getenv("CDK_REMOTE_AUTH_USER")
-		externalPassword := os.Getenv("CDK_REMOTE_AUTH_PASSWORD")
+		
+		if strings.ToLower(authMode) == "external" {
+			user := os.Getenv("CDK_USER")
+			password := os.Getenv("CDK_PASSWORD")
 
-		if apiKey == "" && externalUser == "" {
-			fmt.Fprintln(os.Stderr, "Please set CDK_API_KEY or CDK_REMOTE_AUTH_USER/CDK_REMOTE_AUTH_PASSWORD")
-			os.Exit(1)
-		}
+			if apiKey == "" && user == "" {
+				fmt.Fprintln(os.Stderr, "Please set CDK_API_KEY or CDK_USER/CDK_PASSWORD")
+				os.Exit(1)
+			}
 
-		if apiKey != "" && externalUser != "" {
-			fmt.Fprintln(os.Stderr, "Can't set both CDK_API_KEY and CDK_REMOTE_AUTH_USER")
-			os.Exit(1)
-		}
+			if apiKey != "" && user != "" {
+				fmt.Fprintln(os.Stderr, "Can't set both CDK_API_KEY and CDK_USER")
+				os.Exit(1)
+			}
 
-		if externalUser != "" && externalPassword == "" {
-			fmt.Fprintln(os.Stderr, "Please set CDK_REMOTE_AUTH_PASSWORD when using CDK_REMOTE_AUTH_USER")
-			os.Exit(1)
-		}
+			if user != "" && password == "" {
+				fmt.Fprintln(os.Stderr, "Please set CDK_PASSWORD when using CDK_USER")
+				os.Exit(1)
+			}
 
-		if apiKey != "" {
-			c.authMethod = BearerToken{apiKey}
+			if apiKey != "" {
+				c.authMethod = BearerToken{apiKey}
+			} else {
+				c.authMethod = BasicAuth{user, password}
+			}
 		} else {
-			c.authMethod = BasicAuth{externalUser, externalPassword}
+			if apiKey == "" {
+				fmt.Fprintln(os.Stderr, "Please set CDK_API_KEY")
+				os.Exit(1)
+			}
+
+			c.authMethod = BearerToken{apiKey}
 		}
 
 		c.setAuthMethodInRestClient()
@@ -214,7 +211,7 @@ func (c *Client) setAuthMethodFromEnvIfNeeded() {
 
 func (c *Client) setAuthMethodInRestClient() {
 	if c.authMethod == nil {
-		fmt.Fprintln(os.Stderr, "No authentication method defined. Please set CDK_API_KEY or CDK_USER/CDK_PASSWORD or CDK_REMOTE_AUTH_USER/CDK_REMOTE_AUTH_PASSWORD")
+		fmt.Fprintln(os.Stderr, "No authentication method defined. Please set CDK_API_KEY or CDK_USER/CDK_PASSWORD")
 		os.Exit(1)
 	}
 	c.client = c.client.SetHeader("Authorization", c.authMethod.AuthorizationHeader())

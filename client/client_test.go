@@ -77,15 +77,16 @@ func TestApplyShouldWork(t *testing.T) {
 	}
 }
 
-func TestApplyShouldWorkWithExternalUser(t *testing.T) {
+func TestApplyShouldWorkWithExternalAuthMode(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
-	externalUser := "user"
-	externalPassword := "password"
+	user := "user"
+	password := "password"
 	client, err := Make(ApiParameter{
-		BaseUrl:          baseUrl,
-		ExternalUser:     externalUser,
-		ExternalPassword: externalPassword,
+		BaseUrl:     baseUrl,
+		CdkUser:     user,
+		CdkPassword: password,
+		AuthMode:    "ExTerNaL",
 	})
 	if err != nil {
 		panic(err)
