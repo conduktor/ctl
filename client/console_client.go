@@ -112,13 +112,15 @@ func Make(apiParameter ApiParameter) (*Client, error) {
 	if apiParameter.CdkUser != "" {
 		if strings.ToLower(apiParameter.AuthMode) == "external" {
 			result.authMethod = BasicAuth{apiParameter.CdkUser, apiParameter.CdkPassword}
-		} else {
+		} else if apiParameter.AuthMode == "" || strings.ToLower(apiParameter.AuthMode) == "conduktor" {
 			jwtToken, err := result.Login(apiParameter.CdkUser, apiParameter.CdkPassword)
 			if err != nil {
 				return nil, fmt.Errorf("Could not login: %s", err)
 			}
 			bearer := BearerToken{jwtToken.AccessToken}
 			result.authMethod = &bearer
+		} else {
+			return nil, fmt.Errorf("CDK_AUTH_MODE was: \"%s\". Accepted values are \"conduktor\" or \"external\".", apiParameter.AuthMode)
 		}
 	}
 
@@ -169,10 +171,10 @@ func (c *Client) IgnoreUntrustedCertificate() {
 
 func (c *Client) setAuthMethodFromEnvIfNeeded() {
 	if c.authMethod == nil {
-		authMode := os.Getenv("CDK_AUTH_MODE")
+		authMode := strings.ToLower(os.Getenv("CDK_AUTH_MODE"))
 		apiKey := os.Getenv("CDK_API_KEY")
-		
-		if strings.ToLower(authMode) == "external" {
+
+		if authMode == "external" {
 			user := os.Getenv("CDK_USER")
 			password := os.Getenv("CDK_PASSWORD")
 
@@ -196,13 +198,16 @@ func (c *Client) setAuthMethodFromEnvIfNeeded() {
 			} else {
 				c.authMethod = BasicAuth{user, password}
 			}
-		} else {
+		} else if authMode == "" || authMode == "conduktor" {
 			if apiKey == "" {
 				fmt.Fprintln(os.Stderr, "Please set CDK_API_KEY")
 				os.Exit(1)
 			}
 
 			c.authMethod = BearerToken{apiKey}
+		} else {
+			fmt.Fprintf(os.Stderr, "CDK_AUTH_MODE was: \"%s\". Accepted values are \"conduktor\" or \"external\"\n.", authMode)
+			os.Exit(1)
 		}
 
 		c.setAuthMethodInRestClient()
