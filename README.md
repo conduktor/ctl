@@ -81,6 +81,24 @@ CDK_GATEWAY_USER=admin
 CDK_GATEWAY_PASSWORD=conduktor
 ````
 
+### Configuring the CLI for authenticating through an API Gateway
+Console has the ability to delegate the authentication to an API Gateway.
+To provide the credentials to the API Gateway you can either use a bearer token: 
+````yaml
+CDK_BASE_URL=http://localhost:8080
+CDK_AUTH_MODE=external
+CDK_API_KEY=<token>
+````
+
+or basic auth:
+````yaml
+CDK_BASE_URL=http://localhost:8080
+CDK_AUTH_MODE=external
+CDK_USER=<client_id>
+CDK_PASSWORD=<client_secret>
+````
+
+
 ### Commands Usage
 ````
 You need to define the CDK_API_KEY and CDK_BASE_URL environment variables to use this tool.

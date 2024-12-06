@@ -2,6 +2,7 @@ package client
 
 import (
 	"crypto/tls"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -14,11 +15,34 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
+type AuthMethod interface {
+	AuthorizationHeader() string
+}
+
+type BearerToken struct {
+	Token string
+}
+
+func (t BearerToken) AuthorizationHeader() string {
+	return fmt.Sprintf("Bearer %s", t.Token)
+}
+
+type BasicAuth struct {
+	Username string
+	Password string
+}
+
+func (t BasicAuth) AuthorizationHeader() string {
+	credentials := fmt.Sprintf("%s:%s", t.Username, t.Password)
+	encodedCredentials := base64.StdEncoding.EncodeToString([]byte(credentials))
+	return fmt.Sprintf("Basic %s", encodedCredentials)
+}
+
 type Client struct {
-	apiKey  string
-	baseUrl string
-	client  *resty.Client
-	kinds   schema.KindCatalog
+	authMethod AuthMethod
+	baseUrl    string
+	client     *resty.Client
+	kinds      schema.KindCatalog
 }
 
 type ApiParameter struct {
@@ -30,6 +54,7 @@ type ApiParameter struct {
 	Cacert      string
 	CdkUser     string
 	CdkPassword string
+	AuthMode    string
 	Insecure    bool
 }
 
@@ -60,6 +85,7 @@ func Make(apiParameter ApiParameter) (*Client, error) {
 	if (apiParameter.CdkUser != "" && apiParameter.CdkPassword == "") || (apiParameter.CdkUser == "" && apiParameter.CdkPassword != "") {
 		return nil, fmt.Errorf("CDK_USER and CDK_PASSWORD must be provided together")
 	}
+
 	if apiParameter.CdkUser != "" && apiParameter.ApiKey != "" {
 		return nil, fmt.Errorf("Can't set both CDK_USER and CDK_API_KEY")
 	}
@@ -69,29 +95,40 @@ func Make(apiParameter ApiParameter) (*Client, error) {
 	}
 
 	result := &Client{
-		apiKey:  apiParameter.ApiKey,
-		baseUrl: uniformizeBaseUrl(apiParameter.BaseUrl),
-		client:  restyClient,
-		kinds:   nil,
+		authMethod: nil,
+		baseUrl:    uniformizeBaseUrl(apiParameter.BaseUrl),
+		client:     restyClient,
+		kinds:      nil,
 	}
 
 	if apiParameter.Insecure {
 		result.IgnoreUntrustedCertificate()
 	}
 
-	if apiParameter.CdkUser != "" {
-		jwtToken, err := result.Login(apiParameter.CdkUser, apiParameter.CdkPassword)
-		if err != nil {
-			return nil, fmt.Errorf("Could not login: %s", err)
-		}
-		result.apiKey = jwtToken.AccessToken
+	if apiParameter.ApiKey != "" {
+		result.authMethod = BearerToken{apiParameter.ApiKey}
 	}
 
-	if result.apiKey != "" {
-		result.setApiKeyInRestClient()
+	if apiParameter.CdkUser != "" {
+		if strings.ToLower(apiParameter.AuthMode) == "external" {
+			result.authMethod = BasicAuth{apiParameter.CdkUser, apiParameter.CdkPassword}
+		} else if apiParameter.AuthMode == "" || strings.ToLower(apiParameter.AuthMode) == "conduktor" {
+			jwtToken, err := result.Login(apiParameter.CdkUser, apiParameter.CdkPassword)
+			if err != nil {
+				return nil, fmt.Errorf("Could not login: %s", err)
+			}
+			bearer := BearerToken{jwtToken.AccessToken}
+			result.authMethod = &bearer
+		} else {
+			return nil, fmt.Errorf("CDK_AUTH_MODE was: \"%s\". Accepted values are \"conduktor\" or \"external\".", apiParameter.AuthMode)
+		}
+	}
+
+	if result.authMethod != nil {
+		result.setAuthMethodInRestClient()
 	} else {
 		//it will be set later only when really needed
-		//so aim is not fail when CDK_API_KEY is not set before printing the cmd help
+		//so aim is not fail when auth method is not set before printing the cmd help
 	}
 
 	err := result.initKindFromApi()
@@ -113,6 +150,7 @@ func MakeFromEnv() (*Client, error) {
 		ApiKey:      os.Getenv("CDK_API_KEY"),
 		CdkUser:     os.Getenv("CDK_USER"),
 		CdkPassword: os.Getenv("CDK_PASSWORD"),
+		AuthMode:    os.Getenv("CDK_AUTH_MODE"),
 		Insecure:    strings.ToLower(os.Getenv("CDK_INSECURE")) == "true",
 	}
 
@@ -131,25 +169,62 @@ func (c *Client) IgnoreUntrustedCertificate() {
 	c.client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 }
 
-func (c *Client) setApiKeyFromEnvIfNeeded() {
-	if c.apiKey == "" {
+func (c *Client) setAuthMethodFromEnvIfNeeded() {
+	if c.authMethod == nil {
+		authMode := strings.ToLower(os.Getenv("CDK_AUTH_MODE"))
 		apiKey := os.Getenv("CDK_API_KEY")
-		if apiKey == "" {
-			fmt.Fprintln(os.Stderr, "Please set CDK_API_KEY")
+
+		if authMode == "external" {
+			user := os.Getenv("CDK_USER")
+			password := os.Getenv("CDK_PASSWORD")
+
+			if apiKey == "" && user == "" {
+				fmt.Fprintln(os.Stderr, "Please set CDK_API_KEY or CDK_USER/CDK_PASSWORD")
+				os.Exit(1)
+			}
+
+			if apiKey != "" && user != "" {
+				fmt.Fprintln(os.Stderr, "Can't set both CDK_API_KEY and CDK_USER")
+				os.Exit(1)
+			}
+
+			if user != "" && password == "" {
+				fmt.Fprintln(os.Stderr, "Please set CDK_PASSWORD when using CDK_USER")
+				os.Exit(1)
+			}
+
+			if apiKey != "" {
+				c.authMethod = BearerToken{apiKey}
+			} else {
+				c.authMethod = BasicAuth{user, password}
+			}
+		} else if authMode == "" || authMode == "conduktor" {
+			if apiKey == "" {
+				fmt.Fprintln(os.Stderr, "Please set CDK_API_KEY")
+				os.Exit(1)
+			}
+
+			c.authMethod = BearerToken{apiKey}
+		} else {
+			fmt.Fprintf(os.Stderr, "CDK_AUTH_MODE was: \"%s\". Accepted values are \"conduktor\" or \"external\"\n.", authMode)
 			os.Exit(1)
 		}
-		c.apiKey = apiKey
-		c.setApiKeyInRestClient()
+
+		c.setAuthMethodInRestClient()
 	}
 }
 
-func (c *Client) setApiKeyInRestClient() {
-	c.client = c.client.SetHeader("Authorization", "Bearer "+c.apiKey)
+func (c *Client) setAuthMethodInRestClient() {
+	if c.authMethod == nil {
+		fmt.Fprintln(os.Stderr, "No authentication method defined. Please set CDK_API_KEY or CDK_USER/CDK_PASSWORD")
+		os.Exit(1)
+	}
+	c.client = c.client.SetHeader("Authorization", c.authMethod.AuthorizationHeader())
 }
 
 func (c *Client) SetApiKey(apiKey string) {
-	c.apiKey = apiKey
-	c.setApiKeyInRestClient()
+	c.authMethod = BearerToken{apiKey}
+	c.setAuthMethodInRestClient()
 }
 
 func extractApiError(resp *resty.Response) string {
@@ -171,7 +246,7 @@ func (client *Client) ActivateDebug() {
 }
 
 func (client *Client) Apply(resource *resource.Resource, dryMode bool) (string, error) {
-	client.setApiKeyFromEnvIfNeeded()
+	client.setAuthMethodFromEnvIfNeeded()
 	kinds := client.GetKinds()
 	kind, ok := kinds[resource.Kind]
 	if !ok {
@@ -204,7 +279,7 @@ func (client *Client) Apply(resource *resource.Resource, dryMode bool) (string, 
 
 func (client *Client) Get(kind *schema.Kind, parentPathValue []string, queryParams map[string]string) ([]resource.Resource, error) {
 	var result []resource.Resource
-	client.setApiKeyFromEnvIfNeeded()
+	client.setAuthMethodFromEnvIfNeeded()
 	url := client.baseUrl + kind.ListPath(parentPathValue)
 	requestBuilder := client.client.R()
 	if queryParams != nil {
@@ -243,7 +318,7 @@ func (client *Client) Login(username, password string) (LoginResult, error) {
 
 func (client *Client) Describe(kind *schema.Kind, parentPathValue []string, name string) (resource.Resource, error) {
 	var result resource.Resource
-	client.setApiKeyFromEnvIfNeeded()
+	client.setAuthMethodFromEnvIfNeeded()
 	url := client.baseUrl + kind.DescribePath(parentPathValue, name)
 	resp, err := client.client.R().Get(url)
 	if err != nil {
@@ -256,7 +331,7 @@ func (client *Client) Describe(kind *schema.Kind, parentPathValue []string, name
 }
 
 func (client *Client) Delete(kind *schema.Kind, parentPathValue []string, name string) error {
-	client.setApiKeyFromEnvIfNeeded()
+	client.setAuthMethodFromEnvIfNeeded()
 	url := client.baseUrl + kind.DescribePath(parentPathValue, name)
 	resp, err := client.client.R().Delete(url)
 	if err != nil {
@@ -271,7 +346,7 @@ func (client *Client) Delete(kind *schema.Kind, parentPathValue []string, name s
 }
 
 func (client *Client) DeleteResource(resource *resource.Resource) error {
-	client.setApiKeyFromEnvIfNeeded()
+	client.setAuthMethodFromEnvIfNeeded()
 	kinds := client.GetKinds()
 	kind, ok := kinds[resource.Kind]
 	if !ok {
@@ -324,7 +399,7 @@ func (client *Client) initKindFromApi() error {
 
 func (client *Client) ListAdminToken() ([]Token, error) {
 	result := make([]Token, 0)
-	client.setApiKeyFromEnvIfNeeded()
+	client.setAuthMethodFromEnvIfNeeded()
 	url := client.baseUrl + "/token/v1/admin_tokens"
 	resp, err := client.client.R().Get(url)
 	if err != nil {
@@ -339,7 +414,7 @@ func (client *Client) ListAdminToken() ([]Token, error) {
 
 func (client *Client) ListApplicationInstanceToken(applicationInstanceName string) ([]Token, error) {
 	result := make([]Token, 0)
-	client.setApiKeyFromEnvIfNeeded()
+	client.setAuthMethodFromEnvIfNeeded()
 	url := client.baseUrl + "/token/v1/application_instance_tokens/" + applicationInstanceName
 	resp, err := client.client.R().Get(url)
 	if err != nil {
@@ -354,7 +429,7 @@ func (client *Client) ListApplicationInstanceToken(applicationInstanceName strin
 
 func (client *Client) CreateAdminToken(name string) (CreatedToken, error) {
 	var result CreatedToken
-	client.setApiKeyFromEnvIfNeeded()
+	client.setAuthMethodFromEnvIfNeeded()
 	url := client.baseUrl + "/token/v1/admin_tokens"
 	resp, err := client.client.R().SetBody(map[string]string{"name": name}).Post(url)
 	if err != nil {
@@ -369,7 +444,7 @@ func (client *Client) CreateAdminToken(name string) (CreatedToken, error) {
 
 func (client *Client) CreateApplicationInstanceToken(applicationInstanceName, name string) (CreatedToken, error) {
 	var result CreatedToken
-	client.setApiKeyFromEnvIfNeeded()
+	client.setAuthMethodFromEnvIfNeeded()
 	url := client.baseUrl + "/token/v1/application_instance_tokens/" + applicationInstanceName
 	resp, err := client.client.R().SetBody(map[string]string{"name": name}).Post(url)
 	if err != nil {
@@ -389,7 +464,7 @@ type SqlResult struct {
 
 func (client *Client) ExecuteSql(maxLine int, sql string) (SqlResult, error) {
 	var result SqlResult
-	client.setApiKeyFromEnvIfNeeded()
+	client.setAuthMethodFromEnvIfNeeded()
 	url := client.baseUrl + "/public/sql/v1/execute"
 	resp, err := client.client.R().SetBody(sql).SetQueryParam("maxLine", fmt.Sprintf("%d", maxLine)).Post(url)
 	if err != nil {
@@ -403,7 +478,7 @@ func (client *Client) ExecuteSql(maxLine int, sql string) (SqlResult, error) {
 }
 
 func (client *Client) DeleteToken(uuid string) error {
-	client.setApiKeyFromEnvIfNeeded()
+	client.setAuthMethodFromEnvIfNeeded()
 	url := client.baseUrl + "/token/v1/" + uuid
 	resp, err := client.client.R().Delete(url)
 	if err != nil {

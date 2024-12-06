@@ -42,7 +42,7 @@ func TestApplyShouldWork(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	client.setApiKeyFromEnvIfNeeded()
+	client.setAuthMethodFromEnvIfNeeded()
 	httpmock.ActivateNonDefault(
 		client.client.GetClient(),
 	)
@@ -63,6 +63,55 @@ func TestApplyShouldWork(t *testing.T) {
 		"http://baseUrl/api/public/kafka/v2/cluster/local/topic",
 		nil,
 		httpmock.HeaderIs("Authorization", "Bearer "+apiKey).
+			And(httpmock.HeaderIs("X-CDK-CLIENT", "CLI/unknown")).
+			And(httpmock.BodyContainsBytes(topic.Json)),
+		responder,
+	)
+
+	body, err := client.Apply(&topic, false)
+	if err != nil {
+		t.Error(err)
+	}
+	if body != "NotChanged" {
+		t.Errorf("Bad result expected NotChanged got: %s", body)
+	}
+}
+
+func TestApplyShouldWorkWithExternalAuthMode(t *testing.T) {
+	defer httpmock.Reset()
+	baseUrl := "http://baseUrl"
+	user := "user"
+	password := "password"
+	client, err := Make(ApiParameter{
+		BaseUrl:     baseUrl,
+		CdkUser:     user,
+		CdkPassword: password,
+		AuthMode:    "ExTerNaL",
+	})
+	if err != nil {
+		panic(err)
+	}
+	client.setAuthMethodFromEnvIfNeeded()
+	httpmock.ActivateNonDefault(
+		client.client.GetClient(),
+	)
+	responder := httpmock.NewStringResponder(200, `{"upsertResult": "NotChanged"}`)
+
+	topic := resource.Resource{
+		Json:    []byte(`{"yolo": "data"}`),
+		Kind:    "Topic",
+		Name:    "toto",
+		Version: "v2",
+		Metadata: map[string]interface{}{
+			"cluster": "local",
+		},
+	}
+
+	httpmock.RegisterMatcherResponderWithQuery(
+		"PUT",
+		"http://baseUrl/api/public/kafka/v2/cluster/local/topic",
+		nil,
+		httpmock.HeaderIs("Authorization", "Basic dXNlcjpwYXNzd29yZA==").
 			And(httpmock.HeaderIs("X-CDK-CLIENT", "CLI/unknown")).
 			And(httpmock.BodyContainsBytes(topic.Json)),
 		responder,
