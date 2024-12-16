@@ -10,6 +10,7 @@ import (
 	"github.com/conduktor/ctl/utils"
 	"github.com/pb33f/libopenapi"
 	v3high "github.com/pb33f/libopenapi/datamodel/high/v3"
+	"gopkg.in/yaml.v3"
 )
 
 type Schema struct {
@@ -83,6 +84,7 @@ func buildConsoleKindVersion(s *Schema, path, kind string, order int, put *v3hig
 			newKind.ParentPathParam = append(newKind.ParentPathParam, putParameter.Name)
 
 		}
+
 	}
 	for _, getParameter := range get.Parameters {
 		if getParameter.In == "query" {
@@ -96,6 +98,13 @@ func buildConsoleKindVersion(s *Schema, path, kind string, order int, put *v3hig
 					Type:     schemaType,
 				}
 			}
+		}
+	}
+	schemaJson, ok := put.RequestBody.Content.Get("application/json")
+	if ok && schemaJson.Example != nil {
+		data, err := yaml.Marshal(schemaJson.Example)
+		if err == nil {
+			newKind.ApplyExample = string(data)
 		}
 	}
 	if strict {
@@ -130,6 +139,7 @@ func buildGatewayKindVersion(s *Schema, path, kind string, order int, put *v3hig
 		ListPath:           consoleKind.ListPath,
 		ParentPathParam:    consoleKind.ParentPathParam,
 		ListQueryParameter: consoleKind.ListQueryParamter,
+		ApplyExample:       consoleKind.ApplyExample,
 		GetAvailable:       getAvailable,
 		Order:              consoleKind.Order,
 	}, nil
