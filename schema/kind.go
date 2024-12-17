@@ -19,6 +19,7 @@ type KindVersion interface {
 	GetParentPathParam() []string
 	GetOrder() int
 	GetListQueryParamter() map[string]QueryParameterOption
+	GetApplyExample() string
 }
 
 // two logics: uniformize flag name and kebab case
@@ -38,11 +39,16 @@ type ConsoleKindVersion struct {
 	Name              string
 	ParentPathParam   []string
 	ListQueryParamter map[string]QueryParameterOption
+	ApplyExample      string
 	Order             int `json:1000` //same value DefaultPriority
 }
 
 func (c *ConsoleKindVersion) GetListPath() string {
 	return c.ListPath
+}
+
+func (c *ConsoleKindVersion) GetApplyExample() string {
+	return c.ApplyExample
 }
 
 func (c *ConsoleKindVersion) GetName() string {
@@ -72,6 +78,7 @@ type GatewayKindVersion struct {
 	ParentPathParam    []string
 	ListQueryParameter map[string]QueryParameterOption
 	GetAvailable       bool
+	ApplyExample       string
 	Order              int `json:1000` //same value DefaultPriority
 }
 
@@ -85,6 +92,10 @@ func (g *GatewayKindVersion) GetName() string {
 
 func (g *GatewayKindVersion) GetParentPathParam() []string {
 	return g.ParentPathParam
+}
+
+func (g *GatewayKindVersion) GetApplyExample() string {
+	return g.ApplyExample
 }
 
 func (g *GatewayKindVersion) GetOrder() int {

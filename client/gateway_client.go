@@ -52,7 +52,9 @@ func MakeGateway(apiParameter GatewayApiParameter) (*GatewayClient, error) {
 
 	err := result.initKindFromApi()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Cannot access the Gateway Conduktor API: %s\nUsing offline defaults.\n", err)
+		if apiParameter.Debug {
+			fmt.Fprintf(os.Stderr, "Cannot access the Gateway Conduktor API: %s\nUsing offline defaults.\n", err)
+		}
 		result.kinds = schema.GatewayDefaultKind()
 	}
 

@@ -34,7 +34,17 @@ func TestGetKindWithYamlFromGateway(t *testing.T) {
 						ParentPathParam:    []string{},
 						ListQueryParameter: map[string]QueryParameterOption{},
 						GetAvailable:       true,
-						Order:              7,
+						ApplyExample: `kind: VirtualCluster
+apiVersion: gateway/v2
+metadata:
+    name: vcluster1
+spec:
+    aclEnabled: false
+    superUsers:
+        - username1
+        - username2
+`,
+						Order: 7,
 					},
 				},
 			},
@@ -63,6 +73,14 @@ func TestGetKindWithYamlFromGateway(t *testing.T) {
 						},
 						GetAvailable: false,
 						Order:        8,
+						ApplyExample: `kind: AliasTopic
+apiVersion: gateway/v2
+metadata:
+    name: name1
+    vCluster: vCluster1
+spec:
+    physicalName: physicalName1
+`,
 					},
 				},
 			},
@@ -91,6 +109,20 @@ func TestGetKindWithYamlFromGateway(t *testing.T) {
 						},
 						GetAvailable: false,
 						Order:        9,
+						ApplyExample: `kind: ConcentrationRule
+apiVersion: gateway/v2
+metadata:
+    name: concentrationRule1
+    vCluster: vCluster1
+spec:
+    pattern: topic.*
+    physicalTopics:
+        delete: topic
+        compact: compact_topic
+        deleteCompact: compact_delete_topic
+    autoManaged: false
+    offsetCorrectness: false
+`,
 					},
 				},
 			},
@@ -100,6 +132,22 @@ func TestGetKindWithYamlFromGateway(t *testing.T) {
 						Name:            "GatewayGroup",
 						ListPath:        "/gateway/v2/group",
 						ParentPathParam: []string{},
+						ApplyExample: `kind: GatewayGroup
+apiVersion: gateway/v2
+metadata:
+    name: group1
+spec:
+    members:
+        - vCluster: vCluster1
+          name: serviceAccount1
+        - vCluster: vCluster2
+          name: serviceAccount2
+        - vCluster: vCluster3
+          name: serviceAccount3
+    externalGroups:
+        - GROUP_READER
+        - GROUP_WRITER
+`,
 						ListQueryParameter: map[string]QueryParameterOption{
 							"showDefaults": {
 								FlagName: "show-defaults",
@@ -142,6 +190,16 @@ func TestGetKindWithYamlFromGateway(t *testing.T) {
 						},
 						GetAvailable: false,
 						Order:        10,
+						ApplyExample: `kind: GatewayServiceAccount
+apiVersion: gateway/v2
+metadata:
+    name: user1
+    vCluster: vcluster1
+spec:
+    type: EXTERNAL
+    externalNames:
+        - externalName
+`,
 					},
 				},
 			},
@@ -178,6 +236,20 @@ func TestGetKindWithYamlFromGateway(t *testing.T) {
 								Type:     "string",
 							},
 						},
+						ApplyExample: `kind: Interceptor
+apiVersion: gateway/v2
+metadata:
+    name: yellow_cars_filter
+    scope:
+        vCluster: vCluster1
+spec:
+    comment: Filter yellow cars
+    pluginClass: io.conduktor.gateway.interceptor.VirtualSqlTopicPlugin
+    priority: 1
+    config:
+        virtualTopic: yellow_cars
+        statement: SELECT '$.type' as type, '$.price' as price FROM cars WHERE '$.color' = 'yellow'
+`,
 						GetAvailable: false,
 						Order:        12,
 					},

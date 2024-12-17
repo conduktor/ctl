@@ -80,6 +80,7 @@ func init() {
 	debug = rootCmd.PersistentFlags().BoolP("verbose", "v", false, "show more information for debugging")
 	var permissive = rootCmd.PersistentFlags().Bool("permissive", false, "permissive mode, allow undefined environment variables")
 	initGet(kinds)
+	initTemplate(kinds)
 	initDelete(kinds, !*permissive)
 	initApply(kinds, !*permissive)
 	initConsoleMkKind()
