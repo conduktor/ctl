@@ -17,6 +17,7 @@ type KindVersion interface {
 	GetListPath() string
 	GetName() string
 	GetParentPathParam() []string
+	GetParentQueryParam() []string
 	GetOrder() int
 	GetListQueryParamter() map[string]QueryParameterOption
 	GetApplyExample() string
@@ -38,6 +39,7 @@ type ConsoleKindVersion struct {
 	ListPath          string
 	Name              string
 	ParentPathParam   []string
+	ParentQueryParam  []string
 	ListQueryParamter map[string]QueryParameterOption
 	ApplyExample      string
 	Order             int `json:1000` //same value DefaultPriority
@@ -59,6 +61,10 @@ func (c *ConsoleKindVersion) GetParentPathParam() []string {
 	return c.ParentPathParam
 }
 
+func (c *ConsoleKindVersion) GetParentQueryParam() []string {
+	return c.ParentQueryParam
+}
+
 func (c *ConsoleKindVersion) GetOrder() int {
 	return c.Order
 }
@@ -76,6 +82,7 @@ type GatewayKindVersion struct {
 	ListPath           string
 	Name               string
 	ParentPathParam    []string
+	ParentQueryParam   []string
 	ListQueryParameter map[string]QueryParameterOption
 	GetAvailable       bool
 	ApplyExample       string
@@ -92,6 +99,10 @@ func (g *GatewayKindVersion) GetName() string {
 
 func (g *GatewayKindVersion) GetParentPathParam() []string {
 	return g.ParentPathParam
+}
+
+func (g *GatewayKindVersion) GetParentQueryParam() []string {
+	return g.ParentQueryParam
 }
 
 func (g *GatewayKindVersion) GetApplyExample() string {
@@ -222,6 +233,16 @@ func (Kind *Kind) GetName() string {
 	panic("No kindVersion in kind") //should never happen
 }
 
+type QueryInfo struct {
+	Path        string
+	QueryParams []QueryParam
+}
+
+type QueryParam struct {
+	Name  string
+	Value string
+}
+
 func (kind *Kind) ListPath(parentPathValues []string) string {
 	kindVersion := kind.GetLatestKindVersion()
 	if len(parentPathValues) != len(kindVersion.GetParentPathParam()) {
@@ -238,20 +259,34 @@ func (kind *Kind) DescribePath(parentPathValues []string, name string) string {
 	return kind.ListPath(parentPathValues) + "/" + name
 }
 
-func (kind *Kind) ApplyPath(resource *resource.Resource) (string, error) {
+func (kind *Kind) ApplyPath(resource *resource.Resource) (QueryInfo, error) {
 	kindVersion, ok := kind.Versions[extractVersionFromApiVersion(resource.Version)]
 	if !ok {
-		return "", fmt.Errorf("Could not find version %s for kind %s", resource.Version, resource.Kind)
+		return QueryInfo{}, fmt.Errorf("Could not find version %s for kind %s", resource.Version, resource.Kind)
 	}
 	parentPathValues := make([]string, len(kindVersion.GetParentPathParam()))
+	var parentQueryValues []QueryParam
 	var err error
 	for i, param := range kindVersion.GetParentPathParam() {
 		parentPathValues[i], err = resource.StringFromMetadata(param)
 		if err != nil {
-			return "", err
+			return QueryInfo{}, err
 		}
 	}
-	return kind.ListPath(parentPathValues), nil
+	for _, param := range kindVersion.GetParentQueryParam() {
+		var value string
+		value, err = resource.StringFromMetadata(param)
+		if err == nil {
+			parentQueryValues = append(parentQueryValues, QueryParam{
+				Name:  param,
+				Value: value,
+			})
+		}
+	}
+	return QueryInfo{
+		Path:        kind.ListPath(parentPathValues),
+		QueryParams: parentQueryValues,
+	}, nil
 }
 
 func (kind *Kind) DeletePath(resource *resource.Resource) (string, error) {
@@ -260,5 +295,5 @@ func (kind *Kind) DeletePath(resource *resource.Resource) (string, error) {
 		return "", err
 	}
 
-	return applyPath + "/" + resource.Name, nil
+	return applyPath.Path + "/" + resource.Name, nil
 }

@@ -82,9 +82,10 @@ func buildConsoleKindVersion(s *Schema, path, kind string, order int, put *v3hig
 	for _, putParameter := range put.Parameters {
 		if putParameter.In == "path" && *putParameter.Required {
 			newKind.ParentPathParam = append(newKind.ParentPathParam, putParameter.Name)
-
 		}
-
+		if putParameter.In == "query" && putParameter.Name != "dryMode" {
+			newKind.ParentQueryParam = append(newKind.ParentQueryParam, putParameter.Name)
+		}
 	}
 	for _, getParameter := range get.Parameters {
 		if getParameter.In == "query" {

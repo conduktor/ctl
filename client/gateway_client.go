@@ -275,12 +275,15 @@ func (client *GatewayClient) Apply(resource *resource.Resource, dryMode bool) (s
 	if !ok {
 		return "", fmt.Errorf("kind %s not found", resource.Kind)
 	}
-	applyPath, err := kind.ApplyPath(resource)
+	applyQueryInfo, err := kind.ApplyPath(resource)
 	if err != nil {
 		return "", err
 	}
-	url := client.baseUrl + applyPath
+	url := client.baseUrl + applyQueryInfo.Path
 	builder := client.client.R().SetBody(resource.Json)
+	for _, param := range applyQueryInfo.QueryParams {
+		builder.SetQueryParam(param.Name, param.Value)
+	}
 	if dryMode {
 		builder = builder.SetQueryParam("dryMode", "true")
 	}
