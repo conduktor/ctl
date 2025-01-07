@@ -76,9 +76,9 @@ func MakeGatewayClientFromEnv() (*GatewayClient, error) {
 	return client, nil
 }
 
-func (client *GatewayClient) Get(kind *schema.Kind, parentPathValue []string, queryParams map[string]string) ([]resource.Resource, error) {
+func (client *GatewayClient) Get(kind *schema.Kind, parentPathValue []string, parentQueryValue []string, queryParams map[string]string) ([]resource.Resource, error) {
 	var result []resource.Resource
-	url := client.baseUrl + kind.ListPath(parentPathValue)
+	url := client.baseUrl + kind.ListPath(parentPathValue, parentQueryValue).Path
 	requestBuilder := client.client.R()
 	if queryParams != nil {
 		requestBuilder = requestBuilder.SetQueryParams(queryParams)
@@ -93,9 +93,9 @@ func (client *GatewayClient) Get(kind *schema.Kind, parentPathValue []string, qu
 	return result, err
 }
 
-func (client *GatewayClient) Describe(kind *schema.Kind, parentPathValue []string, name string) (resource.Resource, error) {
+func (client *GatewayClient) Describe(kind *schema.Kind, parentPathValue []string, parentQueryValue []string, name string) (resource.Resource, error) {
 	var result resource.Resource
-	url := client.baseUrl + kind.DescribePath(parentPathValue, name)
+	url := client.baseUrl + kind.DescribePath(parentPathValue, parentQueryValue, name).Path
 	resp, err := client.client.R().Get(url)
 	if err != nil {
 		return result, err
@@ -106,8 +106,8 @@ func (client *GatewayClient) Describe(kind *schema.Kind, parentPathValue []strin
 	return result, err
 }
 
-func (client *GatewayClient) Delete(kind *schema.Kind, parentPathValue []string, name string) error {
-	url := client.baseUrl + kind.DescribePath(parentPathValue, name)
+func (client *GatewayClient) Delete(kind *schema.Kind, parentPathValue []string, parentQueryValue []string, name string) error {
+	url := client.baseUrl + kind.DescribePath(parentPathValue, parentQueryValue, name).Path
 	resp, err := client.client.R().Delete(url)
 	if err != nil {
 		return err
@@ -154,8 +154,8 @@ func (client *GatewayClient) DeleteResourceByNameAndVCluster(resource *resource.
 	if !ok {
 		return fmt.Errorf("kind %s not found", resource.Kind)
 	}
-	deletePath := kind.ListPath(nil)
-	url := client.baseUrl + deletePath
+	deletePath := kind.ListPath(nil, nil)
+	url := client.baseUrl + deletePath.Path
 	resp, err := client.client.R().SetBody(map[string]string{"name": name, "vCluster": vCluster.(string)}).Delete(url)
 	if err != nil {
 		return err
@@ -226,7 +226,7 @@ func (client *GatewayClient) DeleteResourceInterceptors(resource *resource.Resou
 }
 
 func (client *GatewayClient) DeleteKindByNameAndVCluster(kind *schema.Kind, param map[string]string) error {
-	url := client.baseUrl + kind.ListPath(nil)
+	url := client.baseUrl + kind.ListPath(nil, nil).Path
 	req := client.client.R()
 	req.SetBody(param)
 	resp, err := req.Delete(url)
@@ -242,7 +242,7 @@ func (client *GatewayClient) DeleteKindByNameAndVCluster(kind *schema.Kind, para
 }
 
 func (client *GatewayClient) DeleteInterceptor(kind *schema.Kind, name string, param map[string]string) error {
-	url := client.baseUrl + kind.ListPath(nil) + "/" + name
+	url := client.baseUrl + kind.ListPath(nil, nil).Path + "/" + name
 	req := client.client.R()
 	var bodyParams = make(map[string]interface{})
 	for k, v := range param {

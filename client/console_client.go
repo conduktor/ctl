@@ -282,11 +282,15 @@ func (client *Client) Apply(resource *resource.Resource, dryMode bool) (string, 
 	return upsertResponse.UpsertResult, nil
 }
 
-func (client *Client) Get(kind *schema.Kind, parentPathValue []string, queryParams map[string]string) ([]resource.Resource, error) {
+func (client *Client) Get(kind *schema.Kind, parentPathValue []string, parentQueryValue []string, queryParams map[string]string) ([]resource.Resource, error) {
 	var result []resource.Resource
 	client.setAuthMethodFromEnvIfNeeded()
-	url := client.baseUrl + kind.ListPath(parentPathValue)
+	queryInfo := kind.ListPath(parentPathValue, parentQueryValue)
+	url := client.baseUrl + queryInfo.Path
 	requestBuilder := client.client.R()
+	for _, p := range queryInfo.QueryParams {
+		requestBuilder = requestBuilder.SetQueryParam(p.Name, p.Value)
+	}
 	if queryParams != nil {
 		requestBuilder = requestBuilder.SetQueryParams(queryParams)
 	}
@@ -321,11 +325,16 @@ func (client *Client) Login(username, password string) (LoginResult, error) {
 	return result, nil
 }
 
-func (client *Client) Describe(kind *schema.Kind, parentPathValue []string, name string) (resource.Resource, error) {
+func (client *Client) Describe(kind *schema.Kind, parentPathValue []string, parentQueryValue []string, name string) (resource.Resource, error) {
 	var result resource.Resource
 	client.setAuthMethodFromEnvIfNeeded()
-	url := client.baseUrl + kind.DescribePath(parentPathValue, name)
-	resp, err := client.client.R().Get(url)
+	queryInfo := kind.DescribePath(parentPathValue, parentQueryValue, name)
+	url := client.baseUrl + queryInfo.Path
+	requestBuilder := client.client.R()
+	for _, p := range queryInfo.QueryParams {
+		requestBuilder = requestBuilder.SetQueryParam(p.Name, p.Value)
+	}
+	resp, err := requestBuilder.Get(url)
 	if err != nil {
 		return result, err
 	} else if resp.IsError() {
@@ -335,10 +344,15 @@ func (client *Client) Describe(kind *schema.Kind, parentPathValue []string, name
 	return result, err
 }
 
-func (client *Client) Delete(kind *schema.Kind, parentPathValue []string, name string) error {
+func (client *Client) Delete(kind *schema.Kind, parentPathValue []string, parentQueryValue []string, name string) error {
 	client.setAuthMethodFromEnvIfNeeded()
-	url := client.baseUrl + kind.DescribePath(parentPathValue, name)
-	resp, err := client.client.R().Delete(url)
+	queryInfo := kind.DescribePath(parentPathValue, parentQueryValue, name)
+	url := client.baseUrl + queryInfo.Path
+	requestBuilder := client.client.R()
+	for _, p := range queryInfo.QueryParams {
+		requestBuilder = requestBuilder.SetQueryParam(p.Name, p.Value)
+	}
+	resp, err := requestBuilder.Delete(url)
 	if err != nil {
 		return err
 	} else if resp.IsError() {

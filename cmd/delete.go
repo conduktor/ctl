@@ -60,7 +60,9 @@ func initDelete(kinds schema.KindCatalog, strict bool) {
 			deleteCmd.AddCommand(interceptorsDeleteCmd)
 		} else {
 			flags := kind.GetParentFlag()
+			parentQueryFlags := kind.GetParentQueryFlag()
 			parentFlagValue := make([]*string, len(flags))
+			parentQueryFlagValue := make([]*string, len(parentQueryFlags))
 			kindCmd := &cobra.Command{
 				Use:     fmt.Sprintf("%s [name]", name),
 				Short:   "Delete resource of kind " + name,
@@ -68,14 +70,19 @@ func initDelete(kinds schema.KindCatalog, strict bool) {
 				Aliases: buildAlias(name),
 				Run: func(cmd *cobra.Command, args []string) {
 					parentValue := make([]string, len(parentFlagValue))
+					parentQueryValue := make([]string, len(parentQueryFlagValue))
 					for i, v := range parentFlagValue {
 						parentValue[i] = *v
 					}
+					for i, v := range parentQueryFlagValue {
+						parentQueryValue[i] = *v
+					}
+
 					var err error
 					if isGatewayKind(kind) {
-						err = gatewayApiClient().Delete(&kind, parentValue, args[0])
+						err = gatewayApiClient().Delete(&kind, parentValue, parentQueryValue, args[0])
 					} else {
-						err = consoleApiClient().Delete(&kind, parentValue, args[0])
+						err = consoleApiClient().Delete(&kind, parentValue, parentQueryValue, args[0])
 					}
 					if err != nil {
 						fmt.Fprintf(os.Stderr, "%s\n", err)
@@ -86,6 +93,9 @@ func initDelete(kinds schema.KindCatalog, strict bool) {
 			for i, flag := range kind.GetParentFlag() {
 				parentFlagValue[i] = kindCmd.Flags().String(flag, "", "Parent "+flag)
 				kindCmd.MarkFlagRequired(flag)
+			}
+			for i, flag := range parentQueryFlags {
+				parentQueryFlagValue[i] = kindCmd.Flags().String(flag, "", "Parent "+flag)
 			}
 			deleteCmd.AddCommand(kindCmd)
 		}

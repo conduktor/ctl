@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -203,9 +204,22 @@ func (kind *Kind) GetParentFlag() []string {
 	return kindVersion.GetParentPathParam()
 }
 
+func (kind *Kind) GetParentQueryFlag() []string {
+	kindVersion := kind.GetLatestKindVersion()
+	return kindVersion.GetParentQueryParam()
+}
+
 func (kind *Kind) GetListFlag() map[string]QueryParameterOption {
 	kindVersion := kind.GetLatestKindVersion()
-	return kindVersion.GetListQueryParamter()
+	kindVersion.GetParentQueryParam()
+	flags := make(map[string]QueryParameterOption)
+	// Filter out query params from parent to avoid duplicates
+	for k, v := range kindVersion.GetListQueryParamter() {
+		if !slices.Contains(kindVersion.GetParentQueryParam(), k) {
+			flags[k] = v
+		}
+	}
+	return flags
 }
 
 func (kind *Kind) MaxVersion() int {
@@ -243,20 +257,38 @@ type QueryParam struct {
 	Value string
 }
 
-func (kind *Kind) ListPath(parentPathValues []string) string {
+func (kind *Kind) ListPath(parentValues []string, parentQueryValues []string) QueryInfo {
 	kindVersion := kind.GetLatestKindVersion()
-	if len(parentPathValues) != len(kindVersion.GetParentPathParam()) {
-		panic(fmt.Sprintf("For kind %s expected %d parent apiVersion values, got %d", kindVersion.GetName(), len(kindVersion.GetParentPathParam()), len(parentPathValues)))
+	if len(parentValues) != len(kindVersion.GetParentPathParam()) {
+		panic(fmt.Sprintf("For kind %s expected %d parent apiVersion values, got %d", kindVersion.GetName(), len(kindVersion.GetParentPathParam()), len(parentValues)))
 	}
 	path := kindVersion.GetListPath()
-	for i, pathValue := range parentPathValues {
+	for i, pathValue := range kindVersion.GetParentPathParam() {
 		path = strings.Replace(path, fmt.Sprintf("{%s}", kindVersion.GetParentPathParam()[i]), pathValue, 1)
 	}
-	return path
+
+	var params []QueryParam
+	for i, queryParam := range kindVersion.GetParentQueryParam() {
+		if parentQueryValues[i] != "" {
+			params = append(params, QueryParam{
+				Name:  queryParam,
+				Value: parentQueryValues[i],
+			})
+		}
+	}
+
+	return QueryInfo{
+		Path:        path,
+		QueryParams: params,
+	}
 }
 
-func (kind *Kind) DescribePath(parentPathValues []string, name string) string {
-	return kind.ListPath(parentPathValues) + "/" + name
+func (kind *Kind) DescribePath(parentPathValues []string, parentQueryValues []string, name string) QueryInfo {
+	queryInfo := kind.ListPath(parentPathValues, parentQueryValues)
+	return QueryInfo{
+		Path:        queryInfo.Path + "/" + name,
+		QueryParams: queryInfo.QueryParams,
+	}
 }
 
 func (kind *Kind) ApplyPath(resource *resource.Resource) (QueryInfo, error) {
@@ -265,7 +297,7 @@ func (kind *Kind) ApplyPath(resource *resource.Resource) (QueryInfo, error) {
 		return QueryInfo{}, fmt.Errorf("Could not find version %s for kind %s", resource.Version, resource.Kind)
 	}
 	parentPathValues := make([]string, len(kindVersion.GetParentPathParam()))
-	var parentQueryValues []QueryParam
+	var parentQueryValues []string
 	var err error
 	for i, param := range kindVersion.GetParentPathParam() {
 		parentPathValues[i], err = resource.StringFromMetadata(param)
@@ -277,16 +309,12 @@ func (kind *Kind) ApplyPath(resource *resource.Resource) (QueryInfo, error) {
 		var value string
 		value, err = resource.StringFromMetadata(param)
 		if err == nil {
-			parentQueryValues = append(parentQueryValues, QueryParam{
-				Name:  param,
-				Value: value,
-			})
+			parentQueryValues = append(parentQueryValues, value)
+		} else {
+			parentQueryValues = append(parentQueryValues, "")
 		}
 	}
-	return QueryInfo{
-		Path:        kind.ListPath(parentPathValues),
-		QueryParams: parentQueryValues,
-	}, nil
+	return kind.ListPath(parentPathValues, parentQueryValues), nil
 }
 
 func (kind *Kind) DeletePath(resource *resource.Resource) (string, error) {
