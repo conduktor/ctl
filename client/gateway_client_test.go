@@ -153,7 +153,7 @@ func TestGwGetShouldWork(t *testing.T) {
 	)
 
 	vClusterKind := gatewayClient.GetKinds()["VirtualCluster"]
-	result, err := gatewayClient.Get(&vClusterKind, []string{}, nil)
+	result, err := gatewayClient.Get(&vClusterKind, []string{}, []string{}, nil)
 	if err != nil {
 		t.Error(err)
 	}
@@ -191,7 +191,7 @@ func TestGwGetShouldFailIfN2xx(t *testing.T) {
 	)
 
 	vClusterKind := gatewayClient.GetKinds()["VirtualCluster"]
-	_, err = gatewayClient.Get(&vClusterKind, []string{}, nil)
+	_, err = gatewayClient.Get(&vClusterKind, []string{}, []string{}, nil)
 	if err == nil {
 		t.Failed()
 	}
@@ -227,7 +227,7 @@ func TestGwDeleteShouldWork(t *testing.T) {
 	)
 
 	vClusters := gatewayClient.GetKinds()["VirtualCluster"]
-	err = gatewayClient.Delete(&vClusters, []string{}, "vcluster1")
+	err = gatewayClient.Delete(&vClusters, []string{}, []string{}, "vcluster1")
 	if err != nil {
 		t.Error(err)
 	}
@@ -262,7 +262,7 @@ func TestGwDeleteShouldFailOnNot2XX(t *testing.T) {
 	)
 
 	vClusterKind := gatewayClient.GetKinds()["VirtualCluster"]
-	err = gatewayClient.Delete(&vClusterKind, []string{}, "vcluster1")
+	err = gatewayClient.Delete(&vClusterKind, []string{}, []string{}, "vcluster1")
 	if err == nil {
 		t.Fail()
 	}

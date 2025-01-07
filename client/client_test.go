@@ -126,6 +126,52 @@ func TestApplyShouldWorkWithExternalAuthMode(t *testing.T) {
 	}
 }
 
+func TestApplyShouldWorkWithQueryParams(t *testing.T) {
+	defer httpmock.Reset()
+	baseUrl := "http://baseUrl"
+	apiKey := "aToken"
+	client, err := Make(ApiParameter{
+		ApiKey:  apiKey,
+		BaseUrl: baseUrl,
+	})
+	if err != nil {
+		panic(err)
+	}
+	client.setAuthMethodFromEnvIfNeeded()
+	httpmock.ActivateNonDefault(
+		client.client.GetClient(),
+	)
+	responder := httpmock.NewStringResponder(200, `{"upsertResult": "NotChanged"}`)
+
+	topic := resource.Resource{
+		Json:    []byte(`{"yolo": "data"}`),
+		Kind:    "Alert",
+		Name:    "my-alert",
+		Version: "v3",
+		Metadata: map[string]interface{}{
+			"appInstance": "my-app",
+		},
+	}
+
+	httpmock.RegisterMatcherResponderWithQuery(
+		"PUT",
+		"http://baseUrl/api/public/monitoring/v3/alert?appInstance=my-app",
+		nil,
+		httpmock.HeaderIs("Authorization", "Bearer "+apiKey).
+			And(httpmock.HeaderIs("X-CDK-CLIENT", "CLI/unknown")).
+			And(httpmock.BodyContainsBytes(topic.Json)),
+		responder,
+	)
+
+	body, err := client.Apply(&topic, false)
+	if err != nil {
+		t.Error(err)
+	}
+	if body != "NotChanged" {
+		t.Errorf("Bad result expected NotChanged got: %s", body)
+	}
+}
+
 func TestApplyWithDryModeShouldWork(t *testing.T) {
 	defer httpmock.Reset()
 	baseUrl := "http://baseUrl"
@@ -237,7 +283,7 @@ func TestGetShouldWork(t *testing.T) {
 	)
 
 	app := client.GetKinds()["Application"]
-	result, err := client.Get(&app, []string{}, nil)
+	result, err := client.Get(&app, []string{}, []string{}, nil)
 	if err != nil {
 		t.Error(err)
 	}
@@ -274,7 +320,7 @@ func TestGetShouldFailIfN2xx(t *testing.T) {
 	)
 
 	app := client.GetKinds()["Application"]
-	_, err = client.Get(&app, []string{}, nil)
+	_, err = client.Get(&app, []string{}, []string{}, nil)
 	if err == nil {
 		t.Failed()
 	}
@@ -309,7 +355,7 @@ func TestDescribeShouldWork(t *testing.T) {
 	)
 
 	app := client.GetKinds()["Application"]
-	result, err := client.Describe(&app, []string{}, "yo")
+	result, err := client.Describe(&app, []string{}, []string{}, "yo")
 	if err != nil {
 		t.Error(err)
 	}
@@ -347,7 +393,7 @@ func TestDescribeShouldFailIfNo2xx(t *testing.T) {
 	)
 
 	app := client.GetKinds()["Application"]
-	_, err = client.Describe(&app, []string{}, "yo")
+	_, err = client.Describe(&app, []string{}, []string{}, "yo")
 	if err == nil {
 		t.Failed()
 	}
@@ -382,7 +428,7 @@ func TestDeleteShouldWork(t *testing.T) {
 	)
 
 	app := client.GetKinds()["Application"]
-	err = client.Delete(&app, []string{}, "yo")
+	err = client.Delete(&app, []string{}, []string{}, "yo")
 	if err != nil {
 		t.Error(err)
 	}
@@ -453,7 +499,7 @@ func TestDeleteShouldFailOnNot2XX(t *testing.T) {
 	)
 
 	app := client.GetKinds()["Application"]
-	err = client.Delete(&app, []string{}, "yo")
+	err = client.Delete(&app, []string{}, []string{}, "yo")
 	if err == nil {
 		t.Fail()
 	}

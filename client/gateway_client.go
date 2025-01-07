@@ -76,10 +76,14 @@ func MakeGatewayClientFromEnv() (*GatewayClient, error) {
 	return client, nil
 }
 
-func (client *GatewayClient) Get(kind *schema.Kind, parentPathValue []string, queryParams map[string]string) ([]resource.Resource, error) {
+func (client *GatewayClient) Get(kind *schema.Kind, parentPathValue []string, parentQueryValue []string, queryParams map[string]string) ([]resource.Resource, error) {
 	var result []resource.Resource
-	url := client.baseUrl + kind.ListPath(parentPathValue)
+	queryInfo := kind.ListPath(parentPathValue, parentQueryValue)
+	url := client.baseUrl + queryInfo.Path
 	requestBuilder := client.client.R()
+	for _, p := range queryInfo.QueryParams {
+		requestBuilder = requestBuilder.SetQueryParam(p.Name, p.Value)
+	}
 	if queryParams != nil {
 		requestBuilder = requestBuilder.SetQueryParams(queryParams)
 	}
@@ -93,10 +97,15 @@ func (client *GatewayClient) Get(kind *schema.Kind, parentPathValue []string, qu
 	return result, err
 }
 
-func (client *GatewayClient) Describe(kind *schema.Kind, parentPathValue []string, name string) (resource.Resource, error) {
+func (client *GatewayClient) Describe(kind *schema.Kind, parentPathValue []string, parentQueryValue []string, name string) (resource.Resource, error) {
 	var result resource.Resource
-	url := client.baseUrl + kind.DescribePath(parentPathValue, name)
-	resp, err := client.client.R().Get(url)
+	queryInfo := kind.DescribePath(parentPathValue, parentQueryValue, name)
+	url := client.baseUrl + queryInfo.Path
+	requestBuilder := client.client.R()
+	for _, p := range queryInfo.QueryParams {
+		requestBuilder = requestBuilder.SetQueryParam(p.Name, p.Value)
+	}
+	resp, err := requestBuilder.Get(url)
 	if err != nil {
 		return result, err
 	} else if resp.IsError() {
@@ -106,9 +115,14 @@ func (client *GatewayClient) Describe(kind *schema.Kind, parentPathValue []strin
 	return result, err
 }
 
-func (client *GatewayClient) Delete(kind *schema.Kind, parentPathValue []string, name string) error {
-	url := client.baseUrl + kind.DescribePath(parentPathValue, name)
-	resp, err := client.client.R().Delete(url)
+func (client *GatewayClient) Delete(kind *schema.Kind, parentPathValue []string, parentQueryValue []string, name string) error {
+	queryInfo := kind.DescribePath(parentPathValue, parentQueryValue, name)
+	url := client.baseUrl + queryInfo.Path
+	requestBuilder := client.client.R()
+	for _, p := range queryInfo.QueryParams {
+		requestBuilder = requestBuilder.SetQueryParam(p.Name, p.Value)
+	}
+	resp, err := requestBuilder.Delete(url)
 	if err != nil {
 		return err
 	} else if resp.IsError() {
@@ -154,8 +168,8 @@ func (client *GatewayClient) DeleteResourceByNameAndVCluster(resource *resource.
 	if !ok {
 		return fmt.Errorf("kind %s not found", resource.Kind)
 	}
-	deletePath := kind.ListPath(nil)
-	url := client.baseUrl + deletePath
+	deletePath := kind.ListPath(nil, nil)
+	url := client.baseUrl + deletePath.Path
 	resp, err := client.client.R().SetBody(map[string]string{"name": name, "vCluster": vCluster.(string)}).Delete(url)
 	if err != nil {
 		return err
@@ -226,7 +240,7 @@ func (client *GatewayClient) DeleteResourceInterceptors(resource *resource.Resou
 }
 
 func (client *GatewayClient) DeleteKindByNameAndVCluster(kind *schema.Kind, param map[string]string) error {
-	url := client.baseUrl + kind.ListPath(nil)
+	url := client.baseUrl + kind.ListPath(nil, nil).Path
 	req := client.client.R()
 	req.SetBody(param)
 	resp, err := req.Delete(url)
@@ -242,7 +256,7 @@ func (client *GatewayClient) DeleteKindByNameAndVCluster(kind *schema.Kind, para
 }
 
 func (client *GatewayClient) DeleteInterceptor(kind *schema.Kind, name string, param map[string]string) error {
-	url := client.baseUrl + kind.ListPath(nil) + "/" + name
+	url := client.baseUrl + kind.ListPath(nil, nil).Path + "/" + name
 	req := client.client.R()
 	var bodyParams = make(map[string]interface{})
 	for k, v := range param {
@@ -275,12 +289,15 @@ func (client *GatewayClient) Apply(resource *resource.Resource, dryMode bool) (s
 	if !ok {
 		return "", fmt.Errorf("kind %s not found", resource.Kind)
 	}
-	applyPath, err := kind.ApplyPath(resource)
+	applyQueryInfo, err := kind.ApplyPath(resource)
 	if err != nil {
 		return "", err
 	}
-	url := client.baseUrl + applyPath
+	url := client.baseUrl + applyQueryInfo.Path
 	builder := client.client.R().SetBody(resource.Json)
+	for _, param := range applyQueryInfo.QueryParams {
+		builder = builder.SetQueryParam(param.Name, param.Value)
+	}
 	if dryMode {
 		builder = builder.SetQueryParam("dryMode", "true")
 	}
