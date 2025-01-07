@@ -261,7 +261,7 @@ func (client *Client) Apply(resource *resource.Resource, dryMode bool) (string, 
 	url := client.baseUrl + applyQueryInfo.Path
 	builder := client.client.R().SetBody(resource.Json)
 	for _, param := range applyQueryInfo.QueryParams {
-		builder.SetQueryParam(param.Name, param.Value)
+		builder = builder.SetQueryParam(param.Name, param.Value)
 	}
 	if dryMode {
 		builder = builder.SetQueryParam("dryMode", "true")

@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"reflect"
 	"testing"
 )
 
@@ -49,21 +50,27 @@ func TestKindGetFlagWhenNoFlag(t *testing.T) {
 }
 
 func TestKindListPath(t *testing.T) {
-	t.Run("replaces parent parameters in ListPath", func(t *testing.T) {
+	t.Run("replaces parent parameters in ListPath and add parameters", func(t *testing.T) {
 		kind := Kind{
 			Versions: map[int]KindVersion{
 				1: &ConsoleKindVersion{
-					ListPath:        "/ListPath/{param-1}/{param-2}",
-					ParentPathParam: []string{"param-1", "param-2"},
+					ListPath:         "/ListPath/{param-1}/{param-2}",
+					ParentPathParam:  []string{"param-1", "param-2"},
+					ParentQueryParam: []string{"param-3"},
 				},
 			},
 		}
 
-		got := kind.ListPath([]string{"value1", "value2"})
-		want := "/ListPath/value1/value2"
+		got := kind.ListPath([]string{"value1", "value2"}, []string{"value3"})
+		wantPath := "/ListPath/value1/value2"
+		wantParams := []QueryParam{{Name: "param-3", Value: "value3"}}
 
-		if got != want {
-			t.Errorf("got ListPath %q, want %q", got, want)
+		if got.Path != wantPath {
+			t.Errorf("got ListPath %q, want %q", got.Path, wantPath)
+		}
+
+		if !reflect.DeepEqual(got.QueryParams, wantParams) {
+			t.Errorf("got ListPath params %q, want %q", got.QueryParams, wantParams)
 		}
 	})
 
@@ -83,6 +90,26 @@ func TestKindListPath(t *testing.T) {
 			}
 		}()
 
-		kind.ListPath([]string{"value1"})
+		kind.ListPath([]string{"value1"}, []string{})
+	})
+
+	t.Run("panics when parent paths and parameters length mismatch", func(t *testing.T) {
+		kind := Kind{
+			Versions: map[int]KindVersion{
+				1: &ConsoleKindVersion{
+					ListPath:         "/Test",
+					ParentPathParam:  []string{},
+					ParentQueryParam: []string{"param1", "param2"},
+				},
+			},
+		}
+
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("The code did not panic")
+			}
+		}()
+
+		kind.ListPath([]string{}, []string{"value1"})
 	})
 }

@@ -296,7 +296,7 @@ func (client *GatewayClient) Apply(resource *resource.Resource, dryMode bool) (s
 	url := client.baseUrl + applyQueryInfo.Path
 	builder := client.client.R().SetBody(resource.Json)
 	for _, param := range applyQueryInfo.QueryParams {
-		builder.SetQueryParam(param.Name, param.Value)
+		builder = builder.SetQueryParam(param.Name, param.Value)
 	}
 	if dryMode {
 		builder = builder.SetQueryParam("dryMode", "true")

@@ -263,16 +263,19 @@ func (kind *Kind) ListPath(parentValues []string, parentQueryValues []string) Qu
 		panic(fmt.Sprintf("For kind %s expected %d parent apiVersion values, got %d", kindVersion.GetName(), len(kindVersion.GetParentPathParam()), len(parentValues)))
 	}
 	path := kindVersion.GetListPath()
-	for i, pathValue := range kindVersion.GetParentPathParam() {
+	for i, pathValue := range parentValues {
 		path = strings.Replace(path, fmt.Sprintf("{%s}", kindVersion.GetParentPathParam()[i]), pathValue, 1)
 	}
 
+	if len(parentQueryValues) != len(kindVersion.GetParentQueryParam()) {
+		panic(fmt.Sprintf("For kind %s expected %d parent query parameter values, got %d", kindVersion.GetName(), len(kindVersion.GetParentPathParam()), len(parentValues)))
+	}
 	var params []QueryParam
-	for i, queryParam := range kindVersion.GetParentQueryParam() {
-		if parentQueryValues[i] != "" {
+	for i, value := range parentQueryValues {
+		if value != "" {
 			params = append(params, QueryParam{
-				Name:  queryParam,
-				Value: parentQueryValues[i],
+				Name:  kindVersion.GetParentQueryParam()[i],
+				Value: value,
 			})
 		}
 	}
