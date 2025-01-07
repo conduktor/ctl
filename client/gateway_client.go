@@ -78,8 +78,12 @@ func MakeGatewayClientFromEnv() (*GatewayClient, error) {
 
 func (client *GatewayClient) Get(kind *schema.Kind, parentPathValue []string, parentQueryValue []string, queryParams map[string]string) ([]resource.Resource, error) {
 	var result []resource.Resource
-	url := client.baseUrl + kind.ListPath(parentPathValue, parentQueryValue).Path
+	queryInfo := kind.ListPath(parentPathValue, parentQueryValue)
+	url := client.baseUrl + queryInfo.Path
 	requestBuilder := client.client.R()
+	for _, p := range queryInfo.QueryParams {
+		requestBuilder = requestBuilder.SetQueryParam(p.Name, p.Value)
+	}
 	if queryParams != nil {
 		requestBuilder = requestBuilder.SetQueryParams(queryParams)
 	}
@@ -95,8 +99,13 @@ func (client *GatewayClient) Get(kind *schema.Kind, parentPathValue []string, pa
 
 func (client *GatewayClient) Describe(kind *schema.Kind, parentPathValue []string, parentQueryValue []string, name string) (resource.Resource, error) {
 	var result resource.Resource
-	url := client.baseUrl + kind.DescribePath(parentPathValue, parentQueryValue, name).Path
-	resp, err := client.client.R().Get(url)
+	queryInfo := kind.DescribePath(parentPathValue, parentQueryValue, name)
+	url := client.baseUrl + queryInfo.Path
+	requestBuilder := client.client.R()
+	for _, p := range queryInfo.QueryParams {
+		requestBuilder = requestBuilder.SetQueryParam(p.Name, p.Value)
+	}
+	resp, err := requestBuilder.Get(url)
 	if err != nil {
 		return result, err
 	} else if resp.IsError() {
@@ -107,8 +116,13 @@ func (client *GatewayClient) Describe(kind *schema.Kind, parentPathValue []strin
 }
 
 func (client *GatewayClient) Delete(kind *schema.Kind, parentPathValue []string, parentQueryValue []string, name string) error {
-	url := client.baseUrl + kind.DescribePath(parentPathValue, parentQueryValue, name).Path
-	resp, err := client.client.R().Delete(url)
+	queryInfo := kind.DescribePath(parentPathValue, parentQueryValue, name)
+	url := client.baseUrl + queryInfo.Path
+	requestBuilder := client.client.R()
+	for _, p := range queryInfo.QueryParams {
+		requestBuilder = requestBuilder.SetQueryParam(p.Name, p.Value)
+	}
+	resp, err := requestBuilder.Delete(url)
 	if err != nil {
 		return err
 	} else if resp.IsError() {
