@@ -36,7 +36,7 @@ func isIdentifiedByNameAndVCluster(kind string) bool {
 }
 
 func isIdentifiedByName(kind string) bool {
-	return strings.Contains(strings.ToLower(kind), "vcluster") ||
+	return strings.Contains(strings.ToLower(kind), "virtualcluster") ||
 		strings.Contains(strings.ToLower(kind), "group")
 }
 
