@@ -282,7 +282,7 @@ tags:
     description: |+
       ### Definition
       
-      https://docs.conduktor.io/gateway/concepts/GatewayUser/
+      https://docs.conduktor.io/gateway/concepts/service-accounts-authentication-authorization/
       
       ### Available operations
       
@@ -460,6 +460,7 @@ paths:
                     superUsers:
                       - username1
                       - username2
+                    type: Standard
         '401':
           description: The given credentials are not valid
           content:
@@ -519,6 +520,7 @@ paths:
                 superUsers:
                   - username1
                   - username2
+                type: Standard
         required: true
       responses:
         '200':
@@ -538,6 +540,7 @@ paths:
                     superUsers:
                       - username1
                       - username2
+                    type: Standard
                 upsertResult: UPDATED
         '400':
           description: Wrong format or usage of reserved keywords (e.g. passthrough)
@@ -592,7 +595,8 @@ paths:
                 "superUsers" : [
                   "username1",
                   "username2"
-                ]
+                ],
+                "type" : "Standard"
               }
             }'
   /gateway/v2/virtual-cluster/{vCluster}:
@@ -630,6 +634,7 @@ paths:
                   superUsers:
                     - username1
                     - username2
+                  type: Standard
         '401':
           description: The given credentials are not valid
           content:
@@ -898,6 +903,22 @@ paths:
                 $ref: '#/components/schemas/NotFound'
               example:
                 title: The given virtual cluster does not exist
+        '409':
+          description: |2
+
+            The virtual cluster is of type Standard and does not target main physical cluster
+            The virtual cluster is of type Partner and does not target a valid physical cluster
+            The physical cluster of an alias topic cannot be changed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conflict'
+              example:
+                title: |2
+
+                  The virtual cluster is of type Standard and does not target main physical cluster
+                  The virtual cluster is of type Partner and does not target a valid physical cluster
+                  The physical cluster of an alias topic cannot be changed
         '500':
           description: An unexpected error occurred in the server
           content:
@@ -2569,6 +2590,14 @@ components:
           description: The physical name of the alias topic
           type: string
           format: ^[a-zA-Z0-9._-]+$
+        physicalCluster:
+          description: |2
+
+            The physical kafka cluster hosting the physical topic.
+            The field is optional and only useful for alias topics referencing __Partner__ virtual clusters.
+            For alias topics linked to virtual clusters of type __Standard__, the physical cluster can only be "main" (automatically set to "main" if the field is missing).
+            The physical cluster must be one of the configured list of physical clusters of the gateway.
+          type: string
     ApplyResult_AliasTopic:
       title: ApplyResult_AliasTopic
       type: object
@@ -2822,6 +2851,8 @@ components:
       title: ExternalSpec
       description: Spec of the service account
       type: object
+      required:
+        - type
       properties:
         externalNames:
           description: |2
@@ -2833,6 +2864,10 @@ components:
           type: array
           items:
             type: string
+        type:
+          description: 'The type of the service account : `LOCAL` or `EXTERNAL` (case
+            insensitive)'
+          type: string
     GatewayGroup:
       title: GatewayGroup
       type: object
@@ -3028,6 +3063,13 @@ components:
       title: LocalSpec
       description: Spec of the service account
       type: object
+      required:
+        - type
+      properties:
+        type:
+          description: 'The type of the service account : `LOCAL` or `EXTERNAL` (case
+            insensitive)'
+          type: string
     Map_Json:
       title: Map_Json
       description: The configuration of the interceptor
@@ -3214,6 +3256,9 @@ components:
           type: array
           items:
             type: string
+        type:
+          description: 'The type of the virtual cluster : Standard, Partner'
+          type: string
   securitySchemes:
     httpAuth:
       type: http

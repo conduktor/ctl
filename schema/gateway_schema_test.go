@@ -43,6 +43,7 @@ spec:
     superUsers:
         - username1
         - username2
+    type: Standard
 `,
 						Order: 7,
 					},
