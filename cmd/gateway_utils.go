@@ -31,7 +31,7 @@ func isKindIdentifiedByNameAndVCluster(kind schema.Kind) bool {
 
 func isIdentifiedByNameAndVCluster(kind string) bool {
 	return strings.Contains(strings.ToLower(kind), "aliastopic") ||
-		strings.Contains(strings.ToLower(kind), "serviceaccount") ||
+		strings.Contains(strings.ToLower(kind), "gatewayserviceaccount") ||
 		strings.Contains(strings.ToLower(kind), "concentrationrule")
 }
 
