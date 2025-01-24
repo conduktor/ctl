@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"regexp"
 	"strings"
@@ -323,6 +324,27 @@ func (client *Client) Login(username, password string) (LoginResult, error) {
 		return LoginResult{}, err
 	}
 	return result, nil
+}
+
+func getOnlyPathWithSlashApi(inputUrl string) string {
+	var userPath string
+	fullUrl, err := url.Parse(inputUrl)
+	if err != nil {
+		userPath = inputUrl
+	} else {
+		userPath = fullUrl.Path
+	}
+	return "/" + strings.TrimPrefix(strings.TrimPrefix(userPath, "/"), "api/")
+}
+
+func (client *Client) UrlGet(inputUrl string) (string, error) {
+	resp, err := client.client.R().Get(client.baseUrl + getOnlyPathWithSlashApi(inputUrl))
+	if err != nil {
+		return "", err
+	} else if resp.IsError() {
+		return "", fmt.Errorf(extractApiError(resp))
+	}
+	return string(resp.Body()), nil
 }
 
 func (client *Client) Describe(kind *schema.Kind, parentPathValue []string, parentQueryValue []string, name string) (resource.Resource, error) {
