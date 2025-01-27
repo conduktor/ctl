@@ -10,8 +10,10 @@ import (
 
 // consoleUrlGetCmd represents the apply command
 var consoleUrlGetCmd = &cobra.Command{
-	Use:    "consoleUrlGet",
-	Short:  "Perform a get on the given url/path with correct authentication header",
+	Use:   "consoleUrlGet",
+	Short: "Perform a get on the given url/path with correct authentication header",
+	Long: `Perform a get on the given url/path with correct authentication header.
+If a full url is given the host part will be ignored and replace by $CDK_BASE_URL. If /api is missing it will be added automatically`,
 	Args:   cobra.ExactArgs(1),
 	Hidden: !utils.CdkDevMode(),
 	Run: func(cmd *cobra.Command, args []string) {
