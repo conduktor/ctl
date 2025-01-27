@@ -18,7 +18,7 @@ func initPrintKind(kinds schema.KindCatalog) {
 		Short:  "Print kind catalog used",
 		Long:   ``,
 		Args:   cobra.NoArgs,
-		Hidden: !utils.CdkDebug(),
+		Hidden: !utils.CdkDevMode(),
 		Run: func(cmd *cobra.Command, args []string) {
 			var payload []byte
 			var err error
