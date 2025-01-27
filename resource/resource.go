@@ -95,7 +95,10 @@ func FromFolder(path string, strict bool) ([]Resource, error) {
 }
 
 func FromYamlByte(data []byte, strict bool) ([]Resource, error) {
-	data = expandEnvVars(data, strict)
+	data, err := expandEnvVars(data, strict)
+	if err != nil {
+		return nil, err
+	}
 	reader := bytes.NewReader(data)
 	var yamlData interface{}
 	results := make([]Resource, 0, 2)
@@ -125,7 +128,7 @@ var envVarRegex = regexp.MustCompile(`\$\{([^}]+)\}`)
 // expandEnv replaces ${var} or $var in config according to the values of the current environment variables.
 // The replacement is case-sensitive. References to undefined variables are replaced by the empty string.
 // A default value can be given by using the form ${var:-default value}.
-func expandEnvVars(input []byte, strict bool) []byte {
+func expandEnvVars(input []byte, strict bool) ([]byte, error) {
 	missingEnvVars := make([]string, 0)
 	result := envVarRegex.ReplaceAllFunc(input, func(match []byte) []byte {
 		varName := string(match[2 : len(match)-1])
@@ -156,9 +159,9 @@ func expandEnvVars(input []byte, strict bool) []byte {
 		return []byte(value)
 	})
 	if len(missingEnvVars) > 0 {
-		panic(fmt.Sprintf("Missing environment variables: %s", strings.Join(missingEnvVars, ", ")))
+		return nil, fmt.Errorf("Missing environment variables: %s", strings.Join(missingEnvVars, ", "))
 	}
-	return result
+	return result, nil
 }
 
 func extractKeyFromMetadataMap(m map[string]interface{}, key string) (string, error) {
