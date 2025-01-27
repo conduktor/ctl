@@ -123,7 +123,7 @@ func FromYamlByte(data []byte, strict bool) ([]Resource, error) {
 	return results, nil
 }
 
-var envVarRegex = regexp.MustCompile(`\$\{([^}]+)\}`)
+var envVarRegex = regexp.MustCompile(`(\$|\$\$)\{([^}]+)\}`)
 
 // expandEnv replaces ${var} or $var in config according to the values of the current environment variables.
 // The replacement is case-sensitive. References to undefined variables are replaced by the empty string.
@@ -133,6 +133,11 @@ func expandEnvVars(input []byte, strict bool) ([]byte, error) {
 	result := envVarRegex.ReplaceAllFunc(input, func(match []byte) []byte {
 		varName := string(match[2 : len(match)-1])
 		defaultValue := ""
+		// If the match has a double $$, we assume it will be needed by the server.
+		// We're only trimming the first $ in this case.
+		if strings.HasPrefix(string(match), "$$") {
+			return []byte(match[1:])
+		}
 		if strings.Contains(varName, ":-") {
 			parts := strings.SplitN(varName, ":-", 2)
 			varName = parts[0]
