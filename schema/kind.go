@@ -20,7 +20,7 @@ type KindVersion interface {
 	GetParentPathParam() []string
 	GetParentQueryParam() []string
 	GetOrder() int
-	GetListQueryParamter() map[string]QueryParameterOption
+	GetListQueryParameter() map[string]QueryParameterOption
 	GetApplyExample() string
 }
 
@@ -37,13 +37,13 @@ type QueryParameterOption struct {
 	Type     string
 }
 type ConsoleKindVersion struct {
-	ListPath          string
-	Name              string
-	ParentPathParam   []string
-	ParentQueryParam  []string
-	ListQueryParamter map[string]QueryParameterOption
-	ApplyExample      string
-	Order             int `json:1000` //same value DefaultPriority
+	ListPath           string
+	Name               string
+	ParentPathParam    []string
+	ParentQueryParam   []string
+	ListQueryParameter map[string]QueryParameterOption
+	ApplyExample       string
+	Order              int `json:1000` //same value DefaultPriority
 }
 
 func (c *ConsoleKindVersion) GetListPath() string {
@@ -70,8 +70,8 @@ func (c *ConsoleKindVersion) GetOrder() int {
 	return c.Order
 }
 
-func (c *ConsoleKindVersion) GetListQueryParamter() map[string]QueryParameterOption {
-	return c.ListQueryParamter
+func (c *ConsoleKindVersion) GetListQueryParameter() map[string]QueryParameterOption {
+	return c.ListQueryParameter
 }
 
 type GetParameter struct {
@@ -114,7 +114,7 @@ func (g *GatewayKindVersion) GetOrder() int {
 	return g.Order
 }
 
-func (g *GatewayKindVersion) GetListQueryParamter() map[string]QueryParameterOption {
+func (g *GatewayKindVersion) GetListQueryParameter() map[string]QueryParameterOption {
 	return g.ListQueryParameter
 }
 
@@ -214,7 +214,7 @@ func (kind *Kind) GetListFlag() map[string]QueryParameterOption {
 	kindVersion.GetParentQueryParam()
 	flags := make(map[string]QueryParameterOption)
 	// Filter out query params from parent to avoid duplicates
-	for k, v := range kindVersion.GetListQueryParamter() {
+	for k, v := range kindVersion.GetListQueryParameter() {
 		if !slices.Contains(kindVersion.GetParentQueryParam(), k) {
 			flags[k] = v
 		}

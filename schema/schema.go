@@ -73,11 +73,11 @@ func (s *Schema) GetGatewayKinds(strict bool) (map[string]Kind, error) {
 
 func buildConsoleKindVersion(s *Schema, path, kind string, order int, put *v3high.Operation, get *v3high.Operation, strict bool) (*ConsoleKindVersion, error) {
 	newKind := &ConsoleKindVersion{
-		Name:              kind,
-		ListPath:          path,
-		ParentPathParam:   make([]string, 0, len(put.Parameters)),
-		ListQueryParamter: make(map[string]QueryParameterOption, len(get.Parameters)),
-		Order:             order,
+		Name:               kind,
+		ListPath:           path,
+		ParentPathParam:    make([]string, 0, len(put.Parameters)),
+		ListQueryParameter: make(map[string]QueryParameterOption, len(get.Parameters)),
+		Order:              order,
 	}
 	for _, putParameter := range put.Parameters {
 		if putParameter.In == "path" && *putParameter.Required {
@@ -93,7 +93,7 @@ func buildConsoleKindVersion(s *Schema, path, kind string, order int, put *v3hig
 			if len(schemaTypes) == 1 {
 				schemaType := schemaTypes[0]
 				name := getParameter.Name
-				newKind.ListQueryParamter[name] = QueryParameterOption{
+				newKind.ListQueryParameter[name] = QueryParameterOption{
 					FlagName: ComputeFlagName(name),
 					Required: *getParameter.Required,
 					Type:     schemaType,
@@ -139,7 +139,7 @@ func buildGatewayKindVersion(s *Schema, path, kind string, order int, put *v3hig
 		Name:               consoleKind.Name,
 		ListPath:           consoleKind.ListPath,
 		ParentPathParam:    consoleKind.ParentPathParam,
-		ListQueryParameter: consoleKind.ListQueryParamter,
+		ListQueryParameter: consoleKind.ListQueryParameter,
 		ApplyExample:       consoleKind.ApplyExample,
 		GetAvailable:       getAvailable,
 		Order:              consoleKind.Order,
