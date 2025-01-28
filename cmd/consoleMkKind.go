@@ -16,7 +16,7 @@ func initConsoleMkKind() {
 		Long:    ``,
 		Aliases: []string{"mkKind", "makeConsoleKind"},
 		Args:    cobra.RangeArgs(0, 1),
-		Hidden:  !utils.CdkDebug(),
+		Hidden:  !utils.CdkDevMode(),
 		Run: func(cmd *cobra.Command, args []string) {
 			runMkKind(cmd, args, *prettyPrint, *nonStrict, func() ([]byte, error) { return consoleApiClient().GetOpenApi() }, func(schema *schema.Schema, strict bool) (schema.KindCatalog, error) {
 				return schema.GetConsoleKinds(strict)
