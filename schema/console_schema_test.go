@@ -16,7 +16,7 @@ func TestGetKindWithYamlFromOldConsolePlusWithoutOrder(t *testing.T) {
 			t.Fatalf("failed reading file: %s", err)
 		}
 
-		schema, err := New(schemaContent)
+		schema, err := NewOpenApiParser(schemaContent)
 		if err != nil {
 			t.Fatalf("failed creating new schema: %s", err)
 		}
@@ -124,7 +124,7 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 			t.Fatalf("failed reading file: %s", err)
 		}
 
-		schema, err := New(schemaContent)
+		schema, err := NewOpenApiParser(schemaContent)
 		if err != nil {
 			t.Fatalf("failed creating new schema: %s", err)
 		}
@@ -287,7 +287,7 @@ func TestGetKindWithMultipleVersion(t *testing.T) {
 			t.Fatalf("failed reading file: %s", err)
 		}
 
-		schema, err := New(schemaContent)
+		schema, err := NewOpenApiParser(schemaContent)
 		if err != nil {
 			t.Fatalf("failed creating new schema: %s", err)
 		}
@@ -329,7 +329,7 @@ func TestKindWithMissingMetadataField(t *testing.T) {
 			t.Fatalf("failed reading file: %s", err)
 		}
 
-		schema, err := New(schemaContent)
+		schema, err := NewOpenApiParser(schemaContent)
 		if err != nil {
 			t.Fatalf("failed creating new schema: %s", err)
 		}
@@ -347,7 +347,7 @@ func TestKindNotRequiredMetadataField(t *testing.T) {
 			t.Fatalf("failed reading file: %s", err)
 		}
 
-		schema, err := New(schemaContent)
+		schema, err := NewOpenApiParser(schemaContent)
 		if err != nil {
 			t.Fatalf("failed creating new schema: %s", err)
 		}

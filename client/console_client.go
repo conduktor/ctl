@@ -404,7 +404,7 @@ func (client *Client) initKindFromApi() error {
 	if err != nil {
 		return fmt.Errorf("Cannot get openapi: %s", err)
 	}
-	schema, err := schema.New(data)
+	schema, err := schema.NewOpenApiParser(data)
 	if err != nil {
 		return fmt.Errorf("Cannot parse openapi: %s", err)
 	}

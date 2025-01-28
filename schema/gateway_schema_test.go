@@ -15,7 +15,7 @@ func TestGetKindWithYamlFromGateway(t *testing.T) {
 			t.Fatalf("failed reading file: %s", err)
 		}
 
-		schema, err := New(schemaContent)
+		schema, err := NewOpenApiParser(schemaContent)
 		if err != nil {
 			t.Fatalf("failed creating new schema: %s", err)
 		}

@@ -13,11 +13,11 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type Schema struct {
+type OpenApiParser struct {
 	doc *libopenapi.DocumentModel[v3high.Document]
 }
 
-func New(schema []byte) (*Schema, error) {
+func NewOpenApiParser(schema []byte) (*OpenApiParser, error) {
 	doc, err := libopenapi.NewDocument(schema)
 	if err != nil {
 		return nil, err
@@ -27,12 +27,12 @@ func New(schema []byte) (*Schema, error) {
 		return nil, errors[0]
 	}
 
-	return &Schema{
+	return &OpenApiParser{
 		doc: v3Model,
 	}, nil
 }
 
-func getKinds[T KindVersion](s *Schema, strict bool, buildKindVersion func(s *Schema, path, kind string, order int, put *v3high.Operation, get *v3high.Operation, strict bool) (T, error)) (map[string]Kind, error) {
+func getKinds[T KindVersion](s *OpenApiParser, strict bool, buildKindVersion func(s *OpenApiParser, path, kind string, order int, put *v3high.Operation, get *v3high.Operation, strict bool) (T, error)) (map[string]Kind, error) {
 	result := make(map[string]Kind, 0)
 	for path := s.doc.Model.Paths.PathItems.First(); path != nil; path = path.Next() {
 		put := path.Value().Put
@@ -63,15 +63,15 @@ func getKinds[T KindVersion](s *Schema, strict bool, buildKindVersion func(s *Sc
 	return result, nil
 }
 
-func (s *Schema) GetConsoleKinds(strict bool) (map[string]Kind, error) {
+func (s *OpenApiParser) GetConsoleKinds(strict bool) (map[string]Kind, error) {
 	return getKinds(s, strict, buildConsoleKindVersion)
 }
 
-func (s *Schema) GetGatewayKinds(strict bool) (map[string]Kind, error) {
+func (s *OpenApiParser) GetGatewayKinds(strict bool) (map[string]Kind, error) {
 	return getKinds(s, strict, buildGatewayKindVersion)
 }
 
-func buildConsoleKindVersion(s *Schema, path, kind string, order int, put *v3high.Operation, get *v3high.Operation, strict bool) (*ConsoleKindVersion, error) {
+func buildConsoleKindVersion(s *OpenApiParser, path, kind string, order int, put *v3high.Operation, get *v3high.Operation, strict bool) (*ConsoleKindVersion, error) {
 	newKind := &ConsoleKindVersion{
 		Name:               kind,
 		ListPath:           path,
@@ -122,7 +122,7 @@ func buildConsoleKindVersion(s *Schema, path, kind string, order int, put *v3hig
 	return newKind, nil
 }
 
-func buildGatewayKindVersion(s *Schema, path, kind string, order int, put *v3high.Operation, get *v3high.Operation, strict bool) (*GatewayKindVersion, error) {
+func buildGatewayKindVersion(s *OpenApiParser, path, kind string, order int, put *v3high.Operation, get *v3high.Operation, strict bool) (*GatewayKindVersion, error) {
 	//for the moment there is the same but this might evolve latter
 	consoleKind, err := buildConsoleKindVersion(s, path, kind, order, put, get, strict)
 	if err != nil {
