@@ -19,11 +19,6 @@ type Kind struct {
 
 type KindCatalog = map[string]Kind
 
-type GetParameter struct {
-	Name      string
-	Mandatory bool
-}
-
 //go:embed default_schema/console.json
 var consoleDefaultByteSchema []byte
 
