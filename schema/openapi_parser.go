@@ -94,7 +94,7 @@ func buildConsoleKindVersion(s *OpenApiParser, path, kind string, order int, put
 				schemaType := schemaTypes[0]
 				name := getParameter.Name
 				newKind.ListQueryParameter[name] = QueryParameterOption{
-					FlagName: ComputeFlagName(name),
+					FlagName: computeFlagName(name),
 					Required: *getParameter.Required,
 					Type:     schemaType,
 				}
@@ -120,6 +120,13 @@ func buildConsoleKindVersion(s *OpenApiParser, path, kind string, order int, put
 		}
 	}
 	return newKind, nil
+}
+
+// two logics: uniformize flag name and kebab case
+func computeFlagName(name string) string {
+	kebab := utils.UpperCamelToKebab(name)
+	kebab = strings.TrimPrefix(kebab, "filter-by-")
+	return strings.Replace(kebab, "app-instance", "application-instance", 1)
 }
 
 func buildGatewayKindVersion(s *OpenApiParser, path, kind string, order int, put *v3high.Operation, get *v3high.Operation, strict bool) (*GatewayKindVersion, error) {

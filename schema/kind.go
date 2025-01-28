@@ -11,120 +11,18 @@ import (
 	"strings"
 
 	"github.com/conduktor/ctl/resource"
-	"github.com/conduktor/ctl/utils"
 )
-
-type KindVersion interface {
-	GetListPath() string
-	GetName() string
-	GetParentPathParam() []string
-	GetParentQueryParam() []string
-	GetOrder() int
-	GetListQueryParameter() map[string]QueryParameterOption
-	GetApplyExample() string
-}
-
-// two logics: uniformize flag name and kebab case
-func ComputeFlagName(name string) string {
-	kebab := utils.UpperCamelToKebab(name)
-	kebab = strings.TrimPrefix(kebab, "filter-by-")
-	return strings.Replace(kebab, "app-instance", "application-instance", 1)
-}
-
-type QueryParameterOption struct {
-	FlagName string
-	Required bool
-	Type     string
-}
-type ConsoleKindVersion struct {
-	ListPath           string
-	Name               string
-	ParentPathParam    []string
-	ParentQueryParam   []string
-	ListQueryParameter map[string]QueryParameterOption
-	ApplyExample       string
-	Order              int `json:1000` //same value DefaultPriority
-}
-
-func (c *ConsoleKindVersion) GetListPath() string {
-	return c.ListPath
-}
-
-func (c *ConsoleKindVersion) GetApplyExample() string {
-	return c.ApplyExample
-}
-
-func (c *ConsoleKindVersion) GetName() string {
-	return c.Name
-}
-
-func (c *ConsoleKindVersion) GetParentPathParam() []string {
-	return c.ParentPathParam
-}
-
-func (c *ConsoleKindVersion) GetParentQueryParam() []string {
-	return c.ParentQueryParam
-}
-
-func (c *ConsoleKindVersion) GetOrder() int {
-	return c.Order
-}
-
-func (c *ConsoleKindVersion) GetListQueryParameter() map[string]QueryParameterOption {
-	return c.ListQueryParameter
-}
-
-type GetParameter struct {
-	Name      string
-	Mandatory bool
-}
-
-type GatewayKindVersion struct {
-	ListPath           string
-	Name               string
-	ParentPathParam    []string
-	ParentQueryParam   []string
-	ListQueryParameter map[string]QueryParameterOption
-	GetAvailable       bool
-	ApplyExample       string
-	Order              int `json:1000` //same value DefaultPriority
-}
-
-func (g *GatewayKindVersion) GetListPath() string {
-	return g.ListPath
-}
-
-func (g *GatewayKindVersion) GetName() string {
-	return g.Name
-}
-
-func (g *GatewayKindVersion) GetParentPathParam() []string {
-	return g.ParentPathParam
-}
-
-func (g *GatewayKindVersion) GetParentQueryParam() []string {
-	return g.ParentQueryParam
-}
-
-func (g *GatewayKindVersion) GetApplyExample() string {
-	return g.ApplyExample
-}
-
-func (g *GatewayKindVersion) GetOrder() int {
-	return g.Order
-}
-
-func (g *GatewayKindVersion) GetListQueryParameter() map[string]QueryParameterOption {
-	return g.ListQueryParameter
-}
-
-const DefaultPriority = 1000 //update  json annotation for Order when changing this value
 
 type Kind struct {
 	Versions map[int]KindVersion
 }
 
 type KindCatalog = map[string]Kind
+
+type GetParameter struct {
+	Name      string
+	Mandatory bool
+}
 
 //go:embed default_schema/console.json
 var consoleDefaultByteSchema []byte
@@ -167,27 +65,6 @@ func NewKind(version int, kindVersion KindVersion) Kind {
 	return Kind{
 		Versions: map[int]KindVersion{version: kindVersion},
 	}
-}
-
-func extractVersionFromApiVersion(apiVersion string) int {
-	// we extract the number after v in a apiVersion
-	// e.g. v1 1
-	// e.g. v42-> 42
-
-	re := regexp.MustCompile(`v(\d+)`)
-	matches := re.FindStringSubmatch(apiVersion)
-
-	if len(matches) < 2 {
-		fmt.Fprintf(os.Stderr, "Invalid api version format \"%s\", could not extract version\n", apiVersion)
-		os.Exit(1)
-	}
-
-	version, err := strconv.Atoi(matches[1])
-	if err != nil {
-		panic(fmt.Sprintf("Invalid version number in apiVersion: %s", matches[1]))
-	}
-
-	return version
 }
 
 func (kind *Kind) AddVersion(version int, kindVersion KindVersion) error {
@@ -327,4 +204,25 @@ func (kind *Kind) DeletePath(resource *resource.Resource) (string, error) {
 	}
 
 	return applyPath.Path + "/" + resource.Name, nil
+}
+
+func extractVersionFromApiVersion(apiVersion string) int {
+	// we extract the number after v in a apiVersion
+	// e.g. v1 1
+	// e.g. v42-> 42
+
+	re := regexp.MustCompile(`v(\d+)`)
+	matches := re.FindStringSubmatch(apiVersion)
+
+	if len(matches) < 2 {
+		fmt.Fprintf(os.Stderr, "Invalid api version format \"%s\", could not extract version\n", apiVersion)
+		os.Exit(1)
+	}
+
+	version, err := strconv.Atoi(matches[1])
+	if err != nil {
+		panic(fmt.Sprintf("Invalid version number in apiVersion: %s", matches[1]))
+	}
+
+	return version
 }
