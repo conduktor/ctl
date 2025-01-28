@@ -10,7 +10,8 @@ require (
 	github.com/jarcoal/httpmock v1.3.1
 	github.com/pb33f/libopenapi v0.15.14
 	github.com/spf13/cobra v1.8.0
-	golang.org/x/exp v0.0.0-20240213143201-ec583247a57a
+	github.com/thediveo/enumflag/v2 v2.0.5
+	github.com/wk8/go-ordered-map/v2 v2.1.8
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -21,10 +22,9 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/thediveo/enumflag/v2 v2.0.5 // indirect
 	github.com/vmware-labs/yaml-jsonpath v0.3.2 // indirect
-	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
-	golang.org/x/net v0.23.0 // indirect
+	golang.org/x/exp v0.0.0-20240213143201-ec583247a57a // indirect
+	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/sync v0.6.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
