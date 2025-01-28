@@ -194,6 +194,44 @@ spec:
 		Spec:     map[string]interface{}{"replicationFactor": 2.0, "partition": 3.0},
 		Json:     []byte(`{"apiVersion":"v1","kind":"Topic","metadata":{"cluster":"cluster-a","name":"toto","labels":{"conduktor.io/description":"This topic is awesome"}},"spec":{"replicationFactor":2,"partition":3}}`),
 	})
+
+	yamlByte2 := []byte(`
+# comment
+---
+apiVersion: gateway/v2
+kind: Interceptor
+metadata:
+  name: decryption
+spec:
+  priority: 100
+  pluginClass: io.conduktor.gateway.interceptor.DecryptPlugin
+  config:
+    topic: .*
+    kmsConfig:
+      vault:
+        uri: http://$${VAULT_URI}
+        username: $${VAULT_USERNAME}
+        password: $${VAULT_PASSWORD}
+`)
+
+	results2, err := FromYamlByte(yamlByte2, true)
+	spew.Dump(results2)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(results2) != 1 {
+		t.Errorf("results expected of length 1, got length %d", len(results2))
+	}
+
+	checkResourceWithoutJsonOrder(t, results2[0], Resource{
+		Version:  "gateway/v2",
+		Kind:     "Interceptor",
+		Name:     "decryption",
+		Metadata: map[string]interface{}{"name": "decryption"},
+		Spec:     map[string]interface{}{"priority": 100.0, "pluginClass": "io.conduktor.gateway.interceptor.DecryptPlugin", "config": map[string]interface{}{"topic": ".*", "kmsConfig": map[string]interface{}{"vault": map[string]interface{}{"uri": "http://${VAULT_URI}", "username": "${VAULT_USERNAME}", "password": "${VAULT_PASSWORD}"}}}},
+		Json:     []byte(`{"apiVersion":"gateway/v2","kind":"Interceptor","metadata":{"name":"decryption"},"spec":{"priority":100,"pluginClass":"io.conduktor.gateway.interceptor.DecryptPlugin","config":{"topic":".*","kmsConfig":{"vault":{"uri":"http://${VAULT_URI}","username":"${VAULT_USERNAME}", "password": "${VAULT_PASSWORD}"}}}}}`),
+	})
 }
 
 func TestResourceExpansionForTopic(t *testing.T) {
