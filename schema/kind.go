@@ -126,10 +126,10 @@ type Kind struct {
 
 type KindCatalog = map[string]Kind
 
-//go:embed console-default-schema.json
+//go:embed default_schema/console.json
 var consoleDefaultByteSchema []byte
 
-//go:embed gateway-default-schema.json
+//go:embed default_schema/gateway.json
 var gatewayDefaultByteSchema []byte
 
 type KindGeneric[T KindVersion] struct {
