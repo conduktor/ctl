@@ -400,5 +400,28 @@
         ]
       }
     }
+  },
+  {
+    "httpRequest": {
+      "method": "POST",
+      "path": "/gateway/v2/token",
+      "headers": {
+        "Authorization": "Basic YWRtaW46Y29uZHVrdG9y"
+      },
+      "body": {
+        "lifeTimeSeconds": 3600,
+        "username": "yo",
+        "vCluster": "foyer"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "yolo_le_token",
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
   }
 ]

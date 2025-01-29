@@ -39,10 +39,10 @@ func (t BasicAuth) AuthorizationHeader() string {
 }
 
 type Client struct {
-	authMethod AuthMethod
-	baseUrl    string
-	client     *resty.Client
-	kinds      schema.KindCatalog
+	authMethod    AuthMethod
+	baseUrl       string
+	client        *resty.Client
+	schemaCatalog *schema.Catalog
 }
 
 type ApiParameter struct {
@@ -95,10 +95,10 @@ func Make(apiParameter ApiParameter) (*Client, error) {
 	}
 
 	result := &Client{
-		authMethod: nil,
-		baseUrl:    uniformizeBaseUrl(apiParameter.BaseUrl),
-		client:     restyClient,
-		kinds:      nil,
+		authMethod:    nil,
+		baseUrl:       uniformizeBaseUrl(apiParameter.BaseUrl),
+		client:        restyClient,
+		schemaCatalog: nil,
 	}
 
 	if apiParameter.Insecure {
@@ -136,7 +136,7 @@ func Make(apiParameter ApiParameter) (*Client, error) {
 		if apiParameter.Debug {
 			fmt.Fprintf(os.Stderr, "Cannot access the Conduktor API: %s\nUsing offline defaults.\n", err)
 		}
-		result.kinds = schema.ConsoleDefaultKind()
+		result.schemaCatalog = schema.ConsoleDefaultCatalog()
 	}
 
 	return result, nil
@@ -304,6 +304,29 @@ func (client *Client) Get(kind *schema.Kind, parentPathValue []string, parentQue
 	return result, err
 }
 
+func (client *Client) Run(run schema.Run, pathValue []string, queryParams map[string]string, body interface{}) ([]byte, error) {
+	if run.BackendType != schema.CONSOLE {
+		return nil, fmt.Errorf("Only console backend type is supported by console client")
+	}
+	client.setAuthMethodFromEnvIfNeeded()
+	path := run.BuildPath(pathValue)
+	url := client.baseUrl + path
+	requestBuilder := client.client.R()
+	for k, v := range queryParams {
+		requestBuilder.SetQueryParam(k, v)
+	}
+	if body != nil {
+		requestBuilder = requestBuilder.SetBody(body)
+	}
+	resp, err := requestBuilder.Execute(run.Method, url)
+	if err != nil {
+		return nil, err
+	} else if resp.IsError() {
+		return nil, fmt.Errorf(extractApiError(resp))
+	}
+	return resp.Body(), nil
+}
+
 func (client *Client) Login(username, password string) (LoginResult, error) {
 	url := client.baseUrl + "/login"
 	resp, err := client.client.R().SetBody(map[string]string{"username": username, "password": password}).Post(url)
@@ -409,9 +432,9 @@ func (client *Client) initKindFromApi() error {
 		return fmt.Errorf("Cannot parse openapi: %s", err)
 	}
 	strict := false
-	client.kinds, err = schema.GetConsoleKinds(strict)
+	client.schemaCatalog, err = schema.GetConsoleCatalog(strict)
 	if err != nil {
-		fmt.Errorf("Cannot extract kinds from openapi: %s", err)
+		fmt.Errorf("Cannot extract schemaCatalog from openapi: %s", err)
 	}
 	return nil
 }
@@ -509,5 +532,12 @@ func (client *Client) DeleteToken(uuid string) error {
 }
 
 func (client *Client) GetKinds() schema.KindCatalog {
-	return client.kinds
+	if client.schemaCatalog == nil {
+		return map[string]schema.Kind{}
+	}
+	return client.schemaCatalog.Kind
+}
+
+func (c *Client) GetCatalog() *schema.Catalog {
+	return c.schemaCatalog
 }

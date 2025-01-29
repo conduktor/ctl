@@ -33,7 +33,7 @@ func TestGetKindWithYamlFromOldConsolePlusWithoutOrder(t *testing.T) {
 						Name:               "Application",
 						ListPath:           "/public/self-serve/v1/application",
 						ParentPathParam:    make([]string, 0),
-						ListQueryParameter: map[string]QueryParameterOption{},
+						ListQueryParameter: map[string]FlagParameterOption{},
 						Order:              DefaultPriority,
 					},
 				},
@@ -44,7 +44,7 @@ func TestGetKindWithYamlFromOldConsolePlusWithoutOrder(t *testing.T) {
 						Name:            "ApplicationInstance",
 						ListPath:        "/public/self-serve/v1/application-instance",
 						ParentPathParam: make([]string, 0),
-						ListQueryParameter: map[string]QueryParameterOption{
+						ListQueryParameter: map[string]FlagParameterOption{
 							"application": {
 								FlagName: "application",
 								Required: false,
@@ -61,7 +61,7 @@ func TestGetKindWithYamlFromOldConsolePlusWithoutOrder(t *testing.T) {
 						Name:            "ApplicationInstancePermission",
 						ListPath:        "/public/self-serve/v1/application-instance-permission",
 						ParentPathParam: make([]string, 0),
-						ListQueryParameter: map[string]QueryParameterOption{
+						ListQueryParameter: map[string]FlagParameterOption{
 							"filterByApplication": {
 								FlagName: "application",
 								Required: false,
@@ -88,7 +88,7 @@ func TestGetKindWithYamlFromOldConsolePlusWithoutOrder(t *testing.T) {
 						Name:            "TopicPolicy",
 						ListPath:        "/public/self-serve/v1/topic-policy",
 						ParentPathParam: make([]string, 0),
-						ListQueryParameter: map[string]QueryParameterOption{
+						ListQueryParameter: map[string]FlagParameterOption{
 							"app-instance": {
 								FlagName: "application-instance",
 								Required: false,
@@ -105,7 +105,7 @@ func TestGetKindWithYamlFromOldConsolePlusWithoutOrder(t *testing.T) {
 						Name:               "Topic",
 						ListPath:           "/public/kafka/v2/cluster/{cluster}/topic",
 						ParentPathParam:    []string{"cluster"},
-						ListQueryParameter: map[string]QueryParameterOption{},
+						ListQueryParameter: map[string]FlagParameterOption{},
 						Order:              DefaultPriority,
 					},
 				},
@@ -141,7 +141,7 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 						Name:               "Application",
 						ListPath:           "/public/self-serve/v1/application",
 						ParentPathParam:    []string{},
-						ListQueryParameter: map[string]QueryParameterOption{},
+						ListQueryParameter: map[string]FlagParameterOption{},
 						Order:              6,
 					},
 				},
@@ -152,7 +152,7 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 						Name:            "ApplicationInstance",
 						ListPath:        "/public/self-serve/v1/application-instance",
 						ParentPathParam: []string{},
-						ListQueryParameter: map[string]QueryParameterOption{
+						ListQueryParameter: map[string]FlagParameterOption{
 							"application": {
 								FlagName: "application",
 								Required: false,
@@ -169,7 +169,7 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 						Name:            "ApplicationInstancePermission",
 						ListPath:        "/public/self-serve/v1/application-instance-permission",
 						ParentPathParam: []string{},
-						ListQueryParameter: map[string]QueryParameterOption{
+						ListQueryParameter: map[string]FlagParameterOption{
 							"filterByApplication": {
 								FlagName: "application",
 								Required: false,
@@ -196,7 +196,7 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 						Name:               "ApplicationGroup",
 						ListPath:           "/public/self-serve/v1/application-group",
 						ParentPathParam:    []string{},
-						ListQueryParameter: map[string]QueryParameterOption{},
+						ListQueryParameter: map[string]FlagParameterOption{},
 						Order:              9,
 					},
 				},
@@ -207,7 +207,7 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 						Name:            "TopicPolicy",
 						ListPath:        "/public/self-serve/v1/topic-policy",
 						ParentPathParam: []string{},
-						ListQueryParameter: map[string]QueryParameterOption{
+						ListQueryParameter: map[string]FlagParameterOption{
 							"app-instance": {
 								FlagName: "application-instance",
 								Required: false,
@@ -224,7 +224,7 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 						Name:               "Topic",
 						ListPath:           "/public/kafka/v2/cluster/{cluster}/topic",
 						ParentPathParam:    []string{"cluster"},
-						ListQueryParameter: map[string]QueryParameterOption{},
+						ListQueryParameter: map[string]FlagParameterOption{},
 						Order:              3,
 					},
 				},
@@ -235,7 +235,7 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 						Name:               "Subject",
 						ListPath:           "/public/kafka/v2/cluster/{cluster}/subject",
 						ParentPathParam:    []string{"cluster"},
-						ListQueryParameter: map[string]QueryParameterOption{},
+						ListQueryParameter: map[string]FlagParameterOption{},
 						Order:              4,
 					},
 				},
@@ -246,7 +246,7 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 						Name:               "User",
 						ListPath:           "/public/iam/v2/user",
 						ParentPathParam:    []string{},
-						ListQueryParameter: map[string]QueryParameterOption{},
+						ListQueryParameter: map[string]FlagParameterOption{},
 						Order:              0,
 					},
 				},
@@ -257,7 +257,7 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 						Name:               "Group",
 						ListPath:           "/public/iam/v2/group",
 						ParentPathParam:    []string{},
-						ListQueryParameter: map[string]QueryParameterOption{},
+						ListQueryParameter: map[string]FlagParameterOption{},
 						Order:              1,
 					},
 				},
@@ -268,7 +268,7 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 						Name:               "KafkaCluster",
 						ListPath:           "/public/console/v2/kafka-cluster",
 						ParentPathParam:    []string{},
-						ListQueryParameter: map[string]QueryParameterOption{},
+						ListQueryParameter: map[string]FlagParameterOption{},
 						Order:              2,
 					},
 				},
@@ -304,14 +304,14 @@ func TestGetKindWithMultipleVersion(t *testing.T) {
 						Name:               "Topic",
 						ListPath:           "/public/v1/cluster/{cluster}/topic",
 						ParentPathParam:    []string{"cluster"},
-						ListQueryParameter: map[string]QueryParameterOption{},
+						ListQueryParameter: map[string]FlagParameterOption{},
 						Order:              DefaultPriority,
 					},
 					2: &ConsoleKindVersion{
 						Name:               "Topic",
 						ListPath:           "/public/v2/cluster/{cluster}/sa/{sa}/topic",
 						ParentPathParam:    []string{"cluster", "sa"},
-						ListQueryParameter: map[string]QueryParameterOption{},
+						ListQueryParameter: map[string]FlagParameterOption{},
 						Order:              42,
 					},
 				},
@@ -355,6 +355,108 @@ func TestKindNotRequiredMetadataField(t *testing.T) {
 		_, err = schema.GetConsoleKinds(true)
 		if !strings.Contains(err.Error(), "Parent path param sa in metadata for kind Topic not required") {
 			t.Fatalf("Not expected error: %s", err)
+		}
+	})
+}
+
+func TestGetExecutes(t *testing.T) {
+	t.Run("gets execute endpoint from schema", func(t *testing.T) {
+		schemaContent, err := os.ReadFile("testdata/console_run.yaml")
+		if err != nil {
+			t.Fatalf("failed reading file: %s", err)
+		}
+
+		schema, err := NewOpenApiParser(schemaContent)
+		if err != nil {
+			t.Fatalf("failed creating new schema: %s", err)
+		}
+
+		result, err := schema.getRuns(CONSOLE)
+		if err != nil {
+			t.Fatalf("failed getting execute: %s", err)
+		}
+
+		//all the token runs are not present in real life just present in the yaml test file used here
+		expected := RunCatalog{
+			"partnerZoneGenerateCredentials": Run{
+				Path:           "/public/partner-zone/v2/{partner-zone-name}/generate-credentials",
+				Name:           "partnerZoneGenerateCredentials",
+				PathParameter:  []string{"partner-zone-name"},
+				Doc:            "generate a token for a partner zone service account",
+				QueryParameter: map[string]FlagParameterOption{},
+				BodyFields:     map[string]FlagParameterOption{},
+				Method:         "POST",
+				BackendType:    CONSOLE,
+			},
+			"createAdminToken": Run{
+				Path:           "/token/v1/admin_tokens",
+				Name:           "createAdminToken",
+				Doc:            "Create an admin token",
+				QueryParameter: map[string]FlagParameterOption{},
+				PathParameter:  []string{},
+				BodyFields: map[string]FlagParameterOption{
+					"name": {
+						FlagName: "name",
+						Required: true,
+						Type:     "string",
+					},
+				},
+				Method:      "POST",
+				BackendType: CONSOLE,
+			},
+			"createApplicationInstanceToken": Run{
+				Path:           "/token/v1/application_instance_tokens/{application-instance-name}",
+				Name:           "createApplicationInstanceToken",
+				Doc:            "Create an application instance token",
+				QueryParameter: map[string]FlagParameterOption{},
+				PathParameter: []string{
+					"application-instance-name",
+				},
+				BodyFields: map[string]FlagParameterOption{
+					"name": {
+						FlagName: "name",
+						Required: true,
+						Type:     "string",
+					},
+				},
+				Method:      "POST",
+				BackendType: CONSOLE,
+			},
+			"deleteToken": Run{
+				Path:           "/token/v1/{token-id}",
+				Name:           "deleteToken",
+				Doc:            "Delete a token",
+				QueryParameter: map[string]FlagParameterOption{},
+				PathParameter:  []string{"token-id"},
+				BodyFields:     map[string]FlagParameterOption{},
+				Method:         "DELETE",
+				BackendType:    CONSOLE,
+			},
+			"listAdminToken": Run{
+				Path:           "/token/v1/admin_tokens",
+				Name:           "listAdminToken",
+				Doc:            "List admin token",
+				QueryParameter: map[string]FlagParameterOption{},
+				PathParameter:  []string{},
+				BodyFields:     map[string]FlagParameterOption{},
+				Method:         "GET",
+				BackendType:    CONSOLE,
+			},
+			"listApplicationInstanceToken": Run{
+				Path:           "/token/v1/application_instance_tokens/{application-instance-name}",
+				Name:           "listApplicationInstanceToken",
+				Doc:            "List application instance token",
+				QueryParameter: map[string]FlagParameterOption{},
+				PathParameter: []string{
+					"application-instance-name",
+				},
+				BodyFields:  map[string]FlagParameterOption{},
+				Method:      "GET",
+				BackendType: CONSOLE,
+			},
+		}
+		if !reflect.DeepEqual(result, expected) {
+			t.Error(spew.Printf("got %v, want %v", result, expected))
 		}
 	})
 }

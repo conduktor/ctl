@@ -9,16 +9,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func initPrintKind(kinds schema.KindCatalog) {
+func initPrintCatalog(kinds schema.Catalog) {
 
 	var prettyPrint *bool
 
 	var printKind = &cobra.Command{
-		Use:    "printKind",
-		Short:  "Print kind catalog used",
-		Long:   ``,
-		Args:   cobra.NoArgs,
-		Hidden: !utils.CdkDevMode(),
+		Use:     "printCatalog",
+		Aliases: []string{"printKind"}, // for backward compatibility
+		Short:   "Print catalog",
+		Long:    ``,
+		Args:    cobra.NoArgs,
+		Hidden:  !utils.CdkDevMode(),
 		Run: func(cmd *cobra.Command, args []string) {
 			var payload []byte
 			var err error

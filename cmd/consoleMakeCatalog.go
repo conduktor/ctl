@@ -6,20 +6,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func initConsoleMkKind() {
+func intConsoleMakeCatalog() {
 	var prettyPrint *bool
 	var nonStrict *bool
 
 	var makeKind = &cobra.Command{
-		Use:     "makeKind [file]",
-		Short:   "Make kind json from openapi file if file not given it will read from api",
+		Use:     "makeConsoleCatalog [file]",
+		Short:   "Make catalog json from openapi file if file not given it will read from api",
 		Long:    ``,
-		Aliases: []string{"mkKind", "makeConsoleKind"},
+		Aliases: []string{"mkKind", "makeConsoleKind", "makeKind"}, // for backward compatibility
 		Args:    cobra.RangeArgs(0, 1),
 		Hidden:  !utils.CdkDevMode(),
 		Run: func(cmd *cobra.Command, args []string) {
-			runMkKind(cmd, args, *prettyPrint, *nonStrict, func() ([]byte, error) { return consoleApiClient().GetOpenApi() }, func(schema *schema.OpenApiParser, strict bool) (schema.KindCatalog, error) {
-				return schema.GetConsoleKinds(strict)
+			runMakeCatalog(cmd, args, *prettyPrint, *nonStrict, func() ([]byte, error) { return consoleApiClient().GetOpenApi() }, func(schema *schema.OpenApiParser, strict bool) (*schema.Catalog, error) {
+				return schema.GetConsoleCatalog(strict)
 			})
 		},
 	}

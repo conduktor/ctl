@@ -9,8 +9,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func runMkKind(cmd *cobra.Command, args []string, prettyPrint bool, nonStrict bool, getOpenApi func() ([]byte, error), getKinds func(*schema.OpenApiParser, bool) (schema.KindCatalog, error)) {
-	var kinds map[string]schema.Kind
+func runMakeCatalog(cmd *cobra.Command, args []string, prettyPrint bool, nonStrict bool, getOpenApi func() ([]byte, error), getCatalog func(*schema.OpenApiParser, bool) (*schema.Catalog, error)) {
+	var kinds *schema.Catalog
 	if len(args) == 1 {
 		data, err := os.ReadFile(args[0])
 		if err != nil {
@@ -20,7 +20,7 @@ func runMkKind(cmd *cobra.Command, args []string, prettyPrint bool, nonStrict bo
 		if err != nil {
 			panic(err)
 		}
-		kinds, err = getKinds(schema, !nonStrict)
+		kinds, err = getCatalog(schema, !nonStrict)
 		if err != nil {
 			panic(err)
 		}
@@ -33,7 +33,7 @@ func runMkKind(cmd *cobra.Command, args []string, prettyPrint bool, nonStrict bo
 		if err != nil {
 			panic(err)
 		}
-		kinds, err = getKinds(schema, !nonStrict)
+		kinds, err = getCatalog(schema, !nonStrict)
 		if err != nil {
 			panic(err)
 		}

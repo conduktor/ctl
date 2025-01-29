@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/conduktor/ctl/resource"
@@ -41,27 +40,6 @@ var getCmd = &cobra.Command{
 		cmd.Help()
 		os.Exit(1)
 	},
-}
-
-func buildQueryParams(params map[string]interface{}) map[string]string {
-	queryParams := make(map[string]string)
-	for key, value := range params {
-		if value != nil {
-			str, strOk := value.(*string)
-			boolValue, boolOk := value.(*bool)
-
-			if strOk {
-				if *str != "" {
-					queryParams[key] = *str
-				}
-			} else if boolOk {
-				queryParams[key] = strconv.FormatBool(*boolValue)
-			} else {
-				panic("Unknown query flag type")
-			}
-		}
-	}
-	return queryParams
 }
 
 func removeTrailingSIfAny(name string) string {
@@ -181,7 +159,7 @@ func initGet(kinds schema.KindCatalog) {
 			Run: func(cmd *cobra.Command, args []string) {
 				parentValue := make([]string, len(parentFlagValue))
 				parentQueryValue := make([]string, len(parentQueryFlagValue))
-				queryParams := buildQueryParams(listFlagValue)
+				queryParams := extractFlagValueForQueryParam(listFlagValue)
 				for i, v := range parentFlagValue {
 					parentValue[i] = *v
 				}
@@ -229,19 +207,7 @@ func initGet(kinds schema.KindCatalog) {
 		for i, flag := range parentQueryFlags {
 			parentQueryFlagValue[i] = kindCmd.Flags().String(flag, "", "Parent "+flag)
 		}
-		for key, flag := range listFlags {
-			var isFlagSet bool
-			if flag.Type == "string" {
-				isFlagSet = true
-				listFlagValue[key] = kindCmd.Flags().String(flag.FlagName, "", "")
-			} else if flag.Type == "boolean" {
-				isFlagSet = true
-				listFlagValue[key] = kindCmd.Flags().Bool(flag.FlagName, false, "")
-			}
-			if isFlagSet && flag.Required {
-				kindCmd.MarkFlagRequired(flag.FlagName)
-			}
-		}
+		buildFlag(kindCmd, listFlags, listFlagValue)
 		kindCmd.Flags().VarP(enumflag.New(&format, "output", OutputFormatIds, enumflag.EnumCaseInsensitive), "output", "o", "Output format. One of: json|yaml|name")
 		getCmd.AddCommand(kindCmd)
 	}

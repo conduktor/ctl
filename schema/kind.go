@@ -51,10 +51,10 @@ func (kind *Kind) GetParentQueryFlag() []string {
 	return kindVersion.GetParentQueryParam()
 }
 
-func (kind *Kind) GetListFlag() map[string]QueryParameterOption {
+func (kind *Kind) GetListFlag() map[string]FlagParameterOption {
 	kindVersion := kind.GetLatestKindVersion()
 	kindVersion.GetParentQueryParam()
-	flags := make(map[string]QueryParameterOption)
+	flags := make(map[string]FlagParameterOption)
 	// Filter out query params from parent to avoid duplicates
 	for k, v := range kindVersion.GetListQueryParameter() {
 		if !slices.Contains(kindVersion.GetParentQueryParam(), k) {

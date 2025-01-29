@@ -1,6 +1,7 @@
 package client
 
 import (
+	"github.com/conduktor/ctl/schema"
 	"reflect"
 	"testing"
 
@@ -265,5 +266,59 @@ func TestGwDeleteShouldFailOnNot2XX(t *testing.T) {
 	err = gatewayClient.Delete(&vClusterKind, []string{}, []string{}, "vcluster1")
 	if err == nil {
 		t.Fail()
+	}
+}
+
+func TestGwRunShouldWork(t *testing.T) {
+	defer httpmock.Reset()
+	baseUrl := "http://baseUrl"
+	gatewayClient, err := MakeGateway(GatewayApiParameter{
+		BaseUrl:            baseUrl,
+		Debug:              false,
+		CdkGatewayUser:     "admin",
+		CdkGatewayPassword: "conduktor",
+	})
+	if err != nil {
+		panic(err)
+	}
+	httpmock.ActivateNonDefault(
+		gatewayClient.client.GetClient(),
+	)
+	responder := httpmock.NewStringResponder(200, `somebody`)
+
+	run := schema.Run{
+		Path: "/path/{p1}/{p2}/end",
+		Name: "run",
+		Doc:  "who care",
+		QueryParameter: map[string]schema.FlagParameterOption{
+			"q1": {Required: true, Type: "string", FlagName: "q1"},
+			"q2": {Required: true, Type: "int", FlagName: "q2"},
+		},
+		PathParameter: []string{"p1", "p2"},
+		BodyFields: map[string]schema.FlagParameterOption{
+			"b1": {Required: true, Type: "string", FlagName: "b1"},
+			"b2": {Required: true, Type: "integer", FlagName: "b2"},
+			"b3": {Required: true, Type: "boolean", FlagName: "b3"},
+		},
+		Method:      "POST",
+		BackendType: schema.GATEWAY,
+	}
+
+	httpmock.RegisterMatcherResponderWithQuery(
+		"POST",
+		"http://baseUrl/path/p1val/p2val/end",
+		"q1=q1val&q2=42",
+		httpmock.HeaderIs("Authorization", "Basic YWRtaW46Y29uZHVrdG9y").
+			And(httpmock.HeaderIs("X-CDK-CLIENT", "CLI/unknown")).
+			And(httpmock.BodyContainsString(`{"b1":"b1","b2":2,"b3":true}`)),
+		responder,
+	)
+
+	body, err := gatewayClient.Run(run, []string{"p1val", "p2val"}, map[string]string{"q1": "q1val", "q2": "42"}, map[string]interface{}{"b1": "b1", "b2": 2, "b3": true})
+	if err != nil {
+		t.Error(err)
+	}
+	if string(body) != "somebody" {
+		t.Errorf("Bad result expected somebody got: %s", body)
 	}
 }

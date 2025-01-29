@@ -32,7 +32,7 @@ func TestGetKindWithYamlFromGateway(t *testing.T) {
 						Name:               "VirtualCluster",
 						ListPath:           "/gateway/v2/virtual-cluster",
 						ParentPathParam:    []string{},
-						ListQueryParameter: map[string]QueryParameterOption{},
+						ListQueryParameter: map[string]FlagParameterOption{},
 						GetAvailable:       true,
 						ApplyExample: `kind: VirtualCluster
 apiVersion: gateway/v2
@@ -55,7 +55,7 @@ spec:
 						Name:            "AliasTopic",
 						ListPath:        "/gateway/v2/alias-topic",
 						ParentPathParam: []string{},
-						ListQueryParameter: map[string]QueryParameterOption{
+						ListQueryParameter: map[string]FlagParameterOption{
 							"name": {
 								FlagName: "name",
 								Required: false,
@@ -91,7 +91,7 @@ spec:
 						Name:            "ConcentrationRule",
 						ListPath:        "/gateway/v2/concentration-rule",
 						ParentPathParam: []string{},
-						ListQueryParameter: map[string]QueryParameterOption{
+						ListQueryParameter: map[string]FlagParameterOption{
 							"vcluster": {
 								FlagName: "vcluster",
 								Required: false,
@@ -149,7 +149,7 @@ spec:
         - GROUP_READER
         - GROUP_WRITER
 `,
-						ListQueryParameter: map[string]QueryParameterOption{
+						ListQueryParameter: map[string]FlagParameterOption{
 							"showDefaults": {
 								FlagName: "show-defaults",
 								Required: false,
@@ -167,7 +167,7 @@ spec:
 						Name:            "GatewayServiceAccount",
 						ListPath:        "/gateway/v2/service-account",
 						ParentPathParam: []string{},
-						ListQueryParameter: map[string]QueryParameterOption{
+						ListQueryParameter: map[string]FlagParameterOption{
 							"name": {
 								FlagName: "name",
 								Required: false,
@@ -210,7 +210,7 @@ spec:
 						Name:            "Interceptor",
 						ListPath:        "/gateway/v2/interceptor",
 						ParentPathParam: []string{},
-						ListQueryParameter: map[string]QueryParameterOption{
+						ListQueryParameter: map[string]FlagParameterOption{
 							"username": {
 								FlagName: "username",
 								Required: false,
@@ -259,6 +259,57 @@ spec:
 		}
 		if !reflect.DeepEqual(kinds, expected) {
 			t.Error(spew.Printf("got kinds %v, want %v", kinds, expected))
+		}
+	})
+}
+func TestGetExecutesForGateway(t *testing.T) {
+	t.Run("gets execute endpoint from schema", func(t *testing.T) {
+		schemaContent, err := os.ReadFile("testdata/gateway_run.yaml")
+		if err != nil {
+			t.Fatalf("failed reading file: %s", err)
+		}
+
+		schema, err := NewOpenApiParser(schemaContent)
+		if err != nil {
+			t.Fatalf("failed creating new schema: %s", err)
+		}
+
+		result, err := schema.getRuns(GATEWAY)
+		if err != nil {
+			t.Fatalf("failed getting execute: %s", err)
+		}
+
+		//all the token runs are not present in real life just present in the yaml test file used here
+		expected := RunCatalog{
+			"generateServiceAccountToken": Run{
+				Path:           "/gateway/v2/token",
+				Name:           "generateServiceAccountToken",
+				Doc:            "Generate a token for a service account on a virtual cluster",
+				QueryParameter: map[string]FlagParameterOption{},
+				PathParameter:  []string{},
+				BodyFields: map[string]FlagParameterOption{
+					"vCluster": {
+						FlagName: "v-cluster",
+						Required: false,
+						Type:     "string",
+					},
+					"lifeTimeSeconds": {
+						Type:     "integer",
+						Required: true,
+						FlagName: "life-time-seconds",
+					},
+					"username": {
+						FlagName: "username",
+						Required: true,
+						Type:     "string",
+					},
+				},
+				Method:      "POST",
+				BackendType: GATEWAY,
+			},
+		}
+		if !reflect.DeepEqual(result, expected) {
+			t.Error(spew.Printf("got %v, want %v", result, expected))
 		}
 	})
 }

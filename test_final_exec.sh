@@ -49,6 +49,8 @@ main() {
 	run conduktor delete aliastopic aliastopicname --vcluster=v1
 	run conduktor delete concentrationrule cr1 --vcluster=v1
 	run conduktor delete gatewayserviceaccount s1 --vcluster=v1
+	run conduktor run partnerZoneGenerateCredentials --partner-zone-name yo
+	run conduktor run generateServiceAccountToken --life-time-seconds 3600 --username yo --v-cluster foyer
 }
 
 main "$@"

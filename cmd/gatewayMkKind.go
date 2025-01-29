@@ -6,25 +6,25 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func initGatewayMkKind() {
+func initGatewayMakeCatalog() {
 	var prettyPrint *bool
 	var nonStrict *bool
 
-	var makeKind = &cobra.Command{
-		Use:     "gatewayMakeKind [file]",
-		Short:   "Make kind json from openapi file if file not given it will read from api",
+	var makeCatalog = &cobra.Command{
+		Use:     "gatewayMakeCatalog [file]",
+		Short:   "Make catalog json from openapi file if file not given it will read from api",
 		Long:    ``,
-		Aliases: []string{"gatewayMkKind", "gwMkKind"},
+		Aliases: []string{"gatewayMkKind", "gwMkKind", "gatewayMakeKind"}, // for backward compatibility
 		Args:    cobra.RangeArgs(0, 1),
 		Hidden:  !utils.CdkDevMode(),
 		Run: func(cmd *cobra.Command, args []string) {
-			runMkKind(cmd, args, *prettyPrint, *nonStrict, func() ([]byte, error) { return gatewayApiClient().GetOpenApi() }, func(schema *schema.OpenApiParser, strict bool) (schema.KindCatalog, error) {
-				return schema.GetGatewayKinds(strict)
+			runMakeCatalog(cmd, args, *prettyPrint, *nonStrict, func() ([]byte, error) { return gatewayApiClient().GetOpenApi() }, func(schema *schema.OpenApiParser, strict bool) (*schema.Catalog, error) {
+				return schema.GetGatewayCatalog(strict)
 			})
 		},
 	}
-	rootCmd.AddCommand(makeKind)
+	rootCmd.AddCommand(makeCatalog)
 
-	prettyPrint = makeKind.Flags().BoolP("pretty", "p", false, "Pretty print the output")
-	nonStrict = makeKind.Flags().BoolP("non-strict", "n", false, "Don't be strict on the parsing of the schema")
+	prettyPrint = makeCatalog.Flags().BoolP("pretty", "p", false, "Pretty print the output")
+	nonStrict = makeCatalog.Flags().BoolP("non-strict", "n", false, "Don't be strict on the parsing of the schema")
 }

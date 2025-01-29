@@ -4,9 +4,18 @@ import (
 	"testing"
 )
 
-func TestUpperCamelToKebab(t *testing.T) {
+func TestCamelToKebab(t *testing.T) {
 	t.Run("converts upper camel case to kebab case", func(t *testing.T) {
-		got := UpperCamelToKebab("UpperCamelCase")
+		got := CamelToKebab("UpperCamelCase")
+		want := "upper-camel-case"
+
+		if got != want {
+			t.Errorf("got %q, want %q", got, want)
+		}
+	})
+
+	t.Run("converts lower camel case to kebab case", func(t *testing.T) {
+		got := CamelToKebab("upperCamelCase")
 		want := "upper-camel-case"
 
 		if got != want {
@@ -15,7 +24,7 @@ func TestUpperCamelToKebab(t *testing.T) {
 	})
 
 	t.Run("handles single word", func(t *testing.T) {
-		got := UpperCamelToKebab("Word")
+		got := CamelToKebab("Word")
 		want := "word"
 
 		if got != want {
@@ -24,7 +33,7 @@ func TestUpperCamelToKebab(t *testing.T) {
 	})
 
 	t.Run("handles empty string", func(t *testing.T) {
-		got := UpperCamelToKebab("")
+		got := CamelToKebab("")
 		want := ""
 
 		if got != want {
