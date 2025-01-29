@@ -2,7 +2,6 @@ package schema
 
 import (
 	_ "embed"
-	"encoding/json"
 	"fmt"
 	"os"
 	"regexp"
@@ -17,43 +16,14 @@ type Kind struct {
 	Versions map[int]KindVersion
 }
 
-type KindCatalog = map[string]Kind
-
-//go:embed default_schema/console.json
-var consoleDefaultByteSchema []byte
-
-//go:embed default_schema/gateway.json
-var gatewayDefaultByteSchema []byte
-
-type KindGeneric[T KindVersion] struct {
-	Versions map[int]T
+type QueryInfo struct {
+	Path        string
+	QueryParams []QueryParam
 }
 
-func buildKindCatalogFromByteSchema[T KindVersion](byteSchema []byte) KindCatalog {
-	var jsonResult map[string]KindGeneric[T]
-	err := json.Unmarshal(byteSchema, &jsonResult)
-	if err != nil {
-		panic(err)
-	}
-	var result KindCatalog = make(map[string]Kind)
-	for kindName, kindGeneric := range jsonResult {
-		kind := Kind{
-			Versions: make(map[int]KindVersion),
-		}
-		for version, kindVersion := range kindGeneric.Versions {
-			kind.Versions[version] = kindVersion
-		}
-		result[kindName] = kind
-	}
-	return result
-}
-
-func ConsoleDefaultKind() KindCatalog {
-	return buildKindCatalogFromByteSchema[*ConsoleKindVersion](consoleDefaultByteSchema)
-}
-
-func GatewayDefaultKind() KindCatalog {
-	return buildKindCatalogFromByteSchema[*GatewayKindVersion](gatewayDefaultByteSchema)
+type QueryParam struct {
+	Name  string
+	Value string
 }
 
 func NewKind(version int, kindVersion KindVersion) Kind {
@@ -117,16 +87,6 @@ func (Kind *Kind) GetName() string {
 		return kindVersion.GetName()
 	}
 	panic("No kindVersion in kind") //should never happen
-}
-
-type QueryInfo struct {
-	Path        string
-	QueryParams []QueryParam
-}
-
-type QueryParam struct {
-	Name  string
-	Value string
 }
 
 func (kind *Kind) ListPath(parentValues []string, parentQueryValues []string) QueryInfo {
@@ -221,3 +181,9 @@ func extractVersionFromApiVersion(apiVersion string) int {
 
 	return version
 }
+
+//go:embed default_schema/console.json
+var consoleDefaultByteSchema []byte
+
+//go:embed default_schema/gateway.json
+var gatewayDefaultByteSchema []byte
