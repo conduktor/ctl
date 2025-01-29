@@ -11,7 +11,7 @@ import (
 
 func TestGetKindWithYamlFromOldConsolePlusWithoutOrder(t *testing.T) {
 	t.Run("gets kinds from schema", func(t *testing.T) {
-		schemaContent, err := os.ReadFile("data_for_test/docs_without_order.yaml")
+		schemaContent, err := os.ReadFile("testdata/docs_without_order.yaml")
 		if err != nil {
 			t.Fatalf("failed reading file: %s", err)
 		}
@@ -119,7 +119,7 @@ func TestGetKindWithYamlFromOldConsolePlusWithoutOrder(t *testing.T) {
 
 func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 	t.Run("gets kinds from schema", func(t *testing.T) {
-		schemaContent, err := os.ReadFile("data_for_test/docs_with_order.yaml")
+		schemaContent, err := os.ReadFile("testdata/docs_with_order.yaml")
 		if err != nil {
 			t.Fatalf("failed reading file: %s", err)
 		}
@@ -282,7 +282,7 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 
 func TestGetKindWithMultipleVersion(t *testing.T) {
 	t.Run("gets kinds from schema", func(t *testing.T) {
-		schemaContent, err := os.ReadFile("data_for_test/multiple_version.yaml")
+		schemaContent, err := os.ReadFile("testdata/multiple_version.yaml")
 		if err != nil {
 			t.Fatalf("failed reading file: %s", err)
 		}
@@ -324,7 +324,7 @@ func TestGetKindWithMultipleVersion(t *testing.T) {
 }
 func TestKindWithMissingMetadataField(t *testing.T) {
 	t.Run("gets kinds from schema", func(t *testing.T) {
-		schemaContent, err := os.ReadFile("data_for_test/missing_field_in_metadata.yaml")
+		schemaContent, err := os.ReadFile("testdata/missing_field_in_metadata.yaml")
 		if err != nil {
 			t.Fatalf("failed reading file: %s", err)
 		}
@@ -342,7 +342,7 @@ func TestKindWithMissingMetadataField(t *testing.T) {
 }
 func TestKindNotRequiredMetadataField(t *testing.T) {
 	t.Run("gets kinds from schema", func(t *testing.T) {
-		schemaContent, err := os.ReadFile("data_for_test/not_required_field_in_metadata.yaml")
+		schemaContent, err := os.ReadFile("testdata/not_required_field_in_metadata.yaml")
 		if err != nil {
 			t.Fatalf("failed reading file: %s", err)
 		}

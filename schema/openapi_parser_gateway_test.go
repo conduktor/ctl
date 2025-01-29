@@ -10,7 +10,7 @@ import (
 
 func TestGetKindWithYamlFromGateway(t *testing.T) {
 	t.Run("gets kinds from schema", func(t *testing.T) {
-		schemaContent, err := os.ReadFile("data_for_test/gateway.yaml")
+		schemaContent, err := os.ReadFile("testdata/gateway.yaml")
 		if err != nil {
 			t.Fatalf("failed reading file: %s", err)
 		}
