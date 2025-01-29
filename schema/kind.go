@@ -2,7 +2,6 @@ package schema
 
 import (
 	_ "embed"
-	"encoding/json"
 	"fmt"
 	"os"
 	"regexp"
@@ -11,183 +10,26 @@ import (
 	"strings"
 
 	"github.com/conduktor/ctl/resource"
-	"github.com/conduktor/ctl/utils"
 )
-
-type KindVersion interface {
-	GetListPath() string
-	GetName() string
-	GetParentPathParam() []string
-	GetParentQueryParam() []string
-	GetOrder() int
-	GetListQueryParamter() map[string]QueryParameterOption
-	GetApplyExample() string
-}
-
-// two logics: uniformize flag name and kebab case
-func ComputeFlagName(name string) string {
-	kebab := utils.UpperCamelToKebab(name)
-	kebab = strings.TrimPrefix(kebab, "filter-by-")
-	return strings.Replace(kebab, "app-instance", "application-instance", 1)
-}
-
-type QueryParameterOption struct {
-	FlagName string
-	Required bool
-	Type     string
-}
-type ConsoleKindVersion struct {
-	ListPath          string
-	Name              string
-	ParentPathParam   []string
-	ParentQueryParam  []string
-	ListQueryParamter map[string]QueryParameterOption
-	ApplyExample      string
-	Order             int `json:1000` //same value DefaultPriority
-}
-
-func (c *ConsoleKindVersion) GetListPath() string {
-	return c.ListPath
-}
-
-func (c *ConsoleKindVersion) GetApplyExample() string {
-	return c.ApplyExample
-}
-
-func (c *ConsoleKindVersion) GetName() string {
-	return c.Name
-}
-
-func (c *ConsoleKindVersion) GetParentPathParam() []string {
-	return c.ParentPathParam
-}
-
-func (c *ConsoleKindVersion) GetParentQueryParam() []string {
-	return c.ParentQueryParam
-}
-
-func (c *ConsoleKindVersion) GetOrder() int {
-	return c.Order
-}
-
-func (c *ConsoleKindVersion) GetListQueryParamter() map[string]QueryParameterOption {
-	return c.ListQueryParamter
-}
-
-type GetParameter struct {
-	Name      string
-	Mandatory bool
-}
-
-type GatewayKindVersion struct {
-	ListPath           string
-	Name               string
-	ParentPathParam    []string
-	ParentQueryParam   []string
-	ListQueryParameter map[string]QueryParameterOption
-	GetAvailable       bool
-	ApplyExample       string
-	Order              int `json:1000` //same value DefaultPriority
-}
-
-func (g *GatewayKindVersion) GetListPath() string {
-	return g.ListPath
-}
-
-func (g *GatewayKindVersion) GetName() string {
-	return g.Name
-}
-
-func (g *GatewayKindVersion) GetParentPathParam() []string {
-	return g.ParentPathParam
-}
-
-func (g *GatewayKindVersion) GetParentQueryParam() []string {
-	return g.ParentQueryParam
-}
-
-func (g *GatewayKindVersion) GetApplyExample() string {
-	return g.ApplyExample
-}
-
-func (g *GatewayKindVersion) GetOrder() int {
-	return g.Order
-}
-
-func (g *GatewayKindVersion) GetListQueryParamter() map[string]QueryParameterOption {
-	return g.ListQueryParameter
-}
-
-const DefaultPriority = 1000 //update  json annotation for Order when changing this value
 
 type Kind struct {
 	Versions map[int]KindVersion
 }
 
-type KindCatalog = map[string]Kind
-
-//go:embed console-default-schema.json
-var consoleDefaultByteSchema []byte
-
-//go:embed gateway-default-schema.json
-var gatewayDefaultByteSchema []byte
-
-type KindGeneric[T KindVersion] struct {
-	Versions map[int]T
+type QueryInfo struct {
+	Path        string
+	QueryParams []QueryParam
 }
 
-func buildKindCatalogFromByteSchema[T KindVersion](byteSchema []byte) KindCatalog {
-	var jsonResult map[string]KindGeneric[T]
-	err := json.Unmarshal(byteSchema, &jsonResult)
-	if err != nil {
-		panic(err)
-	}
-	var result KindCatalog = make(map[string]Kind)
-	for kindName, kindGeneric := range jsonResult {
-		kind := Kind{
-			Versions: make(map[int]KindVersion),
-		}
-		for version, kindVersion := range kindGeneric.Versions {
-			kind.Versions[version] = kindVersion
-		}
-		result[kindName] = kind
-	}
-	return result
-}
-
-func ConsoleDefaultKind() KindCatalog {
-	return buildKindCatalogFromByteSchema[*ConsoleKindVersion](consoleDefaultByteSchema)
-}
-
-func GatewayDefaultKind() KindCatalog {
-	return buildKindCatalogFromByteSchema[*GatewayKindVersion](gatewayDefaultByteSchema)
+type QueryParam struct {
+	Name  string
+	Value string
 }
 
 func NewKind(version int, kindVersion KindVersion) Kind {
 	return Kind{
 		Versions: map[int]KindVersion{version: kindVersion},
 	}
-}
-
-func extractVersionFromApiVersion(apiVersion string) int {
-	// we extract the number after v in a apiVersion
-	// e.g. v1 1
-	// e.g. v42-> 42
-
-	re := regexp.MustCompile(`v(\d+)`)
-	matches := re.FindStringSubmatch(apiVersion)
-
-	if len(matches) < 2 {
-		fmt.Fprintf(os.Stderr, "Invalid api version format \"%s\", could not extract version\n", apiVersion)
-		os.Exit(1)
-	}
-
-	version, err := strconv.Atoi(matches[1])
-	if err != nil {
-		panic(fmt.Sprintf("Invalid version number in apiVersion: %s", matches[1]))
-	}
-
-	return version
 }
 
 func (kind *Kind) AddVersion(version int, kindVersion KindVersion) error {
@@ -214,7 +56,7 @@ func (kind *Kind) GetListFlag() map[string]QueryParameterOption {
 	kindVersion.GetParentQueryParam()
 	flags := make(map[string]QueryParameterOption)
 	// Filter out query params from parent to avoid duplicates
-	for k, v := range kindVersion.GetListQueryParamter() {
+	for k, v := range kindVersion.GetListQueryParameter() {
 		if !slices.Contains(kindVersion.GetParentQueryParam(), k) {
 			flags[k] = v
 		}
@@ -245,16 +87,6 @@ func (Kind *Kind) GetName() string {
 		return kindVersion.GetName()
 	}
 	panic("No kindVersion in kind") //should never happen
-}
-
-type QueryInfo struct {
-	Path        string
-	QueryParams []QueryParam
-}
-
-type QueryParam struct {
-	Name  string
-	Value string
 }
 
 func (kind *Kind) ListPath(parentValues []string, parentQueryValues []string) QueryInfo {
@@ -328,3 +160,30 @@ func (kind *Kind) DeletePath(resource *resource.Resource) (string, error) {
 
 	return applyPath.Path + "/" + resource.Name, nil
 }
+
+func extractVersionFromApiVersion(apiVersion string) int {
+	// we extract the number after v in a apiVersion
+	// e.g. v1 1
+	// e.g. v42-> 42
+
+	re := regexp.MustCompile(`v(\d+)`)
+	matches := re.FindStringSubmatch(apiVersion)
+
+	if len(matches) < 2 {
+		fmt.Fprintf(os.Stderr, "Invalid api version format \"%s\", could not extract version\n", apiVersion)
+		os.Exit(1)
+	}
+
+	version, err := strconv.Atoi(matches[1])
+	if err != nil {
+		panic(fmt.Sprintf("Invalid version number in apiVersion: %s", matches[1]))
+	}
+
+	return version
+}
+
+//go:embed default_schema/console.json
+var consoleDefaultByteSchema []byte
+
+//go:embed default_schema/gateway.json
+var gatewayDefaultByteSchema []byte

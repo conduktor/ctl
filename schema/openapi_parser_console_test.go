@@ -11,12 +11,12 @@ import (
 
 func TestGetKindWithYamlFromOldConsolePlusWithoutOrder(t *testing.T) {
 	t.Run("gets kinds from schema", func(t *testing.T) {
-		schemaContent, err := os.ReadFile("docs_without_order.yaml")
+		schemaContent, err := os.ReadFile("testdata/docs_without_order.yaml")
 		if err != nil {
 			t.Fatalf("failed reading file: %s", err)
 		}
 
-		schema, err := New(schemaContent)
+		schema, err := NewOpenApiParser(schemaContent)
 		if err != nil {
 			t.Fatalf("failed creating new schema: %s", err)
 		}
@@ -30,11 +30,11 @@ func TestGetKindWithYamlFromOldConsolePlusWithoutOrder(t *testing.T) {
 			"Application": {
 				Versions: map[int]KindVersion{
 					1: &ConsoleKindVersion{
-						Name:              "Application",
-						ListPath:          "/public/self-serve/v1/application",
-						ParentPathParam:   make([]string, 0),
-						ListQueryParamter: map[string]QueryParameterOption{},
-						Order:             DefaultPriority,
+						Name:               "Application",
+						ListPath:           "/public/self-serve/v1/application",
+						ParentPathParam:    make([]string, 0),
+						ListQueryParameter: map[string]QueryParameterOption{},
+						Order:              DefaultPriority,
 					},
 				},
 			},
@@ -44,7 +44,7 @@ func TestGetKindWithYamlFromOldConsolePlusWithoutOrder(t *testing.T) {
 						Name:            "ApplicationInstance",
 						ListPath:        "/public/self-serve/v1/application-instance",
 						ParentPathParam: make([]string, 0),
-						ListQueryParamter: map[string]QueryParameterOption{
+						ListQueryParameter: map[string]QueryParameterOption{
 							"application": {
 								FlagName: "application",
 								Required: false,
@@ -61,7 +61,7 @@ func TestGetKindWithYamlFromOldConsolePlusWithoutOrder(t *testing.T) {
 						Name:            "ApplicationInstancePermission",
 						ListPath:        "/public/self-serve/v1/application-instance-permission",
 						ParentPathParam: make([]string, 0),
-						ListQueryParamter: map[string]QueryParameterOption{
+						ListQueryParameter: map[string]QueryParameterOption{
 							"filterByApplication": {
 								FlagName: "application",
 								Required: false,
@@ -88,7 +88,7 @@ func TestGetKindWithYamlFromOldConsolePlusWithoutOrder(t *testing.T) {
 						Name:            "TopicPolicy",
 						ListPath:        "/public/self-serve/v1/topic-policy",
 						ParentPathParam: make([]string, 0),
-						ListQueryParamter: map[string]QueryParameterOption{
+						ListQueryParameter: map[string]QueryParameterOption{
 							"app-instance": {
 								FlagName: "application-instance",
 								Required: false,
@@ -102,11 +102,11 @@ func TestGetKindWithYamlFromOldConsolePlusWithoutOrder(t *testing.T) {
 			"Topic": {
 				Versions: map[int]KindVersion{
 					2: &ConsoleKindVersion{
-						Name:              "Topic",
-						ListPath:          "/public/kafka/v2/cluster/{cluster}/topic",
-						ParentPathParam:   []string{"cluster"},
-						ListQueryParamter: map[string]QueryParameterOption{},
-						Order:             DefaultPriority,
+						Name:               "Topic",
+						ListPath:           "/public/kafka/v2/cluster/{cluster}/topic",
+						ParentPathParam:    []string{"cluster"},
+						ListQueryParameter: map[string]QueryParameterOption{},
+						Order:              DefaultPriority,
 					},
 				},
 			},
@@ -119,12 +119,12 @@ func TestGetKindWithYamlFromOldConsolePlusWithoutOrder(t *testing.T) {
 
 func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 	t.Run("gets kinds from schema", func(t *testing.T) {
-		schemaContent, err := os.ReadFile("docs_with_order.yaml")
+		schemaContent, err := os.ReadFile("testdata/docs_with_order.yaml")
 		if err != nil {
 			t.Fatalf("failed reading file: %s", err)
 		}
 
-		schema, err := New(schemaContent)
+		schema, err := NewOpenApiParser(schemaContent)
 		if err != nil {
 			t.Fatalf("failed creating new schema: %s", err)
 		}
@@ -138,11 +138,11 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 			"Application": {
 				Versions: map[int]KindVersion{
 					1: &ConsoleKindVersion{
-						Name:              "Application",
-						ListPath:          "/public/self-serve/v1/application",
-						ParentPathParam:   []string{},
-						ListQueryParamter: map[string]QueryParameterOption{},
-						Order:             6,
+						Name:               "Application",
+						ListPath:           "/public/self-serve/v1/application",
+						ParentPathParam:    []string{},
+						ListQueryParameter: map[string]QueryParameterOption{},
+						Order:              6,
 					},
 				},
 			},
@@ -152,7 +152,7 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 						Name:            "ApplicationInstance",
 						ListPath:        "/public/self-serve/v1/application-instance",
 						ParentPathParam: []string{},
-						ListQueryParamter: map[string]QueryParameterOption{
+						ListQueryParameter: map[string]QueryParameterOption{
 							"application": {
 								FlagName: "application",
 								Required: false,
@@ -169,7 +169,7 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 						Name:            "ApplicationInstancePermission",
 						ListPath:        "/public/self-serve/v1/application-instance-permission",
 						ParentPathParam: []string{},
-						ListQueryParamter: map[string]QueryParameterOption{
+						ListQueryParameter: map[string]QueryParameterOption{
 							"filterByApplication": {
 								FlagName: "application",
 								Required: false,
@@ -193,11 +193,11 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 			"ApplicationGroup": {
 				Versions: map[int]KindVersion{
 					1: &ConsoleKindVersion{
-						Name:              "ApplicationGroup",
-						ListPath:          "/public/self-serve/v1/application-group",
-						ParentPathParam:   []string{},
-						ListQueryParamter: map[string]QueryParameterOption{},
-						Order:             9,
+						Name:               "ApplicationGroup",
+						ListPath:           "/public/self-serve/v1/application-group",
+						ParentPathParam:    []string{},
+						ListQueryParameter: map[string]QueryParameterOption{},
+						Order:              9,
 					},
 				},
 			},
@@ -207,7 +207,7 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 						Name:            "TopicPolicy",
 						ListPath:        "/public/self-serve/v1/topic-policy",
 						ParentPathParam: []string{},
-						ListQueryParamter: map[string]QueryParameterOption{
+						ListQueryParameter: map[string]QueryParameterOption{
 							"app-instance": {
 								FlagName: "application-instance",
 								Required: false,
@@ -221,55 +221,55 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 			"Topic": {
 				Versions: map[int]KindVersion{
 					2: &ConsoleKindVersion{
-						Name:              "Topic",
-						ListPath:          "/public/kafka/v2/cluster/{cluster}/topic",
-						ParentPathParam:   []string{"cluster"},
-						ListQueryParamter: map[string]QueryParameterOption{},
-						Order:             3,
+						Name:               "Topic",
+						ListPath:           "/public/kafka/v2/cluster/{cluster}/topic",
+						ParentPathParam:    []string{"cluster"},
+						ListQueryParameter: map[string]QueryParameterOption{},
+						Order:              3,
 					},
 				},
 			},
 			"Subject": {
 				Versions: map[int]KindVersion{
 					2: &ConsoleKindVersion{
-						Name:              "Subject",
-						ListPath:          "/public/kafka/v2/cluster/{cluster}/subject",
-						ParentPathParam:   []string{"cluster"},
-						ListQueryParamter: map[string]QueryParameterOption{},
-						Order:             4,
+						Name:               "Subject",
+						ListPath:           "/public/kafka/v2/cluster/{cluster}/subject",
+						ParentPathParam:    []string{"cluster"},
+						ListQueryParameter: map[string]QueryParameterOption{},
+						Order:              4,
 					},
 				},
 			},
 			"User": {
 				Versions: map[int]KindVersion{
 					2: &ConsoleKindVersion{
-						Name:              "User",
-						ListPath:          "/public/iam/v2/user",
-						ParentPathParam:   []string{},
-						ListQueryParamter: map[string]QueryParameterOption{},
-						Order:             0,
+						Name:               "User",
+						ListPath:           "/public/iam/v2/user",
+						ParentPathParam:    []string{},
+						ListQueryParameter: map[string]QueryParameterOption{},
+						Order:              0,
 					},
 				},
 			},
 			"Group": {
 				Versions: map[int]KindVersion{
 					2: &ConsoleKindVersion{
-						Name:              "Group",
-						ListPath:          "/public/iam/v2/group",
-						ParentPathParam:   []string{},
-						ListQueryParamter: map[string]QueryParameterOption{},
-						Order:             1,
+						Name:               "Group",
+						ListPath:           "/public/iam/v2/group",
+						ParentPathParam:    []string{},
+						ListQueryParameter: map[string]QueryParameterOption{},
+						Order:              1,
 					},
 				},
 			},
 			"KafkaCluster": {
 				Versions: map[int]KindVersion{
 					2: &ConsoleKindVersion{
-						Name:              "KafkaCluster",
-						ListPath:          "/public/console/v2/kafka-cluster",
-						ParentPathParam:   []string{},
-						ListQueryParamter: map[string]QueryParameterOption{},
-						Order:             2,
+						Name:               "KafkaCluster",
+						ListPath:           "/public/console/v2/kafka-cluster",
+						ParentPathParam:    []string{},
+						ListQueryParameter: map[string]QueryParameterOption{},
+						Order:              2,
 					},
 				},
 			},
@@ -282,12 +282,12 @@ func TestGetKindWithYamlFromConsolePlus(t *testing.T) {
 
 func TestGetKindWithMultipleVersion(t *testing.T) {
 	t.Run("gets kinds from schema", func(t *testing.T) {
-		schemaContent, err := os.ReadFile("multiple_version.yaml")
+		schemaContent, err := os.ReadFile("testdata/multiple_version.yaml")
 		if err != nil {
 			t.Fatalf("failed reading file: %s", err)
 		}
 
-		schema, err := New(schemaContent)
+		schema, err := NewOpenApiParser(schemaContent)
 		if err != nil {
 			t.Fatalf("failed creating new schema: %s", err)
 		}
@@ -301,18 +301,18 @@ func TestGetKindWithMultipleVersion(t *testing.T) {
 			"Topic": {
 				Versions: map[int]KindVersion{
 					1: &ConsoleKindVersion{
-						Name:              "Topic",
-						ListPath:          "/public/v1/cluster/{cluster}/topic",
-						ParentPathParam:   []string{"cluster"},
-						ListQueryParamter: map[string]QueryParameterOption{},
-						Order:             DefaultPriority,
+						Name:               "Topic",
+						ListPath:           "/public/v1/cluster/{cluster}/topic",
+						ParentPathParam:    []string{"cluster"},
+						ListQueryParameter: map[string]QueryParameterOption{},
+						Order:              DefaultPriority,
 					},
 					2: &ConsoleKindVersion{
-						Name:              "Topic",
-						ListPath:          "/public/v2/cluster/{cluster}/sa/{sa}/topic",
-						ParentPathParam:   []string{"cluster", "sa"},
-						ListQueryParamter: map[string]QueryParameterOption{},
-						Order:             42,
+						Name:               "Topic",
+						ListPath:           "/public/v2/cluster/{cluster}/sa/{sa}/topic",
+						ParentPathParam:    []string{"cluster", "sa"},
+						ListQueryParameter: map[string]QueryParameterOption{},
+						Order:              42,
 					},
 				},
 			},
@@ -324,12 +324,12 @@ func TestGetKindWithMultipleVersion(t *testing.T) {
 }
 func TestKindWithMissingMetadataField(t *testing.T) {
 	t.Run("gets kinds from schema", func(t *testing.T) {
-		schemaContent, err := os.ReadFile("missing_field_in_metadata.yaml")
+		schemaContent, err := os.ReadFile("testdata/missing_field_in_metadata.yaml")
 		if err != nil {
 			t.Fatalf("failed reading file: %s", err)
 		}
 
-		schema, err := New(schemaContent)
+		schema, err := NewOpenApiParser(schemaContent)
 		if err != nil {
 			t.Fatalf("failed creating new schema: %s", err)
 		}
@@ -342,12 +342,12 @@ func TestKindWithMissingMetadataField(t *testing.T) {
 }
 func TestKindNotRequiredMetadataField(t *testing.T) {
 	t.Run("gets kinds from schema", func(t *testing.T) {
-		schemaContent, err := os.ReadFile("not_required_field_in_metadata.yaml")
+		schemaContent, err := os.ReadFile("testdata/not_required_field_in_metadata.yaml")
 		if err != nil {
 			t.Fatalf("failed reading file: %s", err)
 		}
 
-		schema, err := New(schemaContent)
+		schema, err := NewOpenApiParser(schemaContent)
 		if err != nil {
 			t.Fatalf("failed creating new schema: %s", err)
 		}

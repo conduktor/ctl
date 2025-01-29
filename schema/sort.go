@@ -9,6 +9,8 @@ import (
 	"github.com/conduktor/ctl/resource"
 )
 
+const DefaultPriority = 1000 //update  json annotation for Order when changing this value
+
 func resourcePriority(catalog KindCatalog, resource resource.Resource, debug, fallbackToDefaultCatalog bool) int {
 	kind, ok := catalog[resource.Kind]
 	if !ok {

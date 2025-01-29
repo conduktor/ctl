@@ -18,7 +18,7 @@ func initGatewayMkKind() {
 		Args:    cobra.RangeArgs(0, 1),
 		Hidden:  !utils.CdkDevMode(),
 		Run: func(cmd *cobra.Command, args []string) {
-			runMkKind(cmd, args, *prettyPrint, *nonStrict, func() ([]byte, error) { return gatewayApiClient().GetOpenApi() }, func(schema *schema.Schema, strict bool) (schema.KindCatalog, error) {
+			runMkKind(cmd, args, *prettyPrint, *nonStrict, func() ([]byte, error) { return gatewayApiClient().GetOpenApi() }, func(schema *schema.OpenApiParser, strict bool) (schema.KindCatalog, error) {
 				return schema.GetGatewayKinds(strict)
 			})
 		},
