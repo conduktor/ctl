@@ -61,30 +61,29 @@ func Execute() {
 
 func init() {
 	apiClient_, apiClientError = client.MakeFromEnv()
-	var kinds schema.KindCatalog
+	var consoleKinds *schema.Catalog
 	if apiClientError == nil {
-		kinds = apiClient_.GetKinds()
+		consoleKinds = apiClient_.GetCatalog()
 	} else {
-		kinds = schema.ConsoleDefaultKind()
+		consoleKinds = schema.ConsoleDefaultCatalog()
 	}
 	gatewayApiClient_, gatewayApiClientError = client.MakeGatewayClientFromEnv()
-	var gatewayKinds schema.KindCatalog
+	var gatewayKinds *schema.Catalog
 	if gatewayApiClientError == nil {
-		gatewayKinds = gatewayApiClient().GetKinds()
+		gatewayKinds = gatewayApiClient().GetCatalog()
 	} else {
-		gatewayKinds = schema.GatewayDefaultKind()
+		gatewayKinds = schema.GatewayDefaultCatalog()
 	}
-	for k, v := range gatewayKinds {
-		kinds[k] = v
-	}
+	catalog := consoleKinds.Merge(gatewayKinds)
 	debug = rootCmd.PersistentFlags().BoolP("verbose", "v", false, "show more information for debugging")
 	var permissive = rootCmd.PersistentFlags().Bool("permissive", false, "permissive mode, allow undefined environment variables")
-	initGet(kinds)
-	initTemplate(kinds)
-	initDelete(kinds, !*permissive)
-	initApply(kinds, !*permissive)
-	initConsoleMkKind()
-	initGatewayMkKind()
-	initPrintKind(kinds)
-	initSql(kinds)
+	initGet(catalog.Kind)
+	initTemplate(catalog.Kind)
+	initDelete(catalog.Kind, !*permissive)
+	initApply(catalog.Kind, !*permissive)
+	intConsoleMakeCatalog()
+	initGatewayMakeCatalog()
+	initPrintCatalog(catalog)
+	initSql(catalog.Kind)
+	initRun(catalog.Run)
 }

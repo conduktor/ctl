@@ -6,7 +6,7 @@ type KindVersion interface {
 	GetParentPathParam() []string
 	GetParentQueryParam() []string
 	GetOrder() int
-	GetListQueryParameter() map[string]QueryParameterOption
+	GetListQueryParameter() map[string]FlagParameterOption
 	GetApplyExample() string
 }
 
@@ -15,7 +15,7 @@ type ConsoleKindVersion struct {
 	Name               string
 	ParentPathParam    []string
 	ParentQueryParam   []string
-	ListQueryParameter map[string]QueryParameterOption
+	ListQueryParameter map[string]FlagParameterOption
 	ApplyExample       string
 	Order              int `json:1000` //same value DefaultPriority
 }
@@ -44,7 +44,7 @@ func (c *ConsoleKindVersion) GetOrder() int {
 	return c.Order
 }
 
-func (c *ConsoleKindVersion) GetListQueryParameter() map[string]QueryParameterOption {
+func (c *ConsoleKindVersion) GetListQueryParameter() map[string]FlagParameterOption {
 	return c.ListQueryParameter
 }
 
@@ -53,7 +53,7 @@ type GatewayKindVersion struct {
 	Name               string
 	ParentPathParam    []string
 	ParentQueryParam   []string
-	ListQueryParameter map[string]QueryParameterOption
+	ListQueryParameter map[string]FlagParameterOption
 	GetAvailable       bool
 	ApplyExample       string
 	Order              int `json:1000` //same value DefaultPriority
@@ -83,6 +83,6 @@ func (g *GatewayKindVersion) GetOrder() int {
 	return g.Order
 }
 
-func (g *GatewayKindVersion) GetListQueryParameter() map[string]QueryParameterOption {
+func (g *GatewayKindVersion) GetListQueryParameter() map[string]FlagParameterOption {
 	return g.ListQueryParameter
 }

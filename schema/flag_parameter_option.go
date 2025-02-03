@@ -1,6 +1,6 @@
 package schema
 
-type QueryParameterOption struct {
+type FlagParameterOption struct {
 	FlagName string
 	Required bool
 	Type     string

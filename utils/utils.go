@@ -2,7 +2,7 @@ package utils
 
 import "strings"
 
-func UpperCamelToKebab(input string) string {
+func CamelToKebab(input string) string {
 	// Split the input string into words
 	words := make([]string, 0)
 	currentWord := ""

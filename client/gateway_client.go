@@ -17,7 +17,7 @@ type GatewayClient struct {
 	cdkGatewayPassword string
 	baseUrl            string
 	client             *resty.Client
-	kinds              schema.KindCatalog
+	schemaCatalog      *schema.Catalog
 }
 
 type GatewayApiParameter struct {
@@ -43,19 +43,19 @@ func MakeGateway(apiParameter GatewayApiParameter) (*GatewayClient, error) {
 		cdkGatewayPassword: apiParameter.CdkGatewayPassword,
 		baseUrl:            apiParameter.BaseUrl,
 		client:             restyClient,
-		kinds:              nil,
+		schemaCatalog:      nil,
 	}
 
 	result.client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 	result.client.SetDisableWarn(true)
 	result.client.SetBasicAuth(apiParameter.CdkGatewayUser, apiParameter.CdkGatewayPassword)
 
-	err := result.initKindFromApi()
+	err := result.initCatalogFromApi()
 	if err != nil {
 		if apiParameter.Debug {
 			fmt.Fprintf(os.Stderr, "Cannot access the Gateway Conduktor API: %s\nUsing offline defaults.\n", err)
 		}
-		result.kinds = schema.GatewayDefaultKind()
+		result.schemaCatalog = schema.GatewayDefaultCatalog()
 	}
 
 	return result, nil
@@ -283,6 +283,28 @@ func (client *GatewayClient) ActivateDebug() {
 	client.client.SetDebug(true)
 }
 
+func (client *GatewayClient) Run(run schema.Run, pathValue []string, queryParams map[string]string, body interface{}) ([]byte, error) {
+	if run.BackendType != schema.GATEWAY {
+		return nil, fmt.Errorf("Only console backend type is supported by console client")
+	}
+	path := run.BuildPath(pathValue)
+	url := client.baseUrl + path
+	requestBuilder := client.client.R()
+	for k, v := range queryParams {
+		requestBuilder.SetQueryParam(k, v)
+	}
+	if body != nil {
+		requestBuilder = requestBuilder.SetBody(body)
+	}
+	resp, err := requestBuilder.Execute(run.Method, url)
+	if err != nil {
+		return nil, err
+	} else if resp.IsError() {
+		return nil, fmt.Errorf(extractApiError(resp))
+	}
+	return resp.Body(), nil
+}
+
 func (client *GatewayClient) Apply(resource *resource.Resource, dryMode bool) (string, error) {
 	kinds := client.GetKinds()
 	kind, ok := kinds[resource.Kind]
@@ -328,7 +350,7 @@ func (client *GatewayClient) GetOpenApi() ([]byte, error) {
 	return resp.Body(), nil
 }
 
-func (client *GatewayClient) initKindFromApi() error {
+func (client *GatewayClient) initCatalogFromApi() error {
 	data, err := client.GetOpenApi()
 	if err != nil {
 		return fmt.Errorf("Cannot get openapi: %s", err)
@@ -338,13 +360,17 @@ func (client *GatewayClient) initKindFromApi() error {
 		return fmt.Errorf("Cannot parse openapi: %s", err)
 	}
 	strict := false
-	client.kinds, err = schema.GetGatewayKinds(strict)
+	client.schemaCatalog, err = schema.GetGatewayCatalog(strict)
 	if err != nil {
-		fmt.Errorf("Cannot extract kinds from openapi: %s", err)
+		fmt.Errorf("Cannot extract schemaCatalog from openapi: %s", err)
 	}
 	return nil
 }
 
 func (client *GatewayClient) GetKinds() schema.KindCatalog {
-	return client.kinds
+	return client.schemaCatalog.Kind
+}
+
+func (client *GatewayClient) GetCatalog() *schema.Catalog {
+	return client.schemaCatalog
 }

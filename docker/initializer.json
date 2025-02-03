@@ -27,7 +27,13 @@
     },
     "httpResponse": {
       "statusCode": 200,
-      "body": [{"metadata": {"name": "a"}}],
+      "body": [
+        {
+          "metadata": {
+            "name": "a"
+          }
+        }
+      ],
       "headers": {
         "Content-Type": [
           "application/json"
@@ -45,7 +51,11 @@
     },
     "httpResponse": {
       "statusCode": 200,
-      "body": {"metadata": {"name": "a"}},
+      "body": {
+        "metadata": {
+          "name": "a"
+        }
+      },
       "headers": {
         "Content-Type": [
           "application/json"
@@ -241,7 +251,11 @@
     },
     "httpResponse": {
       "statusCode": 200,
-      "body": {"metadata": {"name": "a"}},
+      "body": {
+        "metadata": {
+          "name": "a"
+        }
+      },
       "headers": {
         "Content-Type": [
           "application/json"
@@ -254,7 +268,9 @@
       "method": "POST",
       "path": "/api/public/sql/v1/execute",
       "queryStringParameters": {
-        "maxLine": ["100"]
+        "maxLine": [
+          "100"
+        ]
       },
       "headers": {
         "Authorization": "Bearer yo"
@@ -263,7 +279,28 @@
     },
     "httpResponse": {
       "statusCode": 200,
-      "body": {"header": [], "row": []},
+      "body": {
+        "header": [],
+        "row": []
+      },
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "POST",
+      "path": "/api/public/partner-zone/v2/yo/generate-credentials",
+      "headers": {
+        "Authorization": "Bearer yo"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "\"yolo_le_token\"",
       "headers": {
         "Content-Type": [
           "application/json"
@@ -271,5 +308,4 @@
       }
     }
   }
-
 ]

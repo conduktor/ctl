@@ -2,6 +2,7 @@ package schema
 
 import (
 	"fmt"
+	"github.com/go-resty/resty/v2"
 	"regexp"
 	"slices"
 	"strconv"
@@ -63,12 +64,139 @@ func getKinds[T KindVersion](s *OpenApiParser, strict bool, buildKindVersion fun
 	return result, nil
 }
 
-func (s *OpenApiParser) GetConsoleKinds(strict bool) (map[string]Kind, error) {
+func (s *OpenApiParser) getRuns(backendType BackendType) (RunCatalog, error) {
+	result := make(RunCatalog, 0)
+	for path := s.doc.Model.Paths.PathItems.First(); path != nil; path = path.Next() {
+		err := handleExecuteOperation(backendType, path.Key(), path.Value().Get, resty.MethodGet, result)
+		if err != nil {
+			return nil, err
+		}
+		err = handleExecuteOperation(backendType, path.Key(), path.Value().Post, resty.MethodPost, result)
+		if err != nil {
+			return nil, err
+		}
+		err = handleExecuteOperation(backendType, path.Key(), path.Value().Put, resty.MethodPut, result)
+		if err != nil {
+			return nil, err
+		}
+		err = handleExecuteOperation(backendType, path.Key(), path.Value().Delete, resty.MethodDelete, result)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func handleExecuteOperation(backendType BackendType, path string, operation *v3high.Operation, method string, result RunCatalog) error {
+	if operation == nil {
+		return nil
+	}
+
+	nameYaml, present := operation.Extensions.Get("x-cdk-run-name")
+	if !present {
+		return nil
+	}
+	name := nameYaml.Value
+	docYaml, docPresent := operation.Extensions.Get("x-cdk-run-doc")
+	var doc string
+	if docPresent {
+		doc = docYaml.Value
+	} else {
+		doc = ""
+	}
+	run := Run{
+		BackendType:    backendType,
+		Path:           path,
+		Name:           name,
+		Doc:            doc,
+		QueryParameter: make(map[string]FlagParameterOption, len(operation.Parameters)),
+		PathParameter:  make([]string, 0, len(operation.Parameters)),
+		Method:         method,
+	}
+	for _, parameter := range operation.Parameters {
+		if parameter.In == "path" && *parameter.Required {
+			run.PathParameter = append(run.PathParameter, parameter.Name)
+		}
+		if parameter.In == "query" {
+			schemaTypes := parameter.Schema.Schema().Type
+			if len(schemaTypes) == 1 {
+				queryName := parameter.Name
+				run.QueryParameter[queryName] = FlagParameterOption{
+					FlagName: computeFlagName(queryName),
+					Required: *parameter.Required,
+					Type:     schemaTypes[0],
+				}
+			}
+		}
+	}
+	run.BodyFields = computeBodyFields(operation.RequestBody)
+	result[name] = run
+	return nil
+}
+
+func computeBodyFields(body *v3high.RequestBody) map[string]FlagParameterOption {
+	var result = make(map[string]FlagParameterOption)
+	if body == nil {
+		return result
+	}
+	jsonMediaType, present := body.Content.Get("application/json")
+	if present && jsonMediaType.Schema.Schema() != nil && jsonMediaType.Schema.Schema().Properties != nil {
+		bodySchema := jsonMediaType.Schema.Schema()
+		for propertiesPair := bodySchema.Properties.First(); propertiesPair != nil; propertiesPair = propertiesPair.Next() {
+			key := propertiesPair.Key()
+			value := propertiesPair.Value()
+			if value != nil && value.Schema() != nil {
+				valueType := value.Schema().Type[0]
+				if valueType == "string" || valueType == "boolean" || valueType == "integer" {
+					result[key] = FlagParameterOption{
+						FlagName: computeFlagName(key),
+						Type:     valueType,
+						Required: slices.Contains(bodySchema.Required, key),
+					}
+				}
+			}
+		}
+	}
+	return result
+}
+
+func (s *OpenApiParser) GetConsoleCatalog(strict bool) (*Catalog, error) {
+	kinds, err := s.GetConsoleKinds(strict)
+	if err != nil {
+		return nil, err
+	}
+	runs, err := s.getRuns(CONSOLE)
+	if err != nil {
+		return nil, err
+	}
+	return &Catalog{
+		Kind: kinds,
+		Run:  runs,
+	}, nil
+}
+
+func (s *OpenApiParser) GetConsoleKinds(strict bool) (KindCatalog, error) {
 	return getKinds(s, strict, buildConsoleKindVersion)
 }
 
-func (s *OpenApiParser) GetGatewayKinds(strict bool) (map[string]Kind, error) {
+func (s *OpenApiParser) GetGatewayKinds(strict bool) (KindCatalog, error) {
 	return getKinds(s, strict, buildGatewayKindVersion)
+}
+
+func (s *OpenApiParser) GetGatewayCatalog(strict bool) (*Catalog, error) {
+	kinds, err := s.GetGatewayKinds(strict)
+	if err != nil {
+		return nil, err
+	}
+	runs, err := s.getRuns(GATEWAY)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Catalog{
+		Kind: kinds,
+		Run:  runs,
+	}, nil
 }
 
 func buildConsoleKindVersion(s *OpenApiParser, path, kind string, order int, put *v3high.Operation, get *v3high.Operation, strict bool) (*ConsoleKindVersion, error) {
@@ -76,7 +204,7 @@ func buildConsoleKindVersion(s *OpenApiParser, path, kind string, order int, put
 		Name:               kind,
 		ListPath:           path,
 		ParentPathParam:    make([]string, 0, len(put.Parameters)),
-		ListQueryParameter: make(map[string]QueryParameterOption, len(get.Parameters)),
+		ListQueryParameter: make(map[string]FlagParameterOption, len(get.Parameters)),
 		Order:              order,
 	}
 	for _, putParameter := range put.Parameters {
@@ -93,7 +221,7 @@ func buildConsoleKindVersion(s *OpenApiParser, path, kind string, order int, put
 			if len(schemaTypes) == 1 {
 				schemaType := schemaTypes[0]
 				name := getParameter.Name
-				newKind.ListQueryParameter[name] = QueryParameterOption{
+				newKind.ListQueryParameter[name] = FlagParameterOption{
 					FlagName: computeFlagName(name),
 					Required: *getParameter.Required,
 					Type:     schemaType,
@@ -124,7 +252,7 @@ func buildConsoleKindVersion(s *OpenApiParser, path, kind string, order int, put
 
 // two logics: uniformize flag name and kebab case
 func computeFlagName(name string) string {
-	kebab := utils.UpperCamelToKebab(name)
+	kebab := utils.CamelToKebab(name)
 	kebab = strings.TrimPrefix(kebab, "filter-by-")
 	return strings.Replace(kebab, "app-instance", "application-instance", 1)
 }
