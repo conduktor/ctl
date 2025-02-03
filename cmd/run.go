@@ -51,8 +51,8 @@ func initRun(runs schema.RunCatalog) {
 		pathFlagValues := make([]*string, len(pathFlags))
 		queryFlags := run.QueryParameter
 		bodyFlags := run.BodyFields
-		queryFlagValues := make(map[string]interface{}, len(queryFlags))
-		bodyFlagValues := make(map[string]interface{}, len(bodyFlags))
+		var multipleFlagsForQuery *MultipleFlags
+		var multipleFlagsForBody *MultipleFlags
 		subRunCmd := &cobra.Command{
 			Use:     name,
 			Short:   run.Doc,
@@ -60,8 +60,8 @@ func initRun(runs schema.RunCatalog) {
 			Aliases: buildAlias(name),
 			Run: func(cmd *cobra.Command, args []string) {
 				pathValues := make([]string, len(pathFlagValues))
-				queryParams := extractFlagValueForQueryParam(queryFlagValues)
-				body := extractFlagValueForBodyParam(bodyFlagValues)
+				queryParams := multipleFlagsForQuery.ExtractFlagValueForQueryParam()
+				body := multipleFlagsForBody.ExtractFlagValueForBodyParam()
 				for i, v := range pathFlagValues {
 					pathValues[i] = *v
 				}
@@ -93,8 +93,8 @@ func initRun(runs schema.RunCatalog) {
 				panic(err)
 			}
 		}
-		buildFlag(subRunCmd, queryFlags, queryFlagValues)
-		buildFlag(subRunCmd, bodyFlags, bodyFlagValues)
+		multipleFlagsForQuery = NewMultipleFlags(subRunCmd, queryFlags)
+		multipleFlagsForBody = NewMultipleFlags(subRunCmd, bodyFlags)
 
 		runCmd.AddCommand(subRunCmd)
 	}

@@ -146,10 +146,9 @@ func initGet(kinds schema.KindCatalog) {
 		}
 		parentFlags := kind.GetParentFlag()
 		parentQueryFlags := kind.GetParentQueryFlag()
-		listFlags := kind.GetListFlag()
 		parentFlagValue := make([]*string, len(parentFlags))
 		parentQueryFlagValue := make([]*string, len(parentQueryFlags))
-		listFlagValue := make(map[string]interface{}, len(listFlags))
+		var multipleFlags *MultipleFlags
 		kindCmd := &cobra.Command{
 			Use:     use,
 			Short:   "Get resource of kind " + name,
@@ -159,7 +158,7 @@ func initGet(kinds schema.KindCatalog) {
 			Run: func(cmd *cobra.Command, args []string) {
 				parentValue := make([]string, len(parentFlagValue))
 				parentQueryValue := make([]string, len(parentQueryFlagValue))
-				queryParams := extractFlagValueForQueryParam(listFlagValue)
+				queryParams := multipleFlags.ExtractFlagValueForQueryParam()
 				for i, v := range parentFlagValue {
 					parentValue[i] = *v
 				}
@@ -207,7 +206,7 @@ func initGet(kinds schema.KindCatalog) {
 		for i, flag := range parentQueryFlags {
 			parentQueryFlagValue[i] = kindCmd.Flags().String(flag, "", "Parent "+flag)
 		}
-		buildFlag(kindCmd, listFlags, listFlagValue)
+		multipleFlags = NewMultipleFlags(kindCmd, kind.GetListFlag())
 		kindCmd.Flags().VarP(enumflag.New(&format, "output", OutputFormatIds, enumflag.EnumCaseInsensitive), "output", "o", "Output format. One of: json|yaml|name")
 		getCmd.AddCommand(kindCmd)
 	}
