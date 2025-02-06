@@ -16,6 +16,7 @@ func initSql(kinds schema.KindCatalog) {
 		numLine := 1
 		var sqlCmd = &cobra.Command{
 			Use:  "sql",
+			Short: "Run a sql command on indexed topics",
 			Args: cobra.ExactArgs(1),
 			Run: func(cmd *cobra.Command, args []string) {
 				sqlResult, err := consoleApiClient().ExecuteSql(numLine, args[0])
