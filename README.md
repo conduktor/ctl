@@ -178,7 +178,7 @@ spec:
 You can also save the output in a file, in order to edit it before applying it:
 ```
 conduktor template KafkaCluster -o definiton.yml
-conduktor template Topic >> definition.yml   #Appending to a already existinng files
+conduktor template Topic >> definition.yml   #Appending to an already existing file
 vim definition.yml # (or any other text editor you like)
 conduktor apply -f
 ```
