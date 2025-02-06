@@ -110,20 +110,22 @@ Usage:
   conduktor [command]
 
 Available Commands:
-  apply       Upsert a resource on Conduktor
-  completion  Generate the autocompletion script for the specified shell
-  delete      Delete resource of a given kind and name
-  get         Get resource of a given kind
-  help        Help about any command
-  login       Login user using username password to get a JWT token
-  token       Manage Admin and Application Instance Token
-  version     Display the version of conduktor
+  apply              Upsert a resource on Conduktor
+  completion         Generate the autocompletion script for the specified shell
+  delete             Delete resource of a given kind and name
+  get                Get resource of a given kind
+  help               Help about any command
+  login              Login user using username password to get a JWT token
+  run                run an action
+  sql                Run a sql command on indexed topics
+  template           Get a yaml example for a given kind
+  token              Manage Admin and Application Instance tokens
+  version            Display the version of conduktor
 
 Flags:
-      --cert string   set pem cert for certificate authentication (useful for teleport)
-  -h, --help          help for conduktor
-      --key string    set pem key for certificate authentication (useful for teleport)
-  -v, --verbose       show more information for debugging
+  -h, --help         help for conduktor
+      --permissive   permissive mode, allow undefined environment variables
+  -v, --verbose      show more information for debugging
 
 Use "conduktor [command] --help" for more information about a command.
 ````
