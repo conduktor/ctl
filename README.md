@@ -147,6 +147,42 @@ export CDK_KEY=$(tsh apps config --format=key)
 conduktor get application
 ```
 
+### Template
+
+The `template` command allows you to get an example of a resource definition:
+```
+$ conduktor template topic                                                                                                                                                       
+---
+apiVersion: v2
+kind: Topic
+metadata:
+    name: my-topic
+    cluster: my-cluster
+    labels:
+        conduktor.io/application: application-a
+        conduktor.io/application-instance: staging
+        user-labels: I am a user label
+    catalogVisibility: PUBLIC
+    descriptionIsEditable: true
+    description: This is a topic description
+    sqlStorage:
+        retentionTimeInSecond: 42
+spec:
+    partitions: 1
+    replicationFactor: 1
+    configs:
+        cleanup.policy: delete
+        retention.ms: '86400000'
+```
+
+You can also save the output in a file, in order to edit it before applying it:
+```
+conduktor template KafkaCluster -o definiton.yml
+conduktor template Topic >> definition.yml   #Appending to a already existinng files
+vim definition.yml # (or any other text editor you like)
+conduktor apply -f
+```
+
 ### Development
 
 How to run:
