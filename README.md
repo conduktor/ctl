@@ -110,20 +110,22 @@ Usage:
   conduktor [command]
 
 Available Commands:
-  apply       Upsert a resource on Conduktor
-  completion  Generate the autocompletion script for the specified shell
-  delete      Delete resource of a given kind and name
-  get         Get resource of a given kind
-  help        Help about any command
-  login       Login user using username password to get a JWT token
-  token       Manage Admin and Application Instance Token
-  version     Display the version of conduktor
+  apply              Upsert a resource on Conduktor
+  completion         Generate the autocompletion script for the specified shell
+  delete             Delete resource of a given kind and name
+  get                Get resource of a given kind
+  help               Help about any command
+  login              Login user using username password to get a JWT token
+  run                run an action
+  sql                Run a sql command on indexed topics
+  template           Get a yaml example for a given kind
+  token              Manage Admin and Application Instance tokens
+  version            Display the version of conduktor
 
 Flags:
-      --cert string   set pem cert for certificate authentication (useful for teleport)
-  -h, --help          help for conduktor
-      --key string    set pem key for certificate authentication (useful for teleport)
-  -v, --verbose       show more information for debugging
+  -h, --help         help for conduktor
+      --permissive   permissive mode, allow undefined environment variables
+  -v, --verbose      show more information for debugging
 
 Use "conduktor [command] --help" for more information about a command.
 ````
@@ -143,6 +145,42 @@ tsh apps login console
 export CDK_CERT=$(tsh apps config --format=cert)
 export CDK_KEY=$(tsh apps config --format=key)
 conduktor get application
+```
+
+### Template
+
+The `template` command allows you to get an example of a resource definition:
+```
+$ conduktor template topic                                                                                                                                                       
+---
+apiVersion: v2
+kind: Topic
+metadata:
+    name: my-topic
+    cluster: my-cluster
+    labels:
+        conduktor.io/application: application-a
+        conduktor.io/application-instance: staging
+        user-labels: I am a user label
+    catalogVisibility: PUBLIC
+    descriptionIsEditable: true
+    description: This is a topic description
+    sqlStorage:
+        retentionTimeInSecond: 42
+spec:
+    partitions: 1
+    replicationFactor: 1
+    configs:
+        cleanup.policy: delete
+        retention.ms: '86400000'
+```
+
+You can also save the output in a file, in order to edit it before applying it:
+```
+conduktor template KafkaCluster -o definiton.yml
+conduktor template Topic >> definition.yml   #Appending to an already existing file
+vim definition.yml # (or any other text editor you like)
+conduktor apply -f
 ```
 
 ### Development
