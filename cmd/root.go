@@ -40,8 +40,14 @@ Additionally, you can configure client TLS authentication by providing your cert
 For server TLS authentication, you can ignore the certificate by setting CDK_INSECURE=true, or provide a certificate authority using CDK_CACERT.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		if *debug {
-			consoleApiClient().ActivateDebug()
-			gatewayApiClient().ActivateDebug()
+			// ActivateDebug() will enable debug mode for the resty client.
+			// Doesn't need to be set if the client was not initialised correctly.
+			if apiClientError == nil {
+				consoleApiClient().ActivateDebug()
+			}
+			if gatewayApiClientError == nil {
+				gatewayApiClient().ActivateDebug()
+			}
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
