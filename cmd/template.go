@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
 
 	"github.com/conduktor/ctl/schema"
 	"github.com/spf13/cobra"
@@ -20,10 +21,14 @@ var templateCmd = &cobra.Command{
 	},
 }
 
-func initTemplate(kinds schema.KindCatalog) {
+func initTemplate(kinds schema.KindCatalog, strict bool) {
 	rootCmd.AddCommand(templateCmd)
 	var file *string
+	var edit *bool
+	var apply *bool
 	file = templateCmd.PersistentFlags().StringP("output", "o", "", "Write example to file")
+	edit = templateCmd.PersistentFlags().BoolP("edit", "e", false, "Edit the file after it's creation")
+	apply = templateCmd.PersistentFlags().BoolP("apply", "a", false, "Apply the yaml file after it's edition")
 
 	// Add all kinds to the 'template' command
 	for name, kind := range kinds {
@@ -33,6 +38,16 @@ func initTemplate(kinds schema.KindCatalog) {
 			Args:    cobra.NoArgs,
 			Long:    `If name not provided it will list all resource`,
 			Aliases: buildAlias(name),
+			PreRun: func(cmd *cobra.Command, args []string) {
+				if edit != nil && *edit && (file == nil || *file == "") {
+					fmt.Fprintln(os.Stderr, "Cannot use --edit without --output")
+					os.Exit(10)
+				}
+				if apply != nil && *apply && (edit == nil || !*edit) {
+					fmt.Fprintln(os.Stderr, "Cannot use --apply without --edit")
+					os.Exit(11)
+				}
+			},
 			Run: func(cmd *cobra.Command, args []string) {
 				example := kind.GetLatestKindVersion().GetApplyExample()
 				if example == "" {
@@ -55,6 +70,9 @@ func initTemplate(kinds schema.KindCatalog) {
 						}
 						defer f.Close()
 						w := bufio.NewWriter(f)
+						if apply != nil && *apply {
+							_, err = w.WriteString("# WARNING, you file will be apply automatically once saved. If you do want to apply anything save an empty file\n")
+						}
 						_, err = w.WriteString("---\n")
 						_, err = w.WriteString(kind.GetLatestKindVersion().GetApplyExample())
 						if err != nil {
@@ -66,10 +84,38 @@ func initTemplate(kinds schema.KindCatalog) {
 							fmt.Fprintf(os.Stderr, "Error writting to file %s: %s\n", *file, err)
 							os.Exit(5)
 						}
+						editAndApply(edit, file, apply, kinds, strict)
 					}
 				}
 			},
 		}
 		templateCmd.AddCommand(kindCmd)
+	}
+}
+
+func editAndApply(edit *bool, file *string, apply *bool, kinds schema.KindCatalog, strict bool) {
+	if edit != nil && *edit {
+		//run $EDITOR on the file
+		editor := os.Getenv("EDITOR")
+		if editor == "" {
+			fmt.Fprintln(os.Stderr, "No editor set. Set $EDITOR to your preferred editor")
+			os.Exit(6)
+		}
+		editorFromPath, err := exec.LookPath(editor)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Could not find $EDITOR %s in path: %s\n", editor, err)
+			os.Exit(7)
+		}
+		cmd := exec.Command(editorFromPath, *file)
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			fmt.Fprintf(os.Stderr, "Could not run %s: %s", editorFromPath, err)
+			os.Exit(8)
+		}
+		if apply != nil && *apply {
+			runApply(kinds, []string{*file}, strict)
+		}
 	}
 }
