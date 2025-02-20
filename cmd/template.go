@@ -71,7 +71,7 @@ func initTemplate(kinds schema.KindCatalog, strict bool) {
 						defer f.Close()
 						w := bufio.NewWriter(f)
 						if apply != nil && *apply {
-							_, err = w.WriteString("# WARNING, you file will be apply automatically once saved. If you do want to apply anything save an empty file\n")
+							_, err = w.WriteString("WARNING: Your file will be applied automatically once saved. If you do not want to apply anything, save an empty file.\n")
 						}
 						_, err = w.WriteString("---\n")
 						_, err = w.WriteString(kind.GetLatestKindVersion().GetApplyExample())
