@@ -24,6 +24,30 @@ func resourceForPath(path string, strict bool) ([]resource.Resource, error) {
 	}
 }
 
+func runApply(kinds schema.KindCatalog, filePath []string, strict bool) {
+	resources := loadResourceFromFileFlag(filePath, strict)
+	schema.SortResourcesForApply(kinds, resources, *debug)
+	allSuccess := true
+	for _, resource := range resources {
+		var upsertResult string
+		var err error
+		if isGatewayResource(resource, kinds) {
+			upsertResult, err = gatewayApiClient().Apply(&resource, *dryRun)
+		} else {
+			upsertResult, err = consoleApiClient().Apply(&resource, *dryRun)
+		}
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Could not apply resource %s/%s: %s\n", resource.Kind, resource.Name, err)
+			allSuccess = false
+		} else {
+			fmt.Printf("%s/%s: %s\n", resource.Kind, resource.Name, upsertResult)
+		}
+	}
+	if !allSuccess {
+		os.Exit(1)
+	}
+}
+
 func initApply(kinds schema.KindCatalog, strict bool) {
 	// applyCmd represents the apply command
 	var filePath *[]string
@@ -32,27 +56,7 @@ func initApply(kinds schema.KindCatalog, strict bool) {
 		Short: "Upsert a resource on Conduktor",
 		Long:  ``,
 		Run: func(cmd *cobra.Command, args []string) {
-			resources := loadResourceFromFileFlag(*filePath, strict)
-			schema.SortResourcesForApply(kinds, resources, *debug)
-			allSuccess := true
-			for _, resource := range resources {
-				var upsertResult string
-				var err error
-				if isGatewayResource(resource, kinds) {
-					upsertResult, err = gatewayApiClient().Apply(&resource, *dryRun)
-				} else {
-					upsertResult, err = consoleApiClient().Apply(&resource, *dryRun)
-				}
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "Could not apply resource %s/%s: %s\n", resource.Kind, resource.Name, err)
-					allSuccess = false
-				} else {
-					fmt.Printf("%s/%s: %s\n", resource.Kind, resource.Name, upsertResult)
-				}
-			}
-			if !allSuccess {
-				os.Exit(1)
-			}
+			runApply(kinds, *filePath, strict)
 		},
 	}
 
