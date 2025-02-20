@@ -94,10 +94,22 @@ func printResource(result interface{}, format OutputFormat) error {
 	return nil
 }
 
+func isGateway(kind schema.Kind) bool {
+	_, isGatewayKind := kind.GetLatestKindVersion().(*schema.GatewayKindVersion)
+	return isGatewayKind
+}
+
+func isConsole(kind schema.Kind) bool {
+	_, isConsoleKind := kind.GetLatestKindVersion().(*schema.ConsoleKindVersion)
+	return isConsoleKind
+}
+
 func initGet(kinds schema.KindCatalog) {
 	rootCmd.AddCommand(getCmd)
 	var format OutputFormat = YAML
 
+	var onlyGateway *bool
+	var onlyConsole *bool
 	var allCmd = &cobra.Command{
 		Use:   "all",
 		Short: "Get all global resources",
@@ -106,23 +118,35 @@ func initGet(kinds schema.KindCatalog) {
 			var allResources []resource.Resource
 
 			kindsByName := sortedKeys(kinds)
+			if gatewayApiClientError != nil {
+				if *debug || *onlyGateway {
+					fmt.Fprintf(os.Stderr, "Cannot create gateway client: %s\n", gatewayApiClientError)
+				}
+			}
+			if consoleApiClientError != nil {
+				if *debug || *onlyConsole {
+					fmt.Fprintf(os.Stderr, "Cannot create console client: %s\n", consoleApiClientError)
 
+				}
+			}
 			for _, key := range kindsByName {
 				kind := kinds[key]
-
-				// keep only the Kinds where kind.GetParentFlag() is empty and not of GatewayKind (demands extra configuration, TODO fix if config is provided)
-				if len(kind.GetParentFlag())+len(kind.GetParentQueryFlag()) > 0 {
+				// keep only the Kinds where listing is provided TODO fix if config is provided
+				if !kind.IsRootKind() {
 					continue
 				}
-				if _, isGatewayKind := kind.GetLatestKindVersion().(*schema.GatewayKindVersion); isGatewayKind {
-					continue
+				var resources []resource.Resource
+				var err error
+				if isGateway(kind) && !*onlyConsole && gatewayApiClientError == nil {
+					resources, err = gatewayApiClient().Get(&kind, []string{}, []string{}, map[string]string{})
+				} else if isConsole(kind) && !*onlyGateway && consoleApiClientError == nil {
+					resources, err = consoleApiClient().Get(&kind, []string{}, []string{}, map[string]string{})
 				}
-
-				resources, err := consoleApiClient().Get(&kind, []string{}, []string{}, map[string]string{})
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "Error fetching resource %s: %s\n", kind.GetName(), err)
 					continue
 				}
+
 				allResources = append(allResources, resources...)
 			}
 			err := printResource(allResources, format)
@@ -132,6 +156,9 @@ func initGet(kinds schema.KindCatalog) {
 			}
 		},
 	}
+	onlyGateway = allCmd.Flags().BoolP("gateway", "g", false, "Only show gateway resources")
+	onlyConsole = allCmd.Flags().BoolP("console", "c", false, "Only show console resources")
+	allCmd.MarkFlagsMutuallyExclusive("gateway", "console")
 	allCmd.Flags().VarP(enumflag.New(&format, "output", OutputFormatIds, enumflag.EnumCaseInsensitive), "output", "o", "Output format. One of: json|yaml|name")
 	getCmd.AddCommand(allCmd)
 
