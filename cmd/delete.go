@@ -47,7 +47,7 @@ func initDelete(kinds schema.KindCatalog, strict bool) {
 
 	rootCmd.AddCommand(deleteCmd)
 
-	filePath = deleteCmd.Flags().StringArrayP("file", "f", make([]string, 0, 0), "the files to apply")
+	filePath = deleteCmd.Flags().StringArrayP("file", "f", make([]string, 0, 0), "The files to apply")
 
 	deleteCmd.MarkFlagRequired("file")
 
