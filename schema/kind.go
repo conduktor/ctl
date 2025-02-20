@@ -46,6 +46,22 @@ func (kind *Kind) GetParentFlag() []string {
 	return kindVersion.GetParentPathParam()
 }
 
+func (kind *Kind) IsRootKind() bool {
+	kindVersion := kind.GetLatestKindVersion()
+	if len(kindVersion.GetParentPathParam()) != 0 {
+		return false
+	}
+	if len(kindVersion.GetParentQueryParam()) != 0 {
+		return false
+	}
+	for _, queryParam := range kindVersion.GetListQueryParameter() {
+		if queryParam.Required {
+			return false
+		}
+	}
+	return true
+}
+
 func (kind *Kind) GetParentQueryFlag() []string {
 	kindVersion := kind.GetLatestKindVersion()
 	return kindVersion.GetParentQueryParam()
