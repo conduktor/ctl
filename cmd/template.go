@@ -28,7 +28,7 @@ func initTemplate(kinds schema.KindCatalog, strict bool) {
 	var apply *bool
 	file = templateCmd.PersistentFlags().StringP("output", "o", "", "Write example to file")
 	edit = templateCmd.PersistentFlags().BoolP("edit", "e", false, "Edit the YAML file post-creation; this works only with --output.")
-	apply = templateCmd.PersistentFlags().BoolP("apply", "a", false, "Apply the yaml file after it's edition")
+	apply = templateCmd.PersistentFlags().BoolP("apply", "a", false, "Apply the YAML file post-editing; this works only with --edit.")
 
 	// Add all kinds to the 'template' command
 	for name, kind := range kinds {
