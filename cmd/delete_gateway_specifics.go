@@ -75,8 +75,8 @@ func buildDeleteInterceptorsCmd(kind schema.Kind) *cobra.Command {
 	}
 
 	interceptorDeleteCmd.Flags().StringVar(&vClusterValue, vClusterFlag, "", "vCluster of the "+name)
-	interceptorDeleteCmd.Flags().StringVar(&groupValue, groupFlag, "", "group of the "+name)
-	interceptorDeleteCmd.Flags().StringVar(&usernameValue, usernameFlag, "", "username of the "+name)
+	interceptorDeleteCmd.Flags().StringVar(&groupValue, groupFlag, "", "Group of the "+name)
+	interceptorDeleteCmd.Flags().StringVar(&usernameValue, usernameFlag, "", "Username of the "+name)
 
 	return interceptorDeleteCmd
 }

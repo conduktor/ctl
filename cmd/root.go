@@ -81,8 +81,8 @@ func init() {
 		gatewayKinds = schema.GatewayDefaultCatalog()
 	}
 	catalog := consoleKinds.Merge(gatewayKinds)
-	debug = rootCmd.PersistentFlags().BoolP("verbose", "v", false, "show more information for debugging")
-	var permissive = rootCmd.PersistentFlags().Bool("permissive", false, "permissive mode, allow undefined environment variables")
+	debug = rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Show more information for debugging")
+	var permissive = rootCmd.PersistentFlags().Bool("permissive", false, "Permissive mode, allow undefined environment variables")
 	strict := !*permissive
 	initGet(catalog.Kind)
 	initTemplate(catalog.Kind, strict)
