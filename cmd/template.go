@@ -27,7 +27,7 @@ func initTemplate(kinds schema.KindCatalog, strict bool) {
 	var edit *bool
 	var apply *bool
 	file = templateCmd.PersistentFlags().StringP("output", "o", "", "Write example to file")
-	edit = templateCmd.PersistentFlags().BoolP("edit", "e", false, "Edit the YAML file post-creation; this works only with --output.")
+	edit = templateCmd.PersistentFlags().BoolP("edit", "e", false, "Edit the YAML file post-creation; this works only with --output. It will the EDITOR environment variable or nano if not set.")
 	apply = templateCmd.PersistentFlags().BoolP("apply", "a", false, "Apply the YAML file post-editing; this works only with --edit.")
 
 	// Add all kinds to the 'template' command
@@ -98,12 +98,14 @@ func editAndApply(edit *bool, file *string, apply *bool, kinds schema.KindCatalo
 		//run $EDITOR on the file
 		editor := os.Getenv("EDITOR")
 		if editor == "" {
-			fmt.Fprintln(os.Stderr, "No editor set. Set $EDITOR to your preferred editor")
-			os.Exit(6)
+			if *debug {
+				fmt.Fprintln(os.Stderr, "No editor set. Set $EDITOR to your preferred editor")
+			}
+			editor = "nano"
 		}
 		editorFromPath, err := exec.LookPath(editor)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Could not find $EDITOR %s in path: %s\n", editor, err)
+			fmt.Fprintf(os.Stderr, "Could not find %s in path: %s\n", editor, err)
 			os.Exit(7)
 		}
 		cmd := exec.Command(editorFromPath, *file)
