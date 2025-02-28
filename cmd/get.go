@@ -125,7 +125,7 @@ func initGet(kinds schema.KindCatalog) {
 			}
 			if consoleApiClientError != nil {
 				if *debug || *onlyConsole {
-					fmt.Fprintf(os.Stderr, "Cannot create console client: %s\n", consoleApiClientError)
+					fmt.Fprintf(os.Stderr, "Cannot create Console client: %s\n", consoleApiClientError)
 
 				}
 			}
