@@ -11,13 +11,13 @@ import (
 
 var debug *bool
 var apiClient_ *client.Client
-var apiClientError error
+var consoleApiClientError error
 var gatewayApiClient_ *client.GatewayClient
 var gatewayApiClientError error
 
 func consoleApiClient() *client.Client {
-	if apiClientError != nil {
-		fmt.Fprintf(os.Stderr, "Cannot create client: %s", apiClientError)
+	if consoleApiClientError != nil {
+		fmt.Fprintf(os.Stderr, "Cannot create client: %s", consoleApiClientError)
 		os.Exit(1)
 	}
 	return apiClient_
@@ -42,7 +42,7 @@ For server TLS authentication, you can ignore the certificate by setting CDK_INS
 		if *debug {
 			// ActivateDebug() will enable debug mode for the resty client.
 			// Doesn't need to be set if the client was not initialised correctly.
-			if apiClientError == nil {
+			if consoleApiClientError == nil {
 				consoleApiClient().ActivateDebug()
 			}
 			if gatewayApiClientError == nil {
@@ -66,9 +66,9 @@ func Execute() {
 }
 
 func init() {
-	apiClient_, apiClientError = client.MakeFromEnv()
+	apiClient_, consoleApiClientError = client.MakeFromEnv()
 	var consoleKinds *schema.Catalog
-	if apiClientError == nil {
+	if consoleApiClientError == nil {
 		consoleKinds = apiClient_.GetCatalog()
 	} else {
 		consoleKinds = schema.ConsoleDefaultCatalog()
