@@ -120,7 +120,7 @@ func initGet(kinds schema.KindCatalog) {
 			kindsByName := sortedKeys(kinds)
 			if gatewayApiClientError != nil {
 				if *debug || *onlyGateway {
-					fmt.Fprintf(os.Stderr, "Cannot create gateway client: %s\n", gatewayApiClientError)
+					fmt.Fprintf(os.Stderr, "Cannot create Gateway client: %s\n", gatewayApiClientError)
 				}
 			}
 			if consoleApiClientError != nil {
