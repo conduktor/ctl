@@ -192,6 +192,10 @@ tags:
     x-displayName: alert
   - name: cli_partner-zone_console_v2_16
     x-displayName: partner-zone
+  - name: cli_data-quality-rule_data-quality_v1_17
+    x-displayName: data-quality-rule
+  - name: cli_data-quality-policy_data-quality_v1_18
+    x-displayName: data-quality-policy
 paths:
   /token/v1/admin_tokens:
     get:
@@ -250,14 +254,22 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
-      x-cdk-run-version: '1'
-      x-cdk-run-name: listAdminToken
-      x-cdk-run-doc: List admin token
+        - httpAuth: []
+      x-codeSamples:
+        - lang: Shell + Curl
+          source: |-
+            curl \
+              --request GET \
+              --url 'http://localhost:8080/token/v1/admin_tokens' \
+              --header 'Authorization: Bearer $BEARER' \
+              --location \
+              --max-redirs 32
     post:
       tags:
         - tokens
-      description: Create a new Public API token for the organization
+      description: Create a new admin API token for the organization. It can be called
+        with an already existing admin API TOKEN or with a user token having admin
+        permission
       operationId: create-an-admin-token
       requestBody:
         content:
@@ -313,15 +325,23 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
-      x-cdk-run-version: '1'
-      x-cdk-run-name: createAdminToken
-      x-cdk-run-doc: Create an admin token
+        - httpAuth: []
+      x-codeSamples:
+        - lang: Shell + Curl
+          source: |-
+            curl \
+              --request POST \
+              --url 'http://localhost:8080/token/v1/admin_tokens' \
+              --header 'Authorization: Bearer $BEARER' \
+              --header 'Content-Type: application/json' \
+              --data-raw '{"name":"my-token-name"}' \
+              --location \
+              --max-redirs 32
   /token/v1/{token-id}:
     delete:
       tags:
         - tokens
-      description: Delete a public API token of the organization
+      description: 'Delete an API (admin or application instance) token of the organization '
       operationId: delete-a-token
       parameters:
         - name: token-id
@@ -374,10 +394,16 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
-      x-cdk-run-version: '1'
-      x-cdk-run-name: deleteToken
-      x-cdk-run-doc: Delete a token
+        - httpAuth: []
+      x-codeSamples:
+        - lang: Shell + Curl
+          source: |-
+            curl \
+              --request DELETE \
+              --url 'http://localhost:8080/token/v1/00000004-0008-0015-0016-230000000042' \
+              --header 'Authorization: Bearer $BEARER' \
+              --location \
+              --max-redirs 32
   /token/v1/application_instance_tokens/{application-instance-name}:
     get:
       tags:
@@ -441,14 +467,20 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
-      x-cdk-run-version: '1'
-      x-cdk-run-name: listApplicationInstanceToken
-      x-cdk-run-doc: List application instance token
+        - httpAuth: []
+      x-codeSamples:
+        - lang: Shell + Curl
+          source: |-
+            curl \
+              --request GET \
+              --url 'http://localhost:8080/token/v1/application_instance_tokens/app-instance' \
+              --header 'Authorization: Bearer $BEARER' \
+              --location \
+              --max-redirs 32
     post:
       tags:
         - tokens
-      description: Create a new Public API token for an application instance
+      description: Create a new admin API token for an application instance
       operationId: create-an-application-instance-token
       parameters:
         - name: application-instance-name
@@ -512,10 +544,76 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
+      x-codeSamples:
+        - lang: Shell + Curl
+          source: |-
+            curl \
+              --request POST \
+              --url 'http://localhost:8080/token/v1/application_instance_tokens/app-instance' \
+              --header 'Authorization: Bearer $BEARER' \
+              --header 'Content-Type: application/json' \
+              --data-raw '{"name":"my-app-instance-token-name"}' \
+              --location \
+              --max-redirs 32
+  /token/v1/whoami:
+    get:
+      tags:
+        - tokens
+      description: Get the information of the token used to call this endpoint
+      operationId: whoami
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenInfo'
+        '400':
+          description: The request is not valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+              example:
+                title: The request is not valid
+        '401':
+          description: The user is not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+              example:
+                title: The user is not authenticated
+        '403':
+          description: The user doesn't have sufficient privilege to do this operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden'
+              example:
+                title: The user doesn't have sufficient privilege to do this operation
+        '404':
+          description: The searched entity was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+              example:
+                title: The searched entity was not found
+        '500':
+          description: An unexpected error occurred in the server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+              example:
+                title: An unexpected error occurred in the server
+      security:
+        - httpAuth: []
       x-cdk-run-version: '1'
-      x-cdk-run-name: createApplicationInstanceToken
-      x-cdk-run-doc: Create an application instance token
+      x-cdk-run-name: whoami
+      x-cdk-run-doc: Return information about the credentials configured in the CLI
   /public/v1/groups:
     get:
       tags:
@@ -562,7 +660,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -624,7 +722,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -696,7 +794,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -766,7 +864,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -833,7 +931,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -907,7 +1005,7 @@ paths:
                 title: An unexpected error occurred in the server
       deprecated: true
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -972,7 +1070,7 @@ paths:
                 title: An unexpected error occurred in the server
       deprecated: true
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -1043,7 +1141,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -1105,7 +1203,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -1184,7 +1282,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -1266,7 +1364,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -1350,7 +1448,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -1434,7 +1532,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -1504,7 +1602,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -1533,7 +1631,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GroupResource'
+                $ref: '#/components/schemas/GroupResourceV2'
               example:
                 apiVersion: v2
                 kind: Group
@@ -1546,7 +1644,7 @@ paths:
                     - test
                   members:
                     - user@conduktor.io
-                  membersFromExternalGroups: [ ]
+                  membersFromExternalGroups: []
                   permissions:
                     - resourceType: TOPIC
                       cluster: '*'
@@ -1601,7 +1699,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -1675,7 +1773,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -1699,7 +1797,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/GroupResource'
+                  $ref: '#/components/schemas/GroupResourceV2'
               example:
                 - apiVersion: v2
                   kind: Group
@@ -1712,7 +1810,7 @@ paths:
                       - test
                     members:
                       - user@conduktor.io
-                    membersFromExternalGroups: [ ]
+                    membersFromExternalGroups: []
                     permissions:
                       - resourceType: TOPIC
                         cluster: '*'
@@ -1767,7 +1865,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -1793,7 +1891,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GroupResource'
+              $ref: '#/components/schemas/GroupResourceV2'
             example:
               apiVersion: v2
               kind: Group
@@ -1806,7 +1904,7 @@ paths:
                   - test
                 members:
                   - user@conduktor.io
-                membersFromExternalGroups: [ ]
+                membersFromExternalGroups: []
                 permissions:
                   - resourceType: TOPIC
                     cluster: '*'
@@ -1827,7 +1925,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GroupApplyResult'
+                $ref: '#/components/schemas/GroupApplyResultV2'
         '400':
           description: The request is not valid
           content:
@@ -1877,7 +1975,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -1940,7 +2038,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -2082,7 +2180,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -2139,7 +2237,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -2168,11 +2266,11 @@ paths:
                 - clusterSlug: silent-hill
                   name: My Kafka cluster
                   bootstrapServers: broker1:9092, broker2:9092
-                  kafkaConnects: [ ]
+                  kafkaConnects: []
                   ignoreUntrustedCertificate: false
                   createdAt: '1970-01-01T00:00:00Z'
                   updatedAt: '1970-01-01T00:00:00Z'
-                  ksqlDBs: [ ]
+                  ksqlDBs: []
                 - clusterSlug: silent-hill
                   name: My Kafka cluster
                   bootstrapServers: broker1:9092, broker2:9092
@@ -2182,11 +2280,11 @@ paths:
                     ssl.truststore.password=conduktor
                     ssl.keystore.password=conduktor
                     ssl.keystore.location=/etc/kafka/secrets/kafka.keystore.jks
-                  kafkaConnects: [ ]
+                  kafkaConnects: []
                   ignoreUntrustedCertificate: false
                   createdAt: '1970-01-01T00:00:00Z'
                   updatedAt: '1970-01-01T00:00:00Z'
-                  ksqlDBs: [ ]
+                  ksqlDBs: []
         '400':
           description: Invalid value
           content:
@@ -2210,7 +2308,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -2273,7 +2371,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -2378,7 +2476,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -2447,7 +2545,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -2532,7 +2630,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -2584,7 +2682,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -2660,7 +2758,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -2729,7 +2827,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -2780,7 +2878,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -2855,7 +2953,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -2911,7 +3009,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -2987,7 +3085,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -3060,7 +3158,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -3135,7 +3233,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -3210,7 +3308,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -3271,7 +3369,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -3299,7 +3397,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserResource'
+                $ref: '#/components/schemas/UserResourceV2'
               example:
                 apiVersion: v2
                 kind: User
@@ -3308,7 +3406,7 @@ paths:
                 spec:
                   firstName: description
                   lastName: test
-                  permissions: [ ]
+                  permissions: []
         '400':
           description: The request is not valid
           content:
@@ -3350,7 +3448,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -3423,7 +3521,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -3447,7 +3545,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/UserResource'
+                  $ref: '#/components/schemas/UserResourceV2'
               example:
                 - apiVersion: v2
                   kind: User
@@ -3456,7 +3554,7 @@ paths:
                   spec:
                     firstName: description
                     lastName: test
-                    permissions: [ ]
+                    permissions: []
         '400':
           description: The request is not valid
           content:
@@ -3498,7 +3596,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -3524,7 +3622,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserResource'
+              $ref: '#/components/schemas/UserResourceV2'
             example:
               apiVersion: v2
               kind: User
@@ -3533,7 +3631,7 @@ paths:
               spec:
                 firstName: description
                 lastName: test
-                permissions: [ ]
+                permissions: []
         required: true
       responses:
         '200':
@@ -3541,7 +3639,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserApplyResult'
+                $ref: '#/components/schemas/UserApplyResultV2'
         '400':
           description: The request is not valid
           content:
@@ -3591,7 +3689,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -3667,7 +3765,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -3751,7 +3849,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -3833,7 +3931,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -3918,7 +4016,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -3947,7 +4045,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApplicationResource'
+                $ref: '#/components/schemas/ApplicationResourceV1'
               example:
                 apiVersion: v1
                 kind: Application
@@ -3997,7 +4095,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -4071,7 +4169,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -4095,7 +4193,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ApplicationResource'
+                  $ref: '#/components/schemas/ApplicationResourceV1'
               example:
                 - apiVersion: v1
                   kind: Application
@@ -4145,7 +4243,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -4171,7 +4269,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ApplicationResource'
+              $ref: '#/components/schemas/ApplicationResourceV1'
             example:
               apiVersion: v1
               kind: Application
@@ -4187,7 +4285,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApplicationApplyResult'
+                $ref: '#/components/schemas/ApplicationApplyResultV1'
         '400':
           description: The request is not valid
           content:
@@ -4237,7 +4335,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -4268,7 +4366,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApplicationInstanceResource'
+                $ref: '#/components/schemas/ApplicationInstanceResourceV1'
               example:
                 apiVersion: v1
                 kind: ApplicationInstance
@@ -4329,7 +4427,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -4403,7 +4501,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -4435,7 +4533,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ApplicationInstanceResource'
+                  $ref: '#/components/schemas/ApplicationInstanceResourceV1'
               example:
                 - apiVersion: v1
                   kind: ApplicationInstance
@@ -4496,7 +4594,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -4522,7 +4620,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ApplicationInstanceResource'
+              $ref: '#/components/schemas/ApplicationInstanceResourceV1'
             example:
               apiVersion: v1
               kind: ApplicationInstance
@@ -4549,7 +4647,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApplicationInstanceApplyResult'
+                $ref: '#/components/schemas/ApplicationInstanceApplyResultV1'
         '400':
           description: The request is not valid
           content:
@@ -4599,7 +4697,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -4630,7 +4728,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApplicationInstancePermissionResource'
+                $ref: '#/components/schemas/ApplicationInstancePermissionResourceV1'
               example:
                 apiVersion: v1
                 kind: ApplicationInstancePermission
@@ -4686,7 +4784,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -4760,7 +4858,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -4806,7 +4904,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ApplicationInstancePermissionResource'
+                  $ref: '#/components/schemas/ApplicationInstancePermissionResourceV1'
               example:
                 - apiVersion: v1
                   kind: ApplicationInstancePermission
@@ -4862,7 +4960,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -4888,7 +4986,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ApplicationInstancePermissionResource'
+              $ref: '#/components/schemas/ApplicationInstancePermissionResourceV1'
             example:
               apiVersion: v1
               kind: ApplicationInstancePermission
@@ -4910,7 +5008,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApplicationInstancePermissionApplyResult'
+                $ref: '#/components/schemas/ApplicationInstancePermissionApplyResultV1'
         '400':
           description: The request is not valid
           content:
@@ -4960,7 +5058,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -4991,7 +5089,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApplicationGroupResource'
+                $ref: '#/components/schemas/ApplicationGroupResourceV1'
               example:
                 apiVersion: v1
                 kind: ApplicationGroup
@@ -5059,7 +5157,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -5133,7 +5231,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -5165,7 +5263,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ApplicationGroupResource'
+                  $ref: '#/components/schemas/ApplicationGroupResourceV1'
               example:
                 - apiVersion: v1
                   kind: ApplicationGroup
@@ -5233,7 +5331,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -5259,7 +5357,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ApplicationGroupResource'
+              $ref: '#/components/schemas/ApplicationGroupResourceV1'
             example:
               apiVersion: v1
               kind: ApplicationGroup
@@ -5293,7 +5391,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApplicationGroupApplyResult'
+                $ref: '#/components/schemas/ApplicationGroupApplyResultV1'
         '400':
           description: The request is not valid
           content:
@@ -5343,7 +5441,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -5374,7 +5472,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TopicPolicyResource'
+                $ref: '#/components/schemas/TopicPolicyResourceV1'
               example:
                 apiVersion: v1
                 kind: TopicPolicy
@@ -5429,7 +5527,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -5503,7 +5601,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -5535,7 +5633,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/TopicPolicyResource'
+                  $ref: '#/components/schemas/TopicPolicyResourceV1'
               example:
                 - apiVersion: v1
                   kind: TopicPolicy
@@ -5590,7 +5688,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -5616,7 +5714,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TopicPolicyResource'
+              $ref: '#/components/schemas/TopicPolicyResourceV1'
             example:
               apiVersion: v1
               kind: TopicPolicy
@@ -5637,7 +5735,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TopicPolicyApplyResult'
+                $ref: '#/components/schemas/TopicPolicyApplyResultV1'
         '400':
           description: The request is not valid
           content:
@@ -5687,7 +5785,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -5722,7 +5820,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TopicResource'
+                $ref: '#/components/schemas/TopicResourceV2'
               example:
                 apiVersion: v2
                 kind: Topic
@@ -5785,7 +5883,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -5863,7 +5961,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -5893,7 +5991,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/TopicResource'
+                  $ref: '#/components/schemas/TopicResourceV2'
               example:
                 - apiVersion: v2
                   kind: Topic
@@ -5956,7 +6054,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -5987,7 +6085,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TopicResource'
+              $ref: '#/components/schemas/TopicResourceV2'
             example:
               apiVersion: v2
               kind: Topic
@@ -6016,7 +6114,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TopicApplyResult'
+                $ref: '#/components/schemas/TopicApplyResultV2'
         '400':
           description: The request is not valid
           content:
@@ -6066,7 +6164,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -6093,7 +6191,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TopicResource'
+              $ref: '#/components/schemas/TopicResourceV2'
         required: true
       responses:
         '200':
@@ -6101,7 +6199,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TopicCreateResult'
+                $ref: '#/components/schemas/TopicCreateResultV2'
         '400':
           description: The request is not valid
           content:
@@ -6151,7 +6249,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -6186,7 +6284,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SubjectResource'
+                $ref: '#/components/schemas/SubjectResourceV2'
               example:
                 apiVersion: v2
                 kind: Subject
@@ -6241,7 +6339,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -6319,7 +6417,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -6349,7 +6447,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/SubjectResource'
+                  $ref: '#/components/schemas/SubjectResourceV2'
               example:
                 - apiVersion: v2
                   kind: Subject
@@ -6404,7 +6502,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -6435,7 +6533,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SubjectResource'
+              $ref: '#/components/schemas/SubjectResourceV2'
             example:
               apiVersion: v2
               kind: Subject
@@ -6456,7 +6554,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SubjectApplyResult'
+                $ref: '#/components/schemas/SubjectApplyResultV2'
         '400':
           description: The request is not valid
           content:
@@ -6506,7 +6604,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -6533,7 +6631,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SubjectResource'
+              $ref: '#/components/schemas/SubjectResourceV2'
         required: true
       responses:
         '200':
@@ -6541,7 +6639,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SubjectCreateResult'
+                $ref: '#/components/schemas/SubjectCreateResultV2'
         '400':
           description: The request is not valid
           content:
@@ -6591,7 +6689,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -6632,7 +6730,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ConnectorResource'
+                $ref: '#/components/schemas/ConnectorResourceV2'
               example:
                 apiVersion: v2
                 kind: Connector
@@ -6645,7 +6743,7 @@ paths:
                     frequencySeconds: 600
                   description: My connector
                 spec:
-                  config: { }
+                  config: {}
         '400':
           description: The request is not valid
           content:
@@ -6687,7 +6785,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -6771,7 +6869,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -6807,7 +6905,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ConnectorResource'
+                  $ref: '#/components/schemas/ConnectorResourceV2'
               example:
                 - apiVersion: v2
                   kind: Connector
@@ -6820,7 +6918,7 @@ paths:
                       frequencySeconds: 600
                     description: My connector
                   spec:
-                    config: { }
+                    config: {}
         '400':
           description: The request is not valid
           content:
@@ -6862,7 +6960,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -6899,7 +6997,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ConnectorResource'
+              $ref: '#/components/schemas/ConnectorResourceV2'
             example:
               apiVersion: v2
               kind: Connector
@@ -6912,7 +7010,7 @@ paths:
                   frequencySeconds: 600
                 description: My connector
               spec:
-                config: { }
+                config: {}
         required: true
       responses:
         '200':
@@ -6920,7 +7018,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ConnectorApplyResult'
+                $ref: '#/components/schemas/ConnectorApplyResultV2'
         '400':
           description: The request is not valid
           content:
@@ -6970,7 +7068,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -7003,7 +7101,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ConnectorResource'
+              $ref: '#/components/schemas/ConnectorResourceV2'
         required: true
       responses:
         '200':
@@ -7011,7 +7109,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ConnectorCreateResult'
+                $ref: '#/components/schemas/ConnectorCreateResultV2'
         '400':
           description: The request is not valid
           content:
@@ -7061,7 +7159,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -7090,14 +7188,13 @@ paths:
           required: true
           schema:
             type: string
-            pattern: ^[0-9a-z_\-.]+$
       responses:
         '200':
           description: ''
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ServiceAccountResource'
+                $ref: '#/components/schemas/ServiceAccountResourceV1'
               example:
                 apiVersion: v1
                 kind: ServiceAccount
@@ -7161,13 +7258,13 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
             curl \
               --request GET \
-              --url 'http://localhost:8080/public/self-serve/v1/cluster/my-cluster/service-account/my-service-account' \
+              --url 'http://localhost:8080/public/self-serve/v1/cluster/my-cluster/service-account/sa-clicko-dev' \
               --header 'Authorization: Bearer $BEARER' \
               --location \
               --max-redirs 32
@@ -7187,7 +7284,6 @@ paths:
           required: true
           schema:
             type: string
-            pattern: ^[0-9a-z_\-.]+$
       responses:
         '200':
           description: ''
@@ -7240,13 +7336,13 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
             curl \
               --request DELETE \
-              --url 'http://localhost:8080/public/self-serve/v1/cluster/my-cluster/service-account/my-service-account' \
+              --url 'http://localhost:8080/public/self-serve/v1/cluster/my-cluster/service-account/sa-clicko-dev' \
               --header 'Authorization: Bearer $BEARER' \
               --location \
               --max-redirs 32
@@ -7270,7 +7366,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ServiceAccountResource'
+                  $ref: '#/components/schemas/ServiceAccountResourceV1'
               example:
                 - apiVersion: v1
                   kind: ServiceAccount
@@ -7334,7 +7430,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -7365,7 +7461,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ServiceAccountResource'
+              $ref: '#/components/schemas/ServiceAccountResourceV1'
             example:
               apiVersion: v1
               kind: ServiceAccount
@@ -7395,7 +7491,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ServiceAccountApplyResult'
+                $ref: '#/components/schemas/ServiceAccountApplyResultV1'
         '400':
           description: The request is not valid
           content:
@@ -7445,7 +7541,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -7476,7 +7572,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/KafkaClusterResource'
+                $ref: '#/components/schemas/KafkaClusterResourceV2'
               example:
                 apiVersion: v2
                 kind: KafkaCluster
@@ -7541,7 +7637,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -7615,7 +7711,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -7639,7 +7735,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/KafkaClusterResource'
+                  $ref: '#/components/schemas/KafkaClusterResourceV2'
               example:
                 - apiVersion: v2
                   kind: KafkaCluster
@@ -7704,7 +7800,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -7730,7 +7826,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/KafkaClusterResource'
+              $ref: '#/components/schemas/KafkaClusterResourceV2'
             example:
               apiVersion: v2
               kind: KafkaCluster
@@ -7761,7 +7857,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/KafkaClusterApplyResult'
+                $ref: '#/components/schemas/KafkaClusterApplyResultV2'
         '400':
           description: The request is not valid
           content:
@@ -7811,7 +7907,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -7847,7 +7943,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/KafkaConnectClusterResource'
+                $ref: '#/components/schemas/KafkaConnectClusterResourceV2'
               example:
                 apiVersion: v2
                 kind: KafkaConnectCluster
@@ -7908,7 +8004,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -7987,7 +8083,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -8017,7 +8113,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/KafkaConnectClusterResource'
+                  $ref: '#/components/schemas/KafkaConnectClusterResourceV2'
               example:
                 - apiVersion: v2
                   kind: KafkaConnectCluster
@@ -8078,7 +8174,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -8109,7 +8205,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/KafkaConnectClusterResource'
+              $ref: '#/components/schemas/KafkaConnectClusterResourceV2'
             example:
               apiVersion: v2
               kind: KafkaConnectCluster
@@ -8136,7 +8232,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/KafkaConnectClusterApplyResult'
+                $ref: '#/components/schemas/KafkaConnectClusterApplyResultV2'
         '400':
           description: The request is not valid
           content:
@@ -8186,7 +8282,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -8222,7 +8318,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/KsqlDBClusterResource'
+                $ref: '#/components/schemas/KsqlDBClusterResourceV2'
               example:
                 apiVersion: v2
                 kind: KsqlDBCluster
@@ -8281,7 +8377,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -8360,7 +8456,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -8390,7 +8486,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/KsqlDBClusterResource'
+                  $ref: '#/components/schemas/KsqlDBClusterResourceV2'
               example:
                 - apiVersion: v2
                   kind: KsqlDBCluster
@@ -8449,7 +8545,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -8480,7 +8576,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/KsqlDBClusterResource'
+              $ref: '#/components/schemas/KsqlDBClusterResourceV2'
             example:
               apiVersion: v2
               kind: KsqlDBCluster
@@ -8505,7 +8601,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/KsqlDBClusterApplyResult'
+                $ref: '#/components/schemas/KsqlDBClusterApplyResultV2'
         '400':
           description: The request is not valid
           content:
@@ -8555,7 +8651,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -8651,7 +8747,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -8723,7 +8819,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-cdk-run-version: '1'
       x-cdk-run-name: partnerZoneGenerateCredentials
       x-cdk-run-doc: generate a token for a partner zone service account
@@ -8802,7 +8898,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -8831,7 +8927,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PartnerZoneOutputResource'
+                $ref: '#/components/schemas/PartnerZoneOutputResourceV2'
               example:
                 apiVersion: v2
                 kind: PartnerZone
@@ -8840,6 +8936,8 @@ paths:
                   id: 00000000-0000-0000-0000-000000000000
                   updatedAt: '2021-09-01T00:00:00Z'
                   status: READY
+                  labels:
+                    project: projectA
                 spec:
                   cluster: my-cluster
                   displayName: John's partner zone
@@ -8854,6 +8952,20 @@ paths:
                     role: Data analyst
                     email: johndoe@company.io
                     phone: 07827 837 177
+                  trafficControlPolicies:
+                    maxProduceRate: 1000000
+                    maxConsumeRate: 2000000
+                    limitCommitOffset: 30
+                  headers:
+                    addOnProduce:
+                      - key: X-My-Header
+                        value: my-x-value
+                        overrideIfExists: false
+                      - key: Y-My-Header
+                        value: my-y-value
+                        overrideIfExists: true
+                    removeOnConsume:
+                      - keyRegex: my_org_prefix.*
         '400':
           description: The request is not valid
           content:
@@ -8895,7 +9007,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -8969,7 +9081,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -8993,7 +9105,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/PartnerZoneOutputResource'
+                  $ref: '#/components/schemas/PartnerZoneOutputResourceV2'
               example:
                 - apiVersion: v2
                   kind: PartnerZone
@@ -9002,6 +9114,8 @@ paths:
                     id: 00000000-0000-0000-0000-000000000000
                     updatedAt: '2021-09-01T00:00:00Z'
                     status: READY
+                    labels:
+                      project: projectA
                   spec:
                     cluster: my-cluster
                     displayName: John's partner zone
@@ -9016,6 +9130,20 @@ paths:
                       role: Data analyst
                       email: johndoe@company.io
                       phone: 07827 837 177
+                    trafficControlPolicies:
+                      maxProduceRate: 1000000
+                      maxConsumeRate: 2000000
+                      limitCommitOffset: 30
+                    headers:
+                      addOnProduce:
+                        - key: X-My-Header
+                          value: my-x-value
+                          overrideIfExists: false
+                        - key: Y-My-Header
+                          value: my-y-value
+                          overrideIfExists: true
+                      removeOnConsume:
+                        - keyRegex: my_org_prefix.*
         '400':
           description: The request is not valid
           content:
@@ -9057,7 +9185,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -9083,12 +9211,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PartnerZoneResource'
+              $ref: '#/components/schemas/PartnerZoneResourceV2'
             example:
               apiVersion: v2
               kind: PartnerZone
               metadata:
                 name: john-partner-zone
+                labels:
+                  project: projectA
               spec:
                 cluster: my-cluster
                 displayName: John's partner zone
@@ -9103,6 +9233,20 @@ paths:
                   role: Data analyst
                   email: johndoe@company.io
                   phone: 07827 837 177
+                trafficControlPolicies:
+                  maxProduceRate: 1000000
+                  maxConsumeRate: 2000000
+                  limitCommitOffset: 30
+                headers:
+                  addOnProduce:
+                    - key: X-My-Header
+                      value: my-x-value
+                      overrideIfExists: false
+                    - key: Y-My-Header
+                      value: my-y-value
+                      overrideIfExists: true
+                  removeOnConsume:
+                    - keyRegex: my_org_prefix.*
         required: true
       responses:
         '200':
@@ -9110,7 +9254,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PartnerZoneApplyResult'
+                $ref: '#/components/schemas/PartnerZoneApplyResultV2'
         '400':
           description: The request is not valid
           content:
@@ -9160,7 +9304,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -9169,7 +9313,701 @@ paths:
               --url 'http://localhost:8080/public/console/v2/partner-zone?dryMode=false' \
               --header 'Authorization: Bearer $BEARER' \
               --header 'Content-Type: application/json' \
-              --data-raw '{"apiVersion":"v2","kind":"PartnerZone","metadata":{"name":"john-partner-zone"},"spec":{"cluster":"my-cluster","displayName":"John\'s partner zone","url":"http://conduktor.io","serviceAccount":"johndoe","topics":[{"name":"topic-a","backingTopic":"kafka-topic-a","permission":"WRITE"}],"partner":{"name":"John Doe","role":"Data analyst","email":"johndoe@company.io","phone":"07827 837 177"}}}' \
+              --data-raw '{"apiVersion":"v2","kind":"PartnerZone","metadata":{"name":"john-partner-zone","labels":{"project":"projectA"}},"spec":{"cluster":"my-cluster","displayName":"John\'s partner zone","url":"http://conduktor.io","serviceAccount":"johndoe","topics":[{"name":"topic-a","backingTopic":"kafka-topic-a","permission":"WRITE"}],"partner":{"name":"John Doe","role":"Data analyst","email":"johndoe@company.io","phone":"07827 837 177"},"trafficControlPolicies":{"maxProduceRate":1000000,"maxConsumeRate":2000000,"limitCommitOffset":30},"headers":{"addOnProduce":[{"key":"X-My-Header","value":"my-x-value","overrideIfExists":false},{"key":"Y-My-Header","value":"my-y-value","overrideIfExists":true}],"removeOnConsume":[{"keyRegex":"my_org_prefix.*"}]}}}' \
+              --location \
+              --max-redirs 32
+  /public/data-quality/v1/data-quality-rule/{data-quality-rule-name}:
+    get:
+      tags:
+        - cli_data-quality-rule_data-quality_v1_17
+      description: Get DataQualityRule by name
+      operationId: get-data-quality-rule-by-name
+      parameters:
+        - name: data-quality-rule-name
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: ^[0-9a-z_\-.]+$
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataQualityRuleOutputResourceV1'
+              example:
+                apiVersion: v1
+                kind: DataQualityRule
+                metadata:
+                  name: my-rule
+                  createdAt: '1970-01-01T00:00:00Z'
+                  updatedAt: '1970-01-01T00:00:00Z'
+                spec:
+                  celExpression: message.user == 'admin'
+                  message: Only admin can do this
+                  displayName: Admin only
+                  description: Allow only admin
+                  type: CelSpec
+        '400':
+          description: The request is not valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+              example:
+                title: The request is not valid
+        '401':
+          description: The user is not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+              example:
+                title: The user is not authenticated
+        '403':
+          description: The user doesn't have sufficient privilege to do this operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden'
+              example:
+                title: The user doesn't have sufficient privilege to do this operation
+        '404':
+          description: No data-quality-rule with this technical id exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+              example:
+                title: No data-quality-rule with this technical id exists
+        '500':
+          description: An unexpected error occurred in the server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+              example:
+                title: An unexpected error occurred in the server
+      security:
+        - httpAuth: []
+      x-codeSamples:
+        - lang: Shell + Curl
+          source: |-
+            curl \
+              --request GET \
+              --url 'http://localhost:8080/public/data-quality/v1/data-quality-rule/my-data-quality-rule' \
+              --header 'Authorization: Bearer $BEARER' \
+              --location \
+              --max-redirs 32
+    delete:
+      tags:
+        - cli_data-quality-rule_data-quality_v1_17
+      description: Delete a DataQualityRule
+      operationId: delete-data-quality-rule
+      parameters:
+        - name: data-quality-rule-name
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: ^[0-9a-z_\-.]+$
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: The request is not valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+              example:
+                title: The request is not valid
+        '401':
+          description: The user is not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+              example:
+                title: The user is not authenticated
+        '403':
+          description: The user doesn't have sufficient privilege to do this operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden'
+              example:
+                title: The user doesn't have sufficient privilege to do this operation
+        '404':
+          description: No data-quality-rule with this technical id exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+              example:
+                title: No data-quality-rule with this technical id exists
+        '409':
+          description: Resource link to an other resource
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conflict'
+              example:
+                title: Resource link to an other resource
+        '500':
+          description: An unexpected error occurred in the server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+              example:
+                title: An unexpected error occurred in the server
+      security:
+        - httpAuth: []
+      x-codeSamples:
+        - lang: Shell + Curl
+          source: |-
+            curl \
+              --request DELETE \
+              --url 'http://localhost:8080/public/data-quality/v1/data-quality-rule/my-data-quality-rule' \
+              --header 'Authorization: Bearer $BEARER' \
+              --location \
+              --max-redirs 32
+  /public/data-quality/v1/data-quality-rule:
+    get:
+      tags:
+        - cli_data-quality-rule_data-quality_v1_17
+      description: List DataQualityRule resources
+      operationId: list-data-quality-rule-resources
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DataQualityRuleOutputResourceV1'
+              example:
+                - apiVersion: v1
+                  kind: DataQualityRule
+                  metadata:
+                    name: my-rule
+                    createdAt: '1970-01-01T00:00:00Z'
+                    updatedAt: '1970-01-01T00:00:00Z'
+                  spec:
+                    celExpression: message.user == 'admin'
+                    message: Only admin can do this
+                    displayName: Admin only
+                    description: Allow only admin
+                    type: CelSpec
+        '400':
+          description: The request is not valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+              example:
+                title: The request is not valid
+        '401':
+          description: The user is not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+              example:
+                title: The user is not authenticated
+        '403':
+          description: The user doesn't have sufficient privilege to do this operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden'
+              example:
+                title: The user doesn't have sufficient privilege to do this operation
+        '404':
+          description: No data-quality-rule with this name exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+              example:
+                title: No data-quality-rule with this name exists
+        '500':
+          description: An unexpected error occurred in the server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+              example:
+                title: An unexpected error occurred in the server
+      security:
+        - httpAuth: []
+      x-codeSamples:
+        - lang: Shell + Curl
+          source: |-
+            curl \
+              --request GET \
+              --url 'http://localhost:8080/public/data-quality/v1/data-quality-rule' \
+              --header 'Authorization: Bearer $BEARER' \
+              --location \
+              --max-redirs 32
+    put:
+      tags:
+        - cli_data-quality-rule_data-quality_v1_17
+      description: Create or update a DataQualityRule
+      operationId: create-or-update-data-quality-rule
+      parameters:
+        - name: dryMode
+          in: query
+          required: false
+          schema:
+            default: false
+            type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataQualityRuleResourceV1'
+            example:
+              apiVersion: v1
+              kind: DataQualityRule
+              metadata:
+                name: my-rule
+                labels: {}
+              spec:
+                celExpression: message.user == 'admin'
+                message: Only admin can do this
+                displayName: Admin only
+                description: Allow only admin
+                type: CelSpec
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataQualityRuleApplyResultV1'
+        '400':
+          description: The request is not valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+              example:
+                title: The request is not valid
+        '401':
+          description: The user is not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+              example:
+                title: The user is not authenticated
+        '403':
+          description: The user doesn't have sufficient privilege to do this operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden'
+              example:
+                title: The user doesn't have sufficient privilege to do this operation
+        '404':
+          description: No data-quality-rule with this technical id exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+              example:
+                title: No data-quality-rule with this technical id exists
+        '409':
+          description: The request does not match one of the business rules
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conflict'
+              example:
+                title: The request does not match one of the business rules
+        '500':
+          description: An unexpected error occurred in the server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+              example:
+                title: An unexpected error occurred in the server
+      security:
+        - httpAuth: []
+      x-codeSamples:
+        - lang: Shell + Curl
+          source: |-
+            curl \
+              --request PUT \
+              --url 'http://localhost:8080/public/data-quality/v1/data-quality-rule?dryMode=false' \
+              --header 'Authorization: Bearer $BEARER' \
+              --header 'Content-Type: application/json' \
+              --data-raw '{"apiVersion":"v1","kind":"DataQualityRule","metadata":{"name":"my-rule","labels":{}},"spec":{"celExpression":"message.user == \'admin\'","message":"Only admin can do this","displayName":"Admin only","description":"Allow only admin","type":"CelSpec"}}' \
+              --location \
+              --max-redirs 32
+  /public/data-quality/v1/data-quality-policy/{data-quality-policy-name}:
+    get:
+      tags:
+        - cli_data-quality-policy_data-quality_v1_18
+      description: Get DataQualityPolicy by name
+      operationId: get-data-quality-policy-by-name
+      parameters:
+        - name: data-quality-policy-name
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: ^[0-9a-z_\-.]+$
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataQualityPolicyOutputResourceV1'
+              example:
+                apiVersion: v1
+                kind: DataQualityPolicy
+                metadata:
+                  name: my-policy
+                  createdAt: '1970-01-01T00:00:00Z'
+                  updatedAt: '1970-01-01T00:00:00Z'
+                spec:
+                  displayName: My policy
+                  description: My policy description
+                  rule: my-rule
+                  targetSelectors:
+                    - targets:
+                        - clusterSlug: my-cluster1
+                          topicRegex: topic
+                        - clusterSlug: my-cluster2
+                          topicRegex: topic-*
+                      type: DirectTargets
+                  actions:
+                    - type: Report
+                    - type: Block
+        '400':
+          description: The request is not valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+              example:
+                title: The request is not valid
+        '401':
+          description: The user is not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+              example:
+                title: The user is not authenticated
+        '403':
+          description: The user doesn't have sufficient privilege to do this operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden'
+              example:
+                title: The user doesn't have sufficient privilege to do this operation
+        '404':
+          description: No data-quality-policy with this technical id exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+              example:
+                title: No data-quality-policy with this technical id exists
+        '500':
+          description: An unexpected error occurred in the server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+              example:
+                title: An unexpected error occurred in the server
+      security:
+        - httpAuth: []
+      x-codeSamples:
+        - lang: Shell + Curl
+          source: |-
+            curl \
+              --request GET \
+              --url 'http://localhost:8080/public/data-quality/v1/data-quality-policy/my-data-quality-policy' \
+              --header 'Authorization: Bearer $BEARER' \
+              --location \
+              --max-redirs 32
+    delete:
+      tags:
+        - cli_data-quality-policy_data-quality_v1_18
+      description: Delete a DataQualityPolicy
+      operationId: delete-data-quality-policy
+      parameters:
+        - name: data-quality-policy-name
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: ^[0-9a-z_\-.]+$
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: The request is not valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+              example:
+                title: The request is not valid
+        '401':
+          description: The user is not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+              example:
+                title: The user is not authenticated
+        '403':
+          description: The user doesn't have sufficient privilege to do this operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden'
+              example:
+                title: The user doesn't have sufficient privilege to do this operation
+        '404':
+          description: No data-quality-policy with this technical id exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+              example:
+                title: No data-quality-policy with this technical id exists
+        '409':
+          description: Resource link to an other resource
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conflict'
+              example:
+                title: Resource link to an other resource
+        '500':
+          description: An unexpected error occurred in the server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+              example:
+                title: An unexpected error occurred in the server
+      security:
+        - httpAuth: []
+      x-codeSamples:
+        - lang: Shell + Curl
+          source: |-
+            curl \
+              --request DELETE \
+              --url 'http://localhost:8080/public/data-quality/v1/data-quality-policy/my-data-quality-policy' \
+              --header 'Authorization: Bearer $BEARER' \
+              --location \
+              --max-redirs 32
+  /public/data-quality/v1/data-quality-policy:
+    get:
+      tags:
+        - cli_data-quality-policy_data-quality_v1_18
+      description: List DataQualityPolicy resources
+      operationId: list-data-quality-policy-resources
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DataQualityPolicyOutputResourceV1'
+              example:
+                - apiVersion: v1
+                  kind: DataQualityPolicy
+                  metadata:
+                    name: my-policy
+                    createdAt: '1970-01-01T00:00:00Z'
+                    updatedAt: '1970-01-01T00:00:00Z'
+                  spec:
+                    displayName: My policy
+                    description: My policy description
+                    rule: my-rule
+                    targetSelectors:
+                      - targets:
+                          - clusterSlug: my-cluster1
+                            topicRegex: topic
+                          - clusterSlug: my-cluster2
+                            topicRegex: topic-*
+                        type: DirectTargets
+                    actions:
+                      - type: Report
+                      - type: Block
+        '400':
+          description: The request is not valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+              example:
+                title: The request is not valid
+        '401':
+          description: The user is not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+              example:
+                title: The user is not authenticated
+        '403':
+          description: The user doesn't have sufficient privilege to do this operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden'
+              example:
+                title: The user doesn't have sufficient privilege to do this operation
+        '404':
+          description: No data-quality-policy with this name exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+              example:
+                title: No data-quality-policy with this name exists
+        '500':
+          description: An unexpected error occurred in the server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+              example:
+                title: An unexpected error occurred in the server
+      security:
+        - httpAuth: []
+      x-codeSamples:
+        - lang: Shell + Curl
+          source: |-
+            curl \
+              --request GET \
+              --url 'http://localhost:8080/public/data-quality/v1/data-quality-policy' \
+              --header 'Authorization: Bearer $BEARER' \
+              --location \
+              --max-redirs 32
+    put:
+      tags:
+        - cli_data-quality-policy_data-quality_v1_18
+      description: Create or update a DataQualityPolicy
+      operationId: create-or-update-data-quality-policy
+      parameters:
+        - name: dryMode
+          in: query
+          required: false
+          schema:
+            default: false
+            type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataQualityPolicyResourceV1'
+            example:
+              apiVersion: v1
+              kind: DataQualityPolicy
+              metadata:
+                name: my-policy
+                labels: {}
+              spec:
+                displayName: My policy
+                description: My policy description
+                rule: my-rule
+                targetSelectors:
+                  - targets:
+                      - clusterSlug: my-cluster1
+                        topicRegex: topic
+                      - clusterSlug: my-cluster2
+                        topicRegex: topic-*
+                    type: DirectTargets
+                actions:
+                  - type: Report
+                  - type: Block
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataQualityPolicyApplyResultV1'
+        '400':
+          description: The request is not valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+              example:
+                title: The request is not valid
+        '401':
+          description: The user is not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+              example:
+                title: The user is not authenticated
+        '403':
+          description: The user doesn't have sufficient privilege to do this operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden'
+              example:
+                title: The user doesn't have sufficient privilege to do this operation
+        '404':
+          description: No data-quality-policy with this technical id exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+              example:
+                title: No data-quality-policy with this technical id exists
+        '409':
+          description: The request does not match one of the business rules
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conflict'
+              example:
+                title: The request does not match one of the business rules
+        '500':
+          description: An unexpected error occurred in the server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+              example:
+                title: An unexpected error occurred in the server
+      security:
+        - httpAuth: []
+      x-codeSamples:
+        - lang: Shell + Curl
+          source: |-
+            curl \
+              --request PUT \
+              --url 'http://localhost:8080/public/data-quality/v1/data-quality-policy?dryMode=false' \
+              --header 'Authorization: Bearer $BEARER' \
+              --header 'Content-Type: application/json' \
+              --data-raw '{"apiVersion":"v1","kind":"DataQualityPolicy","metadata":{"name":"my-policy","labels":{}},"spec":{"displayName":"My policy","description":"My policy description","rule":"my-rule","targetSelectors":[{"targets":[{"clusterSlug":"my-cluster1","topicRegex":"topic"},{"clusterSlug":"my-cluster2","topicRegex":"topic-*"}],"type":"DirectTargets"}],"actions":[{"type":"Report"},{"type":"Block"}]}}' \
               --location \
               --max-redirs 32
   /public/sql/v1/execute:
@@ -9243,7 +10081,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -9324,7 +10162,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -9358,7 +10196,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/IndexedTopicResource'
+                $ref: '#/components/schemas/IndexedTopicResourceV1'
               example:
                 apiVersion: v1
                 kind: IndexedTopic
@@ -9408,7 +10246,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -9487,7 +10325,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -9517,7 +10355,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/IndexedTopicResource'
+                  $ref: '#/components/schemas/IndexedTopicResourceV1'
               example:
                 - apiVersion: v1
                   kind: IndexedTopic
@@ -9567,7 +10405,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -9598,7 +10436,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/IndexedTopicResource'
+              $ref: '#/components/schemas/IndexedTopicResourceV1'
             example:
               apiVersion: v1
               kind: IndexedTopic
@@ -9614,7 +10452,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/IndexedTopicApplyResult'
+                $ref: '#/components/schemas/IndexedTopicApplyResultV1'
         '400':
           description: The request is not valid
           content:
@@ -9664,7 +10502,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -9747,7 +10585,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -9833,7 +10671,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -9924,7 +10762,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -10019,7 +10857,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -10116,7 +10954,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -10217,7 +11055,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -10297,7 +11135,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -10375,7 +11213,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -10466,7 +11304,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -10543,7 +11381,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -10641,7 +11479,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -10732,7 +11570,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -10826,7 +11664,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -10916,7 +11754,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -11003,7 +11841,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -11089,7 +11927,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -11208,7 +12046,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -11292,7 +12130,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -11365,7 +12203,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -11433,7 +12271,7 @@ paths:
                     labels:
                       label-key: label-value
                     lastActivityAt: '2021-03-18T14:00:00Z'
-                    produceRate: 0
+                    produceRate: 0.0
                     type: IndexedTopic
                 page: 1
                 totalPages: 1
@@ -11482,7 +12320,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -11588,7 +12426,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -11688,7 +12526,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -11776,7 +12614,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -11872,7 +12710,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -12017,7 +12855,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -12202,7 +13040,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -12279,7 +13117,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -12356,7 +13194,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -12433,7 +13271,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -12514,7 +13352,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -12596,7 +13434,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -12679,7 +13517,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -12713,7 +13551,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AlertOutputResource'
+                $ref: '#/components/schemas/AlertOutputResourceV2'
               example:
                 apiVersion: v2
                 kind: Alert
@@ -12774,7 +13612,7 @@ paths:
                 title: An unexpected error occurred in the server
       deprecated: true
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -12854,7 +13692,7 @@ paths:
                 title: An unexpected error occurred in the server
       deprecated: true
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -12915,7 +13753,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/AlertOutputResource'
+                  $ref: '#/components/schemas/AlertOutputResourceV2'
               example:
                 - apiVersion: v2
                   kind: Alert
@@ -12976,7 +13814,7 @@ paths:
                 title: An unexpected error occurred in the server
       deprecated: true
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -13007,7 +13845,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AlertResource'
+              $ref: '#/components/schemas/AlertResourceV2'
             example:
               apiVersion: v2
               kind: Alert
@@ -13028,7 +13866,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AlertApplyResult'
+                $ref: '#/components/schemas/AlertApplyResultV2'
         '400':
           description: The request is not valid
           content:
@@ -13079,7 +13917,7 @@ paths:
                 title: An unexpected error occurred in the server
       deprecated: true
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -13106,7 +13944,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AlertResource'
+              $ref: '#/components/schemas/AlertResourceV2'
         required: true
       responses:
         '200':
@@ -13114,7 +13952,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AlertCreateResult'
+                $ref: '#/components/schemas/AlertCreateResultV2'
         '400':
           description: The request is not valid
           content:
@@ -13165,7 +14003,7 @@ paths:
                 title: An unexpected error occurred in the server
       deprecated: true
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -13213,7 +14051,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AlertOutputResource'
+                $ref: '#/components/schemas/AlertOutputResourceV3'
               example:
                 apiVersion: v3
                 kind: Alert
@@ -13278,7 +14116,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -13369,7 +14207,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -13448,7 +14286,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/AlertOutputResource'
+                  $ref: '#/components/schemas/AlertOutputResourceV3'
               example:
                 - apiVersion: v3
                   kind: Alert
@@ -13513,7 +14351,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -13556,7 +14394,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AlertResource'
+              $ref: '#/components/schemas/AlertResourceV3'
             example:
               apiVersion: v3
               kind: Alert
@@ -13581,7 +14419,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AlertApplyResult'
+                $ref: '#/components/schemas/AlertApplyResultV3'
         '400':
           description: The request is not valid
           content:
@@ -13631,7 +14469,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -13670,7 +14508,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AlertResource'
+              $ref: '#/components/schemas/AlertResourceV3'
         required: true
       responses:
         '200':
@@ -13678,7 +14516,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AlertCreateResult'
+                $ref: '#/components/schemas/AlertCreateResultV3'
         '400':
           description: The request is not valid
           content:
@@ -13728,7 +14566,7 @@ paths:
               example:
                 title: An unexpected error occurred in the server
       security:
-        - httpAuth: [ ]
+        - httpAuth: []
       x-codeSamples:
         - lang: Shell + Curl
           source: |-
@@ -13830,6 +14668,29 @@ components:
         - TRANSACTIONAL_ID
         - UNKNOWN
         - USER
+    Action:
+      title: Action
+      oneOf:
+        - $ref: '#/components/schemas/Block'
+        - $ref: '#/components/schemas/Report'
+    AdminToken:
+      title: AdminToken
+      type: object
+      required:
+        - id
+        - name
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          type: string
     Aiven:
       title: Aiven
       type: object
@@ -13989,26 +14850,48 @@ components:
           type: string
         username:
           type: string
-    AlertApplyResult:
-      title: AlertApplyResult
+    AlertApplyResultV2:
+      title: AlertApplyResultV2
       type: object
       required:
         - resource
         - upsertResult
       properties:
         resource:
-          $ref: '#/components/schemas/AlertResource'
+          $ref: '#/components/schemas/AlertResourceV2'
         upsertResult:
           $ref: '#/components/schemas/UpsertResult'
-    AlertCreateResult:
-      title: AlertCreateResult
+    AlertApplyResultV3:
+      title: AlertApplyResultV3
+      type: object
+      required:
+        - resource
+        - upsertResult
+      properties:
+        resource:
+          $ref: '#/components/schemas/AlertResourceV3'
+        upsertResult:
+          $ref: '#/components/schemas/UpsertResult'
+    AlertCreateResultV2:
+      title: AlertCreateResultV2
       type: object
       required:
         - resource
         - createResult
       properties:
         resource:
-          $ref: '#/components/schemas/AlertResource'
+          $ref: '#/components/schemas/AlertResourceV2'
+        createResult:
+          $ref: '#/components/schemas/CreateResult'
+    AlertCreateResultV3:
+      title: AlertCreateResultV3
+      type: object
+      required:
+        - resource
+        - createResult
+      properties:
+        resource:
+          $ref: '#/components/schemas/AlertResourceV3'
         createResult:
           $ref: '#/components/schemas/CreateResult'
     AlertKind:
@@ -14100,8 +14983,8 @@ components:
           pattern: ^[0-9a-z_\-.]+$
         user:
           type: string
-    AlertOutputResource:
-      title: AlertOutputResource
+    AlertOutputResourceV2:
+      title: AlertOutputResourceV2
       type: object
       required:
         - apiVersion
@@ -14118,8 +15001,26 @@ components:
           $ref: '#/components/schemas/AlertMetadataOutput'
         spec:
           $ref: '#/components/schemas/AlertSpecOutputV2'
-    AlertResource:
-      title: AlertResource
+    AlertOutputResourceV3:
+      title: AlertOutputResourceV3
+      type: object
+      required:
+        - apiVersion
+        - kind
+        - metadata
+        - spec
+      properties:
+        apiVersion:
+          type: string
+          pattern: v3
+        kind:
+          $ref: '#/components/schemas/AlertKind'
+        metadata:
+          $ref: '#/components/schemas/AlertMetadataOutputV3'
+        spec:
+          $ref: '#/components/schemas/AlertSpecOutputV3'
+    AlertResourceV2:
+      title: AlertResourceV2
       type: object
       required:
         - apiVersion
@@ -14136,6 +15037,24 @@ components:
           $ref: '#/components/schemas/AlertMetadata'
         spec:
           $ref: '#/components/schemas/AlertSpecV2'
+    AlertResourceV3:
+      title: AlertResourceV3
+      type: object
+      required:
+        - apiVersion
+        - kind
+        - metadata
+        - spec
+      properties:
+        apiVersion:
+          type: string
+          pattern: v3
+        kind:
+          $ref: '#/components/schemas/AlertKind'
+        metadata:
+          $ref: '#/components/schemas/AlertMetadataV3'
+        spec:
+          $ref: '#/components/schemas/AlertSpecV3'
     AlertSpecOutputV2:
       title: AlertSpecOutputV2
       oneOf:
@@ -14267,26 +15186,26 @@ components:
           format: date-time
         secret:
           type: string
-    ApplicationApplyResult:
-      title: ApplicationApplyResult
+    ApplicationApplyResultV1:
+      title: ApplicationApplyResultV1
       type: object
       required:
         - resource
         - upsertResult
       properties:
         resource:
-          $ref: '#/components/schemas/ApplicationResource'
+          $ref: '#/components/schemas/ApplicationResourceV1'
         upsertResult:
           $ref: '#/components/schemas/UpsertResult'
-    ApplicationGroupApplyResult:
-      title: ApplicationGroupApplyResult
+    ApplicationGroupApplyResultV1:
+      title: ApplicationGroupApplyResultV1
       type: object
       required:
         - resource
         - upsertResult
       properties:
         resource:
-          $ref: '#/components/schemas/ApplicationGroupResource'
+          $ref: '#/components/schemas/ApplicationGroupResourceV1'
         upsertResult:
           $ref: '#/components/schemas/UpsertResult'
     ApplicationGroupKind:
@@ -14307,8 +15226,8 @@ components:
         name:
           type: string
           pattern: ^[0-9a-z_\-.]+$
-    ApplicationGroupResource:
-      title: ApplicationGroupResource
+    ApplicationGroupResourceV1:
+      title: ApplicationGroupResourceV1
       type: object
       required:
         - apiVersion
@@ -14355,15 +15274,15 @@ components:
           uniqueItems: true
           items:
             type: string
-    ApplicationInstanceApplyResult:
-      title: ApplicationInstanceApplyResult
+    ApplicationInstanceApplyResultV1:
+      title: ApplicationInstanceApplyResultV1
       type: object
       required:
         - resource
         - upsertResult
       properties:
         resource:
-          $ref: '#/components/schemas/ApplicationInstanceResource'
+          $ref: '#/components/schemas/ApplicationInstanceResourceV1'
         upsertResult:
           $ref: '#/components/schemas/UpsertResult'
     ApplicationInstanceKind:
@@ -14384,15 +15303,15 @@ components:
         application:
           type: string
           pattern: ^[0-9a-z_\-.]+$
-    ApplicationInstancePermissionApplyResult:
-      title: ApplicationInstancePermissionApplyResult
+    ApplicationInstancePermissionApplyResultV1:
+      title: ApplicationInstancePermissionApplyResultV1
       type: object
       required:
         - resource
         - upsertResult
       properties:
         resource:
-          $ref: '#/components/schemas/ApplicationInstancePermissionResource'
+          $ref: '#/components/schemas/ApplicationInstancePermissionResourceV1'
         upsertResult:
           $ref: '#/components/schemas/UpsertResult'
     ApplicationInstancePermissionKind:
@@ -14417,8 +15336,8 @@ components:
         name:
           type: string
           pattern: ^[0-9a-z_\-.]+$
-    ApplicationInstancePermissionResource:
-      title: ApplicationInstancePermissionResource
+    ApplicationInstancePermissionResourceV1:
+      title: ApplicationInstancePermissionResourceV1
       type: object
       required:
         - apiVersion
@@ -14450,8 +15369,8 @@ components:
         grantedTo:
           type: string
           pattern: ^[0-9a-z_\-.]+$
-    ApplicationInstanceResource:
-      title: ApplicationInstanceResource
+    ApplicationInstanceResourceV1:
+      title: ApplicationInstanceResourceV1
       type: object
       required:
         - apiVersion
@@ -14493,6 +15412,22 @@ components:
           type: string
         defaultCatalogVisibility:
           $ref: '#/components/schemas/CatalogVisibility'
+    ApplicationInstanceToken:
+      title: ApplicationInstanceToken
+      type: object
+      required:
+        - id
+        - name
+        - applicationInstanceName
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        applicationInstanceName:
+          type: string
+          pattern: ^[0-9a-z_\-.]+$
     ApplicationKind:
       title: ApplicationKind
       type: string
@@ -14524,8 +15459,22 @@ components:
       properties:
         policies:
           $ref: '#/components/schemas/Map_PolicyConstraintDto'
-    ApplicationResource:
-      title: ApplicationResource
+    ApplicationResourcePermissionDto_Any:
+      title: ApplicationResourcePermissionDto_Any
+      oneOf:
+        - $ref: '#/components/schemas/CONNECTOR'
+        - $ref: '#/components/schemas/CONSUMER_GROUP1'
+        - $ref: '#/components/schemas/SUBJECT1'
+        - $ref: '#/components/schemas/TOPIC1'
+      discriminator:
+        propertyName: resourceType
+        mapping:
+          CONNECTOR: '#/components/schemas/CONNECTOR'
+          CONSUMER_GROUP: '#/components/schemas/CONSUMER_GROUP1'
+          SUBJECT: '#/components/schemas/SUBJECT1'
+          TOPIC: '#/components/schemas/TOPIC1'
+    ApplicationResourceV1:
+      title: ApplicationResourceV1
       type: object
       required:
         - apiVersion
@@ -14542,20 +15491,6 @@ components:
           $ref: '#/components/schemas/ApplicationMetadata'
         spec:
           $ref: '#/components/schemas/ApplicationSpec'
-    ApplicationResourcePermissionDto_Any:
-      title: ApplicationResourcePermissionDto_Any
-      oneOf:
-        - $ref: '#/components/schemas/CONNECTOR'
-        - $ref: '#/components/schemas/CONSUMER_GROUP1'
-        - $ref: '#/components/schemas/SUBJECT1'
-        - $ref: '#/components/schemas/TOPIC1'
-      discriminator:
-        propertyName: resourceType
-        mapping:
-          CONNECTOR: '#/components/schemas/CONNECTOR'
-          CONSUMER_GROUP: '#/components/schemas/CONSUMER_GROUP1'
-          SUBJECT: '#/components/schemas/SUBJECT1'
-          TOPIC: '#/components/schemas/TOPIC1'
     ApplicationSpec:
       title: ApplicationSpec
       type: object
@@ -14703,6 +15638,12 @@ components:
         type:
           type: string
           const: BearerToken
+    Block:
+      title: Block
+      type: object
+      properties:
+        dlqTopic:
+          type: string
     BrokerAlertOutputV2:
       title: BrokerAlertOutputV2
       type: object
@@ -14968,6 +15909,21 @@ components:
       enum:
         - PRIVATE
         - PUBLIC
+    CelSpec:
+      title: CelSpec
+      type: object
+      required:
+        - celExpression
+        - message
+      properties:
+        celExpression:
+          type: string
+        message:
+          type: string
+        displayName:
+          type: string
+        description:
+          type: string
     CleanupPolicy:
       title: CleanupPolicy
       type: string
@@ -15164,26 +16120,26 @@ components:
         type:
           type: string
           const: ConfluentResponse
-    ConnectorApplyResult:
-      title: ConnectorApplyResult
+    ConnectorApplyResultV2:
+      title: ConnectorApplyResultV2
       type: object
       required:
         - resource
         - upsertResult
       properties:
         resource:
-          $ref: '#/components/schemas/ConnectorResource'
+          $ref: '#/components/schemas/ConnectorResourceV2'
         upsertResult:
           $ref: '#/components/schemas/UpsertResult'
-    ConnectorCreateResult:
-      title: ConnectorCreateResult
+    ConnectorCreateResultV2:
+      title: ConnectorCreateResultV2
       type: object
       required:
         - resource
         - createResult
       properties:
         resource:
-          $ref: '#/components/schemas/ConnectorResource'
+          $ref: '#/components/schemas/ConnectorResourceV2'
         createResult:
           $ref: '#/components/schemas/CreateResult'
     ConnectorKind:
@@ -15212,8 +16168,8 @@ components:
           $ref: '#/components/schemas/AutoRestartConfig'
         description:
           type: string
-    ConnectorResource:
-      title: ConnectorResource
+    ConnectorResourceV2:
+      title: ConnectorResourceV2
       type: object
       required:
         - apiVersion
@@ -15247,7 +16203,6 @@ components:
         - NoneOf
         - OneOf
         - Range
-      const: Match
     ConsumerGroup:
       title: ConsumerGroup
       type: object
@@ -15550,6 +16505,187 @@ components:
         type:
           type: string
           const: Credentials
+    DataQualityPolicyApplyResultV1:
+      title: DataQualityPolicyApplyResultV1
+      type: object
+      required:
+        - resource
+        - upsertResult
+      properties:
+        resource:
+          $ref: '#/components/schemas/DataQualityPolicyResourceV1'
+        upsertResult:
+          $ref: '#/components/schemas/UpsertResult'
+    DataQualityPolicyKind:
+      title: DataQualityPolicyKind
+      type: string
+      enum:
+        - DataQualityPolicy
+    DataQualityPolicyMetadata:
+      title: DataQualityPolicyMetadata
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        labels:
+          $ref: '#/components/schemas/Map_LabelKey_String'
+    DataQualityPolicyMetadataOutput:
+      title: DataQualityPolicyMetadataOutput
+      type: object
+      required:
+        - name
+        - createdAt
+        - updatedAt
+      properties:
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    DataQualityPolicyOutputResourceV1:
+      title: DataQualityPolicyOutputResourceV1
+      type: object
+      required:
+        - apiVersion
+        - kind
+        - metadata
+        - spec
+      properties:
+        apiVersion:
+          type: string
+          pattern: v1
+        kind:
+          $ref: '#/components/schemas/DataQualityPolicyKind'
+        metadata:
+          $ref: '#/components/schemas/DataQualityPolicyMetadataOutput'
+        spec:
+          $ref: '#/components/schemas/DataQualityPolicySpec'
+    DataQualityPolicyResourceV1:
+      title: DataQualityPolicyResourceV1
+      type: object
+      required:
+        - apiVersion
+        - kind
+        - metadata
+        - spec
+      properties:
+        apiVersion:
+          type: string
+          pattern: v1
+        kind:
+          $ref: '#/components/schemas/DataQualityPolicyKind'
+        metadata:
+          $ref: '#/components/schemas/DataQualityPolicyMetadata'
+        spec:
+          $ref: '#/components/schemas/DataQualityPolicySpec'
+    DataQualityPolicySpec:
+      title: DataQualityPolicySpec
+      type: object
+      required:
+        - rule
+      properties:
+        displayName:
+          type: string
+        description:
+          type: string
+        rule:
+          type: string
+        targetSelectors:
+          type: array
+          items:
+            $ref: '#/components/schemas/TargetSelector'
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Action'
+    DataQualityRuleApplyResultV1:
+      title: DataQualityRuleApplyResultV1
+      type: object
+      required:
+        - resource
+        - upsertResult
+      properties:
+        resource:
+          $ref: '#/components/schemas/DataQualityRuleResourceV1'
+        upsertResult:
+          $ref: '#/components/schemas/UpsertResult'
+    DataQualityRuleKind:
+      title: DataQualityRuleKind
+      type: string
+      enum:
+        - DataQualityRule
+    DataQualityRuleMetadata:
+      title: DataQualityRuleMetadata
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        labels:
+          $ref: '#/components/schemas/Map_LabelKey_String'
+    DataQualityRuleMetadataOutput:
+      title: DataQualityRuleMetadataOutput
+      type: object
+      required:
+        - name
+        - createdAt
+        - updatedAt
+      properties:
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    DataQualityRuleOutputResourceV1:
+      title: DataQualityRuleOutputResourceV1
+      type: object
+      required:
+        - apiVersion
+        - kind
+        - metadata
+        - spec
+      properties:
+        apiVersion:
+          type: string
+          pattern: v1
+        kind:
+          $ref: '#/components/schemas/DataQualityRuleKind'
+        metadata:
+          $ref: '#/components/schemas/DataQualityRuleMetadataOutput'
+        spec:
+          $ref: '#/components/schemas/DataQualityRuleSpec'
+    DataQualityRuleResourceV1:
+      title: DataQualityRuleResourceV1
+      type: object
+      required:
+        - apiVersion
+        - kind
+        - metadata
+        - spec
+      properties:
+        apiVersion:
+          type: string
+          pattern: v1
+        kind:
+          $ref: '#/components/schemas/DataQualityRuleKind'
+        metadata:
+          $ref: '#/components/schemas/DataQualityRuleMetadata'
+        spec:
+          $ref: '#/components/schemas/DataQualityRuleSpec'
+    DataQualityRuleSpec:
+      title: DataQualityRuleSpec
+      oneOf:
+        - $ref: '#/components/schemas/CelSpec'
+        - $ref: '#/components/schemas/EnforceAvroSpec'
     DecodedCertificate:
       title: DecodedCertificate
       type: object
@@ -15585,6 +16721,22 @@ components:
         - $ref: '#/components/schemas/Slack'
         - $ref: '#/components/schemas/Teams'
         - $ref: '#/components/schemas/Webhook'
+    DirectTargets:
+      title: DirectTargets
+      type: object
+      properties:
+        targets:
+          type: array
+          items:
+            $ref: '#/components/schemas/Target'
+    EnforceAvroSpec:
+      title: EnforceAvroSpec
+      type: object
+      properties:
+        displayName:
+          type: string
+        description:
+          type: string
     ExplainQuery:
       title: ExplainQuery
       type: object
@@ -15770,15 +16922,15 @@ components:
         type:
           type: string
           const: GlueSchemaRegistryResponse
-    GroupApplyResult:
-      title: GroupApplyResult
+    GroupApplyResultV2:
+      title: GroupApplyResultV2
       type: object
       required:
         - resource
         - upsertResult
       properties:
         resource:
-          $ref: '#/components/schemas/GroupResource'
+          $ref: '#/components/schemas/GroupResourceV2'
         upsertResult:
           $ref: '#/components/schemas/UpsertResult'
     GroupKind:
@@ -15795,8 +16947,8 @@ components:
         name:
           type: string
           pattern: ^[0-9a-z_\-.]+$
-    GroupResource:
-      title: GroupResource
+    GroupResourceV2:
+      title: GroupResourceV2
       type: object
       required:
         - apiVersion
@@ -15841,6 +16993,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ResourcePermissions1'
+    Headers:
+      title: Headers
+      type: object
+      properties:
+        addOnProduce:
+          type: array
+          items:
+            $ref: '#/components/schemas/ToAdd'
+        removeOnConsume:
+          type: array
+          items:
+            $ref: '#/components/schemas/ToRemove'
     HideInternal:
       title: HideInternal
       type: object
@@ -15979,20 +17143,20 @@ components:
           type: string
           format: date-time
         produceRate:
-          type: integer
-          format: int32
+          type: number
+          format: double
         type:
           type: string
           const: IndexedTopic
-    IndexedTopicApplyResult:
-      title: IndexedTopicApplyResult
+    IndexedTopicApplyResultV1:
+      title: IndexedTopicApplyResultV1
       type: object
       required:
         - resource
         - upsertResult
       properties:
         resource:
-          $ref: '#/components/schemas/IndexedTopicResource'
+          $ref: '#/components/schemas/IndexedTopicResourceV1'
         upsertResult:
           $ref: '#/components/schemas/UpsertResult'
     IndexedTopicKind:
@@ -16011,8 +17175,8 @@ components:
           type: string
         name:
           type: string
-    IndexedTopicResource:
-      title: IndexedTopicResource
+    IndexedTopicResourceV1:
+      title: IndexedTopicResourceV1
       type: object
       required:
         - apiVersion
@@ -16056,7 +17220,7 @@ components:
         priority:
           type: integer
           format: int32
-        config: { }
+        config: {}
     KAFKA_CONNECT:
       title: KAFKA_CONNECT
       type: object
@@ -16143,15 +17307,15 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/KafkaServiceAccountACL'
-    KafkaClusterApplyResult:
-      title: KafkaClusterApplyResult
+    KafkaClusterApplyResultV2:
+      title: KafkaClusterApplyResultV2
       type: object
       required:
         - resource
         - upsertResult
       properties:
         resource:
-          $ref: '#/components/schemas/KafkaClusterResource'
+          $ref: '#/components/schemas/KafkaClusterResourceV2'
         upsertResult:
           $ref: '#/components/schemas/UpsertResult'
     KafkaClusterKind:
@@ -16170,8 +17334,8 @@ components:
           pattern: ^[0-9a-z_\-.]+$
         labels:
           $ref: '#/components/schemas/Map_LabelKey_String'
-    KafkaClusterResource:
-      title: KafkaClusterResource
+    KafkaClusterResourceV2:
+      title: KafkaClusterResourceV2
       type: object
       required:
         - apiVersion
@@ -16426,15 +17590,15 @@ components:
         type:
           type: string
           const: KafkaConnectBearerToken
-    KafkaConnectClusterApplyResult:
-      title: KafkaConnectClusterApplyResult
+    KafkaConnectClusterApplyResultV2:
+      title: KafkaConnectClusterApplyResultV2
       type: object
       required:
         - resource
         - upsertResult
       properties:
         resource:
-          $ref: '#/components/schemas/KafkaConnectClusterResource'
+          $ref: '#/components/schemas/KafkaConnectClusterResourceV2'
         upsertResult:
           $ref: '#/components/schemas/UpsertResult'
     KafkaConnectClusterKind:
@@ -16442,8 +17606,8 @@ components:
       type: string
       enum:
         - KafkaConnectCluster
-    KafkaConnectClusterResource:
-      title: KafkaConnectClusterResource
+    KafkaConnectClusterResourceV2:
+      title: KafkaConnectClusterResourceV2
       type: object
       required:
         - apiVersion
@@ -16710,15 +17874,15 @@ components:
         type:
           type: string
           const: KsqlDBBearerToken
-    KsqlDBClusterApplyResult:
-      title: KsqlDBClusterApplyResult
+    KsqlDBClusterApplyResultV2:
+      title: KsqlDBClusterApplyResultV2
       type: object
       required:
         - resource
         - upsertResult
       properties:
         resource:
-          $ref: '#/components/schemas/KsqlDBClusterResource'
+          $ref: '#/components/schemas/KsqlDBClusterResourceV2'
         upsertResult:
           $ref: '#/components/schemas/UpsertResult'
     KsqlDBClusterKind:
@@ -16726,8 +17890,8 @@ components:
       type: string
       enum:
         - KsqlDBCluster
-    KsqlDBClusterResource:
-      title: KsqlDBClusterResource
+    KsqlDBClusterResourceV2:
+      title: KsqlDBClusterResourceV2
       type: object
       required:
         - apiVersion
@@ -17182,16 +18346,18 @@ components:
           items:
             type: string
             enum:
-              - auditLogView
               - taasView
               - certificateManage
               - userManage
               - clusterConnectionsManage
               - notificationChannelManage
               - datamaskingView
+              - sqlManage
               - userView
               - testingView
               - datamaskingManage
+              - auditLogView
+              - chargebackManage
               - taasManage
               - notificationChannelView
         resourceType:
@@ -17293,15 +18459,15 @@ components:
           type: string
         phone:
           type: string
-    PartnerZoneApplyResult:
-      title: PartnerZoneApplyResult
+    PartnerZoneApplyResultV2:
+      title: PartnerZoneApplyResultV2
       type: object
       required:
         - resource
         - upsertResult
       properties:
         resource:
-          $ref: '#/components/schemas/PartnerZoneResource'
+          $ref: '#/components/schemas/PartnerZoneResourceV2'
         upsertResult:
           $ref: '#/components/schemas/UpsertResult'
     PartnerZoneKind:
@@ -17318,6 +18484,8 @@ components:
         name:
           type: string
           pattern: ^[0-9a-z_\-.]+$
+        labels:
+          $ref: '#/components/schemas/Map_LabelKey_String'
     PartnerZoneMetadataOutput:
       title: PartnerZoneMetadataOutput
       type: object
@@ -17338,8 +18506,12 @@ components:
           format: date-time
         status:
           $ref: '#/components/schemas/PartnerZoneStatus'
-    PartnerZoneOutputResource:
-      title: PartnerZoneOutputResource
+        failedReason:
+          type: string
+        labels:
+          $ref: '#/components/schemas/Map_LabelKey_String'
+    PartnerZoneOutputResourceV2:
+      title: PartnerZoneOutputResourceV2
       type: object
       required:
         - apiVersion
@@ -17356,8 +18528,8 @@ components:
           $ref: '#/components/schemas/PartnerZoneMetadataOutput'
         spec:
           $ref: '#/components/schemas/PartnerZoneSpec'
-    PartnerZoneResource:
-      title: PartnerZoneResource
+    PartnerZoneResourceV2:
+      title: PartnerZoneResourceV2
       type: object
       required:
         - apiVersion
@@ -17379,9 +18551,7 @@ components:
       type: object
       required:
         - cluster
-        - url
         - serviceAccount
-        - partner
       properties:
         cluster:
           type: string
@@ -17399,6 +18569,10 @@ components:
             $ref: '#/components/schemas/PartnerZoneTopic'
         partner:
           $ref: '#/components/schemas/Partner'
+        trafficControlPolicies:
+          $ref: '#/components/schemas/TrafficControlPolicies'
+        headers:
+          $ref: '#/components/schemas/Headers'
     PartnerZoneStatus:
       title: PartnerZoneStatus
       type: string
@@ -17407,6 +18581,7 @@ components:
         - FAILED
         - PENDING
         - READY
+        - TO_DELETE
     PartnerZoneTopic:
       title: PartnerZoneTopic
       type: object
@@ -17451,16 +18626,18 @@ components:
           items:
             type: string
             enum:
-              - auditLogView
               - taasView
               - certificateManage
               - userManage
               - clusterConnectionsManage
               - notificationChannelManage
               - datamaskingView
+              - sqlManage
               - userView
               - testingView
               - datamaskingManage
+              - auditLogView
+              - chargebackManage
               - taasManage
               - notificationChannelView
         resourceType:
@@ -17722,6 +18899,9 @@ components:
         max:
           type: integer
           format: int64
+    Report:
+      title: Report
+      type: object
     Resource:
       title: Resource
       type: object
@@ -18046,15 +19226,15 @@ components:
           type: string
         description:
           type: string
-    ServiceAccountApplyResult:
-      title: ServiceAccountApplyResult
+    ServiceAccountApplyResultV1:
+      title: ServiceAccountApplyResultV1
       type: object
       required:
         - resource
         - upsertResult
       properties:
         resource:
-          $ref: '#/components/schemas/ServiceAccountResource'
+          $ref: '#/components/schemas/ServiceAccountResourceV1'
         upsertResult:
           $ref: '#/components/schemas/UpsertResult'
     ServiceAccountKind:
@@ -18078,9 +19258,8 @@ components:
           $ref: '#/components/schemas/Map_LabelKey_String'
         name:
           type: string
-          pattern: ^[0-9a-z_\-.]+$
-    ServiceAccountResource:
-      title: ServiceAccountResource
+    ServiceAccountResourceV1:
+      title: ServiceAccountResourceV1
       type: object
       required:
         - apiVersion
@@ -18179,7 +19358,7 @@ components:
           type: array
           items:
             type: array
-            items: { }
+            items: {}
     Subject:
       title: Subject
       type: object
@@ -18213,26 +19392,26 @@ components:
             - KafkaConnect
             - Subject
             - KsqlDB
-    SubjectApplyResult:
-      title: SubjectApplyResult
+    SubjectApplyResultV2:
+      title: SubjectApplyResultV2
       type: object
       required:
         - resource
         - upsertResult
       properties:
         resource:
-          $ref: '#/components/schemas/SubjectResource'
+          $ref: '#/components/schemas/SubjectResourceV2'
         upsertResult:
           $ref: '#/components/schemas/UpsertResult'
-    SubjectCreateResult:
-      title: SubjectCreateResult
+    SubjectCreateResultV2:
+      title: SubjectCreateResultV2
       type: object
       required:
         - resource
         - createResult
       properties:
         resource:
-          $ref: '#/components/schemas/SubjectResource'
+          $ref: '#/components/schemas/SubjectResourceV2'
         createResult:
           $ref: '#/components/schemas/CreateResult'
     SubjectKind:
@@ -18253,8 +19432,8 @@ components:
           type: string
         labels:
           $ref: '#/components/schemas/Map_LabelKey_String'
-    SubjectResource:
-      title: SubjectResource
+    SubjectResourceV2:
+      title: SubjectResourceV2
       type: object
       required:
         - apiVersion
@@ -18423,6 +19602,21 @@ components:
         type:
           type: string
           const: TagsFilter
+    Target:
+      title: Target
+      type: object
+      required:
+        - clusterSlug
+        - topicRegex
+      properties:
+        clusterSlug:
+          type: string
+        topicRegex:
+          type: string
+    TargetSelector:
+      title: TargetSelector
+      oneOf:
+        - $ref: '#/components/schemas/DirectTargets'
     Teams:
       title: Teams
       type: object
@@ -18460,6 +19654,29 @@ components:
       properties:
         status:
           $ref: '#/components/schemas/TlsStatus'
+    ToAdd:
+      title: ToAdd
+      type: object
+      required:
+        - key
+        - value
+        - overrideIfExists
+      properties:
+        key:
+          type: string
+        value:
+          type: string
+        overrideIfExists:
+          type: boolean
+    ToRemove:
+      title: ToRemove
+      type: object
+      required:
+        - keyRegex
+      properties:
+        keyRegex:
+          description: Must be a valid java regular expression
+          type: string
     TokenCreatedResponse:
       title: TokenCreatedResponse
       type: object
@@ -18479,6 +19696,12 @@ components:
         createdAt:
           type: string
           format: date-time
+    TokenInfo:
+      title: TokenInfo
+      oneOf:
+        - $ref: '#/components/schemas/AdminToken'
+        - $ref: '#/components/schemas/ApplicationInstanceToken'
+        - $ref: '#/components/schemas/UserToken'
     TokenResponse:
       title: TokenResponse
       type: object
@@ -18563,9 +19786,6 @@ components:
       properties:
         topicName:
           type: string
-        partition:
-          type: integer
-          format: int32
         threshold:
           type: integer
           format: int64
@@ -18600,9 +19820,6 @@ components:
           type: string
         topicName:
           type: string
-        partition:
-          type: integer
-          format: int32
         threshold:
           type: integer
           format: int64
@@ -18646,9 +19863,6 @@ components:
           type: string
         displayName:
           type: string
-        partition:
-          type: integer
-          format: int32
         disable:
           type: boolean
         type:
@@ -18682,23 +19896,20 @@ components:
           type: string
         destination:
           $ref: '#/components/schemas/Destination'
-        partition:
-          type: integer
-          format: int32
         disable:
           type: boolean
         type:
           type: string
           const: TopicAlert
-    TopicApplyResult:
-      title: TopicApplyResult
+    TopicApplyResultV2:
+      title: TopicApplyResultV2
       type: object
       required:
         - resource
         - upsertResult
       properties:
         resource:
-          $ref: '#/components/schemas/TopicResource'
+          $ref: '#/components/schemas/TopicResourceV2'
         upsertResult:
           $ref: '#/components/schemas/UpsertResult'
     TopicConfigMap:
@@ -18706,15 +19917,15 @@ components:
       type: object
       additionalProperties:
         type: string
-    TopicCreateResult:
-      title: TopicCreateResult
+    TopicCreateResultV2:
+      title: TopicCreateResultV2
       type: object
       required:
         - resource
         - createResult
       properties:
         resource:
-          $ref: '#/components/schemas/TopicResource'
+          $ref: '#/components/schemas/TopicResourceV2'
         createResult:
           $ref: '#/components/schemas/CreateResult'
     TopicKind:
@@ -18818,15 +20029,15 @@ components:
         type:
           type: string
           const: TopicNameFilter
-    TopicPolicyApplyResult:
-      title: TopicPolicyApplyResult
+    TopicPolicyApplyResultV1:
+      title: TopicPolicyApplyResultV1
       type: object
       required:
         - resource
         - upsertResult
       properties:
         resource:
-          $ref: '#/components/schemas/TopicPolicyResource'
+          $ref: '#/components/schemas/TopicPolicyResourceV1'
         upsertResult:
           $ref: '#/components/schemas/UpsertResult'
     TopicPolicyKind:
@@ -18834,8 +20045,8 @@ components:
       type: string
       enum:
         - TopicPolicy
-    TopicPolicyResource:
-      title: TopicPolicyResource
+    TopicPolicyResourceV1:
+      title: TopicPolicyResourceV1
       type: object
       required:
         - apiVersion
@@ -18852,8 +20063,8 @@ components:
           $ref: '#/components/schemas/ApplicationPolicyMetadata'
         spec:
           $ref: '#/components/schemas/ApplicationPolicySpec'
-    TopicResource:
-      title: TopicResource
+    TopicResourceV2:
+      title: TopicResourceV2
       type: object
       required:
         - apiVersion
@@ -18923,6 +20134,22 @@ components:
           type: string
         fields:
           $ref: '#/components/schemas/columnPerField'
+    TrafficControlPolicies:
+      title: TrafficControlPolicies
+      type: object
+      properties:
+        maxProduceRate:
+          description: produce rate in bytes per second
+          type: integer
+          format: int32
+        maxConsumeRate:
+          description: consume rate in bytes per second
+          type: integer
+          format: int32
+        limitCommitOffset:
+          description: commit attempts per minute
+          type: integer
+          format: int32
     Unauthorized:
       title: Unauthorized
       type: object
@@ -18962,7 +20189,7 @@ components:
         priority:
           type: integer
           format: int32
-        config: { }
+        config: {}
     UpdateUserRequest:
       title: UpdateUserRequest
       type: object
@@ -19022,15 +20249,15 @@ components:
         - Created
         - Updated
         - NotChanged
-    UserApplyResult:
-      title: UserApplyResult
+    UserApplyResultV2:
+      title: UserApplyResultV2
       type: object
       required:
         - resource
         - upsertResult
       properties:
         resource:
-          $ref: '#/components/schemas/UserResource'
+          $ref: '#/components/schemas/UserResourceV2'
         upsertResult:
           $ref: '#/components/schemas/UpsertResult'
     UserKind:
@@ -19058,8 +20285,8 @@ components:
             $ref: '#/components/schemas/ResourcePermissions'
         groups:
           $ref: '#/components/schemas/ResourcePermissionsByGroupId'
-    UserResource:
-      title: UserResource
+    UserResourceV2:
+      title: UserResourceV2
       type: object
       required:
         - apiVersion
@@ -19088,6 +20315,14 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ResourcePermissions1'
+    UserToken:
+      title: UserToken
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
     Webhook:
       title: Webhook
       type: object
@@ -19134,6 +20369,10 @@ x-tagGroups:
       - cli_kafka-connect-cluster_console_v2_3
       - cli_ksql-d-b-cluster_console_v2_4
       - cli_partner-zone_console_v2_16
+  - name: 💎 dataquality/v1
+    tags:
+      - cli_data-quality-rule_data-quality_v1_17
+      - cli_data-quality-policy_data-quality_v1_18
   - name: 🐞 debug/v1
     tags:
       - logging
