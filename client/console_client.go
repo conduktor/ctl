@@ -304,6 +304,50 @@ func (client *Client) Get(kind *schema.Kind, parentPathValue []string, parentQue
 	return result, err
 }
 
+// GetFromResource fetches the current version of a resource from the server by name and kind.
+// It builds the appropriate URL and query parameters based on the resource's kind configuration.
+func (client *Client) GetFromResource(res *resource.Resource) (resource.Resource, error) {
+	var results []resource.Resource
+	client.setAuthMethodFromEnvIfNeeded()
+	kinds := client.GetKinds()
+	kind, ok := kinds[res.Kind]
+	if !ok {
+		return resource.Resource{}, fmt.Errorf("kind %s not found", res.Kind)
+	}
+	applyQueryInfo, err := kind.ApplyPath(res)
+	if err != nil {
+		return resource.Resource{}, err
+	}
+	url := client.baseUrl + applyQueryInfo.Path
+	builder := client.client.R().SetBody(res.Json)
+
+	for _, param := range applyQueryInfo.QueryParams {
+		builder = builder.SetQueryParam(param.Name, param.Value)
+	}
+
+	resp, err := builder.Get(url)
+	if err != nil {
+		return resource.Resource{}, err
+	}
+
+	if resp.IsError() {
+		return resource.Resource{}, fmt.Errorf(extractApiError(resp))
+	}
+
+	err = json.Unmarshal(resp.Body(), &results)
+	if err != nil {
+		return resource.Resource{}, err
+	}
+
+	// Find the resource by name from the response list
+	for _, element := range results {
+		if element.Name == res.Name {
+			return element, nil
+		}
+	}
+	return resource.Resource{}, fmt.Errorf("could not find any matching resource")
+}
+
 func (client *Client) Run(run schema.Run, pathValue []string, queryParams map[string]string, body interface{}) ([]byte, error) {
 	if run.BackendType != schema.CONSOLE {
 		return nil, fmt.Errorf("Only console backend type is supported by console client")

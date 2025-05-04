@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/conduktor/ctl/utils"
 	"os"
 
 	"github.com/conduktor/ctl/resource"
@@ -31,9 +32,15 @@ func runApply(kinds schema.KindCatalog, filePath []string, strict bool) {
 	for _, res := range resources {
 		var upsertResult string
 		var err error
+		var currentRes resource.Resource
 		if isGatewayResource(res, kinds) {
 			upsertResult, err = gatewayApiClient().Apply(&res, *dryRun)
 		} else {
+			// If the resource supports diffing, show the difference
+			if utils.DiffIsSupported(&res) {
+				currentRes, err = consoleApiClient().GetFromResource(&res)
+				err = utils.PrintDiff(&currentRes, &res)
+			}
 			upsertResult, err = consoleApiClient().Apply(&res, *dryRun)
 		}
 		if err != nil {
