@@ -167,12 +167,12 @@ type UpsertResponse struct {
 	UpsertResult string
 }
 
-func (c *Client) IgnoreUntrustedCertificate() {
-	c.client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
+func (client *Client) IgnoreUntrustedCertificate() {
+	client.client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 }
 
-func (c *Client) setAuthMethodFromEnvIfNeeded() {
-	if c.authMethod == nil {
+func (client *Client) setAuthMethodFromEnvIfNeeded() {
+	if client.authMethod == nil {
 		authMode := strings.ToLower(os.Getenv("CDK_AUTH_MODE"))
 		apiKey := os.Getenv("CDK_API_KEY")
 
@@ -196,9 +196,9 @@ func (c *Client) setAuthMethodFromEnvIfNeeded() {
 			}
 
 			if apiKey != "" {
-				c.authMethod = BearerToken{apiKey}
+				client.authMethod = BearerToken{apiKey}
 			} else {
-				c.authMethod = BasicAuth{user, password}
+				client.authMethod = BasicAuth{user, password}
 			}
 		} else if authMode == "" || authMode == "conduktor" {
 			if apiKey == "" {
@@ -206,27 +206,27 @@ func (c *Client) setAuthMethodFromEnvIfNeeded() {
 				os.Exit(1)
 			}
 
-			c.authMethod = BearerToken{apiKey}
+			client.authMethod = BearerToken{apiKey}
 		} else {
 			fmt.Fprintf(os.Stderr, "CDK_AUTH_MODE was: \"%s\". Accepted values are \"conduktor\" or \"external\"\n.", authMode)
 			os.Exit(1)
 		}
 
-		c.setAuthMethodInRestClient()
+		client.setAuthMethodInRestClient()
 	}
 }
 
-func (c *Client) setAuthMethodInRestClient() {
-	if c.authMethod == nil {
+func (client *Client) setAuthMethodInRestClient() {
+	if client.authMethod == nil {
 		fmt.Fprintln(os.Stderr, "No authentication method defined. Please set CDK_API_KEY or CDK_USER/CDK_PASSWORD")
 		os.Exit(1)
 	}
-	c.client = c.client.SetHeader("Authorization", c.authMethod.AuthorizationHeader())
+	client.client = client.client.SetHeader("Authorization", client.authMethod.AuthorizationHeader())
 }
 
-func (c *Client) SetApiKey(apiKey string) {
-	c.authMethod = BearerToken{apiKey}
-	c.setAuthMethodInRestClient()
+func (client *Client) SetApiKey(apiKey string) {
+	client.authMethod = BearerToken{apiKey}
+	client.setAuthMethodInRestClient()
 }
 
 func extractApiError(resp *resty.Response) string {
@@ -538,6 +538,6 @@ func (client *Client) GetKinds() schema.KindCatalog {
 	return client.schemaCatalog.Kind
 }
 
-func (c *Client) GetCatalog() *schema.Catalog {
-	return c.schemaCatalog
+func (client *Client) GetCatalog() *schema.Catalog {
+	return client.schemaCatalog
 }
