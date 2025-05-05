@@ -9,6 +9,7 @@ require (
 	github.com/go-resty/resty/v2 v2.11.0
 	github.com/jarcoal/httpmock v1.3.1
 	github.com/pb33f/libopenapi v0.15.14
+	github.com/sergi/go-diff v1.1.0
 	github.com/spf13/cobra v1.8.0
 	github.com/thediveo/enumflag/v2 v2.0.5
 	github.com/wk8/go-ordered-map/v2 v2.1.8
