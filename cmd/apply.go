@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/conduktor/ctl/utils"
 	"os"
 
 	"github.com/conduktor/ctl/resource"
@@ -28,19 +29,25 @@ func runApply(kinds schema.KindCatalog, filePath []string, strict bool) {
 	resources := loadResourceFromFileFlag(filePath, strict)
 	schema.SortResourcesForApply(kinds, resources, *debug)
 	allSuccess := true
-	for _, resource := range resources {
+	for _, res := range resources {
 		var upsertResult string
 		var err error
-		if isGatewayResource(resource, kinds) {
-			upsertResult, err = gatewayApiClient().Apply(&resource, *dryRun)
+		var currentRes resource.Resource
+		if isGatewayResource(res, kinds) {
+			upsertResult, err = gatewayApiClient().Apply(&res, *dryRun)
 		} else {
-			upsertResult, err = consoleApiClient().Apply(&resource, *dryRun)
+			// If the resource supports diffing, show the difference
+			if utils.DiffIsSupported(&res) {
+				currentRes, err = consoleApiClient().GetFromResource(&res)
+				err = utils.PrintDiff(&currentRes, &res)
+			}
+			upsertResult, err = consoleApiClient().Apply(&res, *dryRun)
 		}
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Could not apply resource %s/%s: %s\n", resource.Kind, resource.Name, err)
+			fmt.Fprintf(os.Stderr, "Could not apply resource %s/%s: %s\n", res.Kind, res.Name, err)
 			allSuccess = false
 		} else {
-			fmt.Printf("%s/%s: %s\n", resource.Kind, resource.Name, upsertResult)
+			fmt.Printf("%s/%s: %s\n", res.Kind, res.Name, upsertResult)
 		}
 	}
 	if !allSuccess {
