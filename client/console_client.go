@@ -390,16 +390,20 @@ func (client *Client) Delete(kind *schema.Kind, parentPathValue []string, parent
 func (client *Client) DeleteResource(resource *resource.Resource) error {
 	client.setAuthMethodFromEnvIfNeeded()
 	kinds := client.GetKinds()
+	requestBuilder := client.client.R()
 	kind, ok := kinds[resource.Kind]
 	if !ok {
 		return fmt.Errorf("kind %s not found", resource.Kind)
 	}
-	deletePath, err := kind.DeletePath(resource)
+	deletePath, queryParams, err := kind.DeletePath(resource)
 	if err != nil {
 		return err
 	}
 	url := client.baseUrl + deletePath
-	resp, err := client.client.R().Delete(url)
+	if queryParams != nil {
+		requestBuilder = requestBuilder.SetQueryParams(queryParams)
+	}
+	resp, err := requestBuilder.Delete(url)
 	if err != nil {
 		return err
 	} else if resp.IsError() {
