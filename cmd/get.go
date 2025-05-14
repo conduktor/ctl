@@ -105,8 +105,9 @@ func isConsole(kind schema.Kind) bool {
 }
 
 func initGet(kinds schema.KindCatalog) {
-	rootCmd.AddCommand(getCmd)
 	var format OutputFormat = YAML
+	getCmd.PersistentFlags().VarP(enumflag.New(&format, "output", OutputFormatIds, enumflag.EnumCaseInsensitive), "output", "o", "Output format. One of: json|yaml|name")
+	rootCmd.AddCommand(getCmd)
 
 	var onlyGateway *bool
 	var onlyConsole *bool
@@ -159,7 +160,6 @@ func initGet(kinds schema.KindCatalog) {
 	onlyGateway = allCmd.Flags().BoolP("gateway", "g", false, "Only show gateway resources")
 	onlyConsole = allCmd.Flags().BoolP("console", "c", false, "Only show console resources")
 	allCmd.MarkFlagsMutuallyExclusive("gateway", "console")
-	allCmd.Flags().VarP(enumflag.New(&format, "output", OutputFormatIds, enumflag.EnumCaseInsensitive), "output", "o", "Output format. One of: json|yaml|name")
 	getCmd.AddCommand(allCmd)
 
 	// Add all kinds to the 'get' command
@@ -234,7 +234,6 @@ func initGet(kinds schema.KindCatalog) {
 			parentQueryFlagValue[i] = kindCmd.Flags().String(flag, "", "Parent "+flag)
 		}
 		multipleFlags = NewMultipleFlags(kindCmd, kind.GetListFlag())
-		kindCmd.Flags().VarP(enumflag.New(&format, "output", OutputFormatIds, enumflag.EnumCaseInsensitive), "output", "o", "Output format. One of: json|yaml|name")
 		getCmd.AddCommand(kindCmd)
 	}
 }
