@@ -1,6 +1,7 @@
 module github.com/conduktor/ctl
 
 go 1.22.0
+toolchain go1.24.1
 
 require (
 	github.com/Jeffail/gabs/v2 v2.7.0
@@ -24,7 +25,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/vmware-labs/yaml-jsonpath v0.3.2 // indirect
 	golang.org/x/exp v0.0.0-20240213143201-ec583247a57a // indirect
-	golang.org/x/net v0.33.0 // indirect
+	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/sync v0.6.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
