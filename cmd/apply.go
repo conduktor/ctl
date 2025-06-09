@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/conduktor/ctl/resource"
 	"github.com/conduktor/ctl/schema"
@@ -27,20 +28,58 @@ func resourceForPath(path string, strict bool) ([]resource.Resource, error) {
 func runApply(kinds schema.KindCatalog, filePath []string, strict bool) {
 	resources := loadResourceFromFileFlag(filePath, strict)
 	schema.SortResourcesForApply(kinds, resources, *debug)
-	allSuccess := true
-	for _, resource := range resources {
-		var upsertResult string
-		var err error
-		if isGatewayResource(resource, kinds) {
-			upsertResult, err = gatewayApiClient().Apply(&resource, *dryRun)
-		} else {
-			upsertResult, err = consoleApiClient().Apply(&resource, *dryRun)
+	// Group resources by kind
+	kindGroups := make(map[string][]resource.Resource)
+	for _, resrc := range resources {
+		kindGroups[resrc.Kind] = append(kindGroups[resrc.Kind], resrc)
+	}
+
+	results := make([]struct {
+		Resource     resource.Resource
+		UpsertResult string
+		Err          error
+	}, 0, len(resources))
+
+	for _, group := range kindGroups {
+		var wg sync.WaitGroup
+		kindResults := make([]struct {
+			Resource     resource.Resource
+			UpsertResult string
+			Err          error
+		}, len(group))
+
+		for i, resrc := range group {
+			if isGatewayResource(resrc, kinds) {
+				upsertResult, err := gatewayApiClient().Apply(&resrc, *dryRun)
+				kindResults[i] = struct {
+					Resource     resource.Resource
+					UpsertResult string
+					Err          error
+				}{resrc, upsertResult, err}
+			} else {
+				wg.Add(1)
+				go func(i int, resrc resource.Resource) {
+					defer wg.Done()
+					upsertResult, err := consoleApiClient().Apply(&resrc, *dryRun)
+					kindResults[i] = struct {
+						Resource     resource.Resource
+						UpsertResult string
+						Err          error
+					}{resrc, upsertResult, err}
+				}(i, resrc)
+			}
 		}
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Could not apply resource %s/%s: %s\n", resource.Kind, resource.Name, err)
+		wg.Wait()
+		results = append(results, kindResults...)
+	}
+
+	allSuccess := true
+	for _, res := range results {
+		if res.Err != nil {
+			fmt.Fprintf(os.Stderr, "Could not apply resource %s/%s: %s\n", res.Resource.Kind, res.Resource.Name, res.Err)
 			allSuccess = false
-		} else {
-			fmt.Printf("%s/%s: %s\n", resource.Kind, resource.Name, upsertResult)
+		} else if res.UpsertResult != "" {
+			fmt.Printf("%s/%s: %s\n", res.Resource.Kind, res.Resource.Name, res.UpsertResult)
 		}
 	}
 	if !allSuccess {
