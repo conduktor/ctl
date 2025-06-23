@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/conduktor/ctl/resource"
 	"github.com/conduktor/ctl/schema"
@@ -10,6 +11,7 @@ import (
 )
 
 var dryRun *bool
+var runInParallel *bool
 
 func resourceForPath(path string, strict bool) ([]resource.Resource, error) {
 	directory, err := isDirectory(path)
@@ -24,23 +26,81 @@ func resourceForPath(path string, strict bool) ([]resource.Resource, error) {
 	}
 }
 
+// Globally accessible for testing purposes
+func ApplyResources(resources []resource.Resource,
+	applyFunc func(*resource.Resource, bool) (string, error),
+	dryRun bool,
+	runInParallel bool,
+	logFunc func(res resource.Resource, upsertResult string, err error)) []struct {
+	Resource     resource.Resource
+	UpsertResult string
+	Err          error
+} {
+	results := make([]struct {
+		Resource     resource.Resource
+		UpsertResult string
+		Err          error
+	}, len(resources))
+
+	if runInParallel {
+		var wg sync.WaitGroup
+		var mu sync.Mutex // for logging in parallel; prevents interleaving of log messages
+		// by multiple goroutines writing to stdout
+		for i, resrc := range resources {
+			wg.Add(1)
+			go func(i int, resrc resource.Resource) {
+				defer wg.Done()
+				upsertResult, err := applyFunc(&resrc, dryRun)
+				results[i] = struct {
+					Resource     resource.Resource
+					UpsertResult string
+					Err          error
+				}{resrc, upsertResult, err}
+				mu.Lock()
+				logFunc(resrc, upsertResult, err)
+				mu.Unlock()
+			}(i, resrc)
+		}
+		wg.Wait()
+	} else {
+		for i, resrc := range resources {
+			upsertResult, err := applyFunc(&resrc, dryRun)
+			results[i] = struct {
+				Resource     resource.Resource
+				UpsertResult string
+				Err          error
+			}{resrc, upsertResult, err}
+			logFunc(resrc, upsertResult, err)
+		}
+	}
+	return results
+}
+
 func runApply(kinds schema.KindCatalog, filePath []string, strict bool) {
 	resources := loadResourceFromFileFlag(filePath, strict)
 	schema.SortResourcesForApply(kinds, resources, *debug)
+	// Group resources by kind
+	kindGroups := make(map[string][]resource.Resource)
+	for _, resrc := range resources {
+		kindGroups[resrc.Kind] = append(kindGroups[resrc.Kind], resrc)
+	}
+
 	allSuccess := true
-	for _, resource := range resources {
-		var upsertResult string
-		var err error
-		if isGatewayResource(resource, kinds) {
-			upsertResult, err = gatewayApiClient().Apply(&resource, *dryRun)
-		} else {
-			upsertResult, err = consoleApiClient().Apply(&resource, *dryRun)
+	for _, group := range kindGroups {
+		if len(group) == 0 {
+			continue
 		}
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Could not apply resource %s/%s: %s\n", resource.Kind, resource.Name, err)
-			allSuccess = false
+		logFunc := func(res resource.Resource, upsertResult string, err error) {
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Could not apply resource %s/%s: %s\n", res.Kind, res.Name, err)
+			} else if upsertResult != "" {
+				fmt.Printf("%s/%s: %s\n", res.Kind, res.Name, upsertResult)
+			}
+		}
+		if isGatewayResource(group[0], kinds) {
+			ApplyResources(group, gatewayApiClient().Apply, *dryRun, *runInParallel, logFunc)
 		} else {
-			fmt.Printf("%s/%s: %s\n", resource.Kind, resource.Name, upsertResult)
+			ApplyResources(group, consoleApiClient().Apply, *dryRun, *runInParallel, logFunc)
 		}
 	}
 	if !allSuccess {
@@ -66,7 +126,10 @@ func initApply(kinds schema.KindCatalog, strict bool) {
 		PersistentFlags().StringArrayP("file", "f", make([]string, 0, 0), "Specify the files to apply")
 
 	dryRun = applyCmd.
-		PersistentFlags().Bool("dry-run", false, "Don't really apply change but check on backend the effect if applied")
+		PersistentFlags().Bool("dry-run", false, "Test potential changes without the effects being applied")
+
+	runInParallel = applyCmd.
+		PersistentFlags().Bool("parallel-run", false, "Run each apply in parallel, useful when applying a large number of resources")
 
 	applyCmd.MarkPersistentFlagRequired("file")
 }
