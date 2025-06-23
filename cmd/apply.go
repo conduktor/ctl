@@ -11,7 +11,7 @@ import (
 )
 
 var dryRun *bool
-var runInParallel *bool
+var maxParallel *int
 
 func resourceForPath(path string, strict bool) ([]resource.Resource, error) {
 	directory, err := isDirectory(path)
@@ -29,9 +29,9 @@ func resourceForPath(path string, strict bool) ([]resource.Resource, error) {
 // Globally accessible for testing purposes
 func ApplyResources(resources []resource.Resource,
 	applyFunc func(*resource.Resource, bool) (string, error),
+	logFunc func(resource.Resource, string, error),
 	dryRun bool,
-	runInParallel bool,
-	logFunc func(res resource.Resource, upsertResult string, err error)) []struct {
+	maxParallel int) []struct {
 	Resource     resource.Resource
 	UpsertResult string
 	Err          error
@@ -42,14 +42,16 @@ func ApplyResources(resources []resource.Resource,
 		Err          error
 	}, len(resources))
 
-	if runInParallel {
+	if maxParallel > 1 {
 		var wg sync.WaitGroup
-		var mu sync.Mutex // for logging in parallel; prevents interleaving of log messages
-		// by multiple goroutines writing to stdout
+		var mu sync.Mutex // for logging in parallel; prevents interleaving of log messages by multiple goroutines trying to write to stdout
+		sem := make(chan struct{}, maxParallel)
 		for i, resrc := range resources {
 			wg.Add(1)
+			sem <- struct{}{} // acquire a slot
 			go func(i int, resrc resource.Resource) {
 				defer wg.Done()
+				defer func() { <-sem }() // release the slot
 				upsertResult, err := applyFunc(&resrc, dryRun)
 				results[i] = struct {
 					Resource     resource.Resource
@@ -102,9 +104,9 @@ func runApply(kinds schema.KindCatalog, filePath []string, strict bool) {
 			}
 		}
 		if isGatewayResource(group[0], kinds) {
-			ApplyResources(group, gatewayApiClient().Apply, *dryRun, *runInParallel, logFunc)
+			ApplyResources(group, gatewayApiClient().Apply, logFunc, *dryRun, *maxParallel)
 		} else {
-			ApplyResources(group, consoleApiClient().Apply, *dryRun, *runInParallel, logFunc)
+			ApplyResources(group, consoleApiClient().Apply, logFunc, *dryRun, *maxParallel)
 		}
 	}
 	if !allSuccess {
@@ -132,8 +134,8 @@ func initApply(kinds schema.KindCatalog, strict bool) {
 	dryRun = applyCmd.
 		PersistentFlags().Bool("dry-run", false, "Test potential changes without the effects being applied")
 
-	runInParallel = applyCmd.
-		PersistentFlags().Bool("parallel-run", false, "Run each apply in parallel, useful when applying a large number of resources")
+	maxParallel = applyCmd.
+		PersistentFlags().Int("parallelism", 1, "Run each apply in parallel, useful when applying a large number of resources")
 
 	applyCmd.MarkPersistentFlagRequired("file")
 }
