@@ -138,6 +138,13 @@ func initApply(kinds schema.KindCatalog, strict bool) {
 		PersistentFlags().Int("parallelism", 1, "Run each apply in parallel, useful when applying a large number of resources")
 
 	applyCmd.MarkPersistentFlagRequired("file")
+
+	applyCmd.PreRun = func(cmd *cobra.Command, args []string) {
+		if *maxParallel > 100 || *maxParallel < 1 {
+			fmt.Fprintf(os.Stderr, "Error: --parallelism must be between 1 and 100 (got %d)\n", *maxParallel)
+			os.Exit(1)
+		}
+	}
 }
 
 func isDirectory(path string) (bool, error) {
