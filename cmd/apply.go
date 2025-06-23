@@ -11,6 +11,7 @@ import (
 )
 
 var dryRun *bool
+var runInParallel *bool
 
 func resourceForPath(path string, strict bool) ([]resource.Resource, error) {
 	directory, err := isDirectory(path)
@@ -25,6 +26,56 @@ func resourceForPath(path string, strict bool) ([]resource.Resource, error) {
 	}
 }
 
+// Globally accessible for testing purposes
+func ApplyResources(resources []resource.Resource,
+	applyFunc func(*resource.Resource, bool) (string, error),
+	dryRun bool,
+	runInParallel bool,
+	logFunc func(res resource.Resource, upsertResult string, err error)) []struct {
+	Resource     resource.Resource
+	UpsertResult string
+	Err          error
+} {
+	results := make([]struct {
+		Resource     resource.Resource
+		UpsertResult string
+		Err          error
+	}, len(resources))
+
+	if runInParallel {
+		var wg sync.WaitGroup
+		var mu sync.Mutex // for logging in parallel; prevents interleaving of log messages
+		// by multiple goroutines writing to stdout
+		for i, resrc := range resources {
+			wg.Add(1)
+			go func(i int, resrc resource.Resource) {
+				defer wg.Done()
+				upsertResult, err := applyFunc(&resrc, dryRun)
+				results[i] = struct {
+					Resource     resource.Resource
+					UpsertResult string
+					Err          error
+				}{resrc, upsertResult, err}
+				mu.Lock()
+				logFunc(resrc, upsertResult, err)
+				mu.Unlock()
+			}(i, resrc)
+		}
+		wg.Wait()
+	} else {
+		for i, resrc := range resources {
+			upsertResult, err := applyFunc(&resrc, dryRun)
+			results[i] = struct {
+				Resource     resource.Resource
+				UpsertResult string
+				Err          error
+			}{resrc, upsertResult, err}
+			logFunc(resrc, upsertResult, err)
+		}
+	}
+	return results
+}
+
 func runApply(kinds schema.KindCatalog, filePath []string, strict bool) {
 	resources := loadResourceFromFileFlag(filePath, strict)
 	schema.SortResourcesForApply(kinds, resources, *debug)
@@ -34,52 +85,22 @@ func runApply(kinds schema.KindCatalog, filePath []string, strict bool) {
 		kindGroups[resrc.Kind] = append(kindGroups[resrc.Kind], resrc)
 	}
 
-	results := make([]struct {
-		Resource     resource.Resource
-		UpsertResult string
-		Err          error
-	}, 0, len(resources))
-
+	allSuccess := true
 	for _, group := range kindGroups {
-		var wg sync.WaitGroup
-		kindResults := make([]struct {
-			Resource     resource.Resource
-			UpsertResult string
-			Err          error
-		}, len(group))
-
-		for i, resrc := range group {
-			if isGatewayResource(resrc, kinds) {
-				upsertResult, err := gatewayApiClient().Apply(&resrc, *dryRun)
-				kindResults[i] = struct {
-					Resource     resource.Resource
-					UpsertResult string
-					Err          error
-				}{resrc, upsertResult, err}
-			} else {
-				wg.Add(1)
-				go func(i int, resrc resource.Resource) {
-					defer wg.Done()
-					upsertResult, err := consoleApiClient().Apply(&resrc, *dryRun)
-					kindResults[i] = struct {
-						Resource     resource.Resource
-						UpsertResult string
-						Err          error
-					}{resrc, upsertResult, err}
-				}(i, resrc)
+		if len(group) == 0 {
+			continue
+		}
+		logFunc := func(res resource.Resource, upsertResult string, err error) {
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Could not apply resource %s/%s: %s\n", res.Kind, res.Name, err)
+			} else if upsertResult != "" {
+				fmt.Printf("%s/%s: %s\n", res.Kind, res.Name, upsertResult)
 			}
 		}
-		wg.Wait()
-		results = append(results, kindResults...)
-	}
-
-	allSuccess := true
-	for _, res := range results {
-		if res.Err != nil {
-			fmt.Fprintf(os.Stderr, "Could not apply resource %s/%s: %s\n", res.Resource.Kind, res.Resource.Name, res.Err)
-			allSuccess = false
-		} else if res.UpsertResult != "" {
-			fmt.Printf("%s/%s: %s\n", res.Resource.Kind, res.Resource.Name, res.UpsertResult)
+		if isGatewayResource(group[0], kinds) {
+			ApplyResources(group, gatewayApiClient().Apply, *dryRun, *runInParallel, logFunc)
+		} else {
+			ApplyResources(group, consoleApiClient().Apply, *dryRun, *runInParallel, logFunc)
 		}
 	}
 	if !allSuccess {
@@ -105,7 +126,10 @@ func initApply(kinds schema.KindCatalog, strict bool) {
 		PersistentFlags().StringArrayP("file", "f", make([]string, 0, 0), "Specify the files to apply")
 
 	dryRun = applyCmd.
-		PersistentFlags().Bool("dry-run", false, "Don't really apply change but check on backend the effect if applied")
+		PersistentFlags().Bool("dry-run", false, "Test potential changes without the effects being applied")
+
+	runInParallel = applyCmd.
+		PersistentFlags().Bool("parallel-run", false, "Run each apply in parallel, useful when applying a large number of resources")
 
 	applyCmd.MarkPersistentFlagRequired("file")
 }
