@@ -135,7 +135,7 @@ func initApply(kinds schema.KindCatalog, strict bool) {
 		PersistentFlags().Bool("dry-run", false, "Test potential changes without the effects being applied")
 
 	maxParallel = applyCmd.
-		PersistentFlags().Int("parallelism", 1, "Run each apply in parallel, useful when applying a large number of resources")
+		PersistentFlags().Int("parallelism", 1, "Run each apply in parallel, useful when applying a large number of resources. Must be less than 100.")
 
 	applyCmd.MarkPersistentFlagRequired("file")
 
