@@ -81,7 +81,11 @@ func runApply(kinds schema.KindCatalog, filePath []string, strict bool) {
 	schema.SortResourcesForApply(kinds, resources, *debug)
 	// Group resources by kind
 	kindGroups := make(map[string][]resource.Resource)
+	var kindOrder []string
 	for _, resrc := range resources {
+		if _, exists := kindGroups[resrc.Kind]; !exists {
+			kindOrder = append(kindOrder, resrc.Kind)
+		}
 		kindGroups[resrc.Kind] = append(kindGroups[resrc.Kind], resrc)
 	}
 
