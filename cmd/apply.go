@@ -44,6 +44,7 @@ func ApplyResources(resources []resource.Resource,
 
 	if maxParallel > 1 {
 		var wg sync.WaitGroup
+		var mu sync.Mutex // for logging in parallel; prevents interleaving of log messages by multiple goroutines trying to write to stdout
 		sem := make(chan struct{}, maxParallel)
 		for i, resrc := range resources {
 			wg.Add(1)
@@ -59,13 +60,12 @@ func ApplyResources(resources []resource.Resource,
 					UpsertResult string
 					Err          error
 				}{resrc, upsertResult, err}
+				mu.Lock()
+				logFunc(resrc, upsertResult, err)
+				mu.Unlock()
 			}(i, resrc)
 		}
 		wg.Wait()
-		// Call logFunc synchronously after all goroutines complete
-		for i, resrc := range resources {
-			logFunc(resrc, results[i].UpsertResult, results[i].Err)
-		}
 	} else {
 		for i, resrc := range resources {
 			upsertResult, err := applyFunc(&resrc, dryRun)
