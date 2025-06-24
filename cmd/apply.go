@@ -103,10 +103,20 @@ func runApply(kinds schema.KindCatalog, filePath []string, strict bool) {
 				fmt.Printf("%s/%s: %s\n", res.Kind, res.Name, upsertResult)
 			}
 		}
+		var results []struct {
+			Resource     resource.Resource
+			UpsertResult string
+			Err          error
+		}
 		if isGatewayResource(group[0], kinds) {
-			ApplyResources(group, gatewayApiClient().Apply, logFunc, *dryRun, *maxParallel)
+			results = ApplyResources(group, gatewayApiClient().Apply, logFunc, *dryRun, *maxParallel)
 		} else {
-			ApplyResources(group, consoleApiClient().Apply, logFunc, *dryRun, *maxParallel)
+			results = ApplyResources(group, consoleApiClient().Apply, logFunc, *dryRun, *maxParallel)
+		}
+		for _, r := range results {
+			if r.Err != nil {
+				allSuccess = false
+			}
 		}
 	}
 	if !allSuccess {
