@@ -92,11 +92,6 @@ func runApply(kinds schema.KindCatalog, filePath []string, strict bool) {
 		}
 		kindGroups[resrc.Kind] = append(kindGroups[resrc.Kind], resrc)
 	}
-	for _, kind := range kindOrder {
-		for _, res := range kindGroups[kind] {
-			fmt.Printf("- Kind: %s, Name: %s\n", res.Kind, res.Name)
-		}
-	}
 
 	allSuccess := true
 	for _, kind := range kindOrder {
