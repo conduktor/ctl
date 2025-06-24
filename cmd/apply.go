@@ -116,6 +116,7 @@ func runApply(kinds schema.KindCatalog, filePath []string, strict bool) {
 		for _, r := range results {
 			if r.Err != nil {
 				allSuccess = false
+				break
 			}
 		}
 	}
