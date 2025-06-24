@@ -50,8 +50,10 @@ func ApplyResources(resources []resource.Resource,
 			wg.Add(1)
 			sem <- struct{}{} // acquire a slot
 			go func(i int, resrc resource.Resource) {
-				defer wg.Done()
-				defer func() { <-sem }() // release the slot
+				defer func() {
+					wg.Done()
+					<-sem // release the slot
+				}()
 				upsertResult, err := applyFunc(&resrc, dryRun)
 				results[i] = struct {
 					Resource     resource.Resource
@@ -92,7 +94,8 @@ func runApply(kinds schema.KindCatalog, filePath []string, strict bool) {
 	}
 
 	allSuccess := true
-	for _, group := range kindGroups {
+	for _, kind := range kindOrder {
+		group := kindGroups[kind]
 		if len(group) == 0 {
 			continue
 		}
@@ -103,10 +106,21 @@ func runApply(kinds schema.KindCatalog, filePath []string, strict bool) {
 				fmt.Printf("%s/%s: %s\n", res.Kind, res.Name, upsertResult)
 			}
 		}
+		var results []struct {
+			Resource     resource.Resource
+			UpsertResult string
+			Err          error
+		}
 		if isGatewayResource(group[0], kinds) {
-			ApplyResources(group, gatewayApiClient().Apply, logFunc, *dryRun, *maxParallel)
+			results = ApplyResources(group, gatewayApiClient().Apply, logFunc, *dryRun, *maxParallel)
 		} else {
-			ApplyResources(group, consoleApiClient().Apply, logFunc, *dryRun, *maxParallel)
+			results = ApplyResources(group, consoleApiClient().Apply, logFunc, *dryRun, *maxParallel)
+		}
+		for _, r := range results {
+			if r.Err != nil {
+				allSuccess = false
+				break
+			}
 		}
 	}
 	if !allSuccess {
