@@ -105,7 +105,8 @@ func runApply(kinds schema.KindCatalog, filePath []string, strict bool) {
 	}
 
 	allSuccess := true
-	for _, group := range kindGroups {
+	for _, kind := range kindOrder {
+		group := kindGroups[kind]
 		if len(group) == 0 {
 			continue
 		}
