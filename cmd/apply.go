@@ -49,9 +49,7 @@ func ApplyResources(resources []resource.Resource,
 			wg.Add(1)
 			sem <- struct{}{} // acquire a slot
 			go func(i int, resrc resource.Resource) {
-				fmt.Printf("[DEBUG] Starting applyFunc for Kind: %s, Name: %s\n", resrc.Kind, resrc.Name)
 				defer func() {
-					fmt.Printf("[DEBUG] Finished applyFunc for Kind: %s, Name: %s\n", resrc.Kind, resrc.Name)
 					wg.Done()
 					<-sem // release the slot
 				}()
@@ -70,9 +68,7 @@ func ApplyResources(resources []resource.Resource,
 		}
 	} else {
 		for i, resrc := range resources {
-			fmt.Printf("[DEBUG] Starting applyFunc for Kind: %s, Name: %s\n", resrc.Kind, resrc.Name)
 			upsertResult, err := applyFunc(&resrc, dryRun)
-			fmt.Printf("[DEBUG] Finished applyFunc for Kind: %s, Name: %s\n", resrc.Kind, resrc.Name)
 			results[i] = struct {
 				Resource     resource.Resource
 				UpsertResult string
@@ -96,8 +92,6 @@ func runApply(kinds schema.KindCatalog, filePath []string, strict bool) {
 		}
 		kindGroups[resrc.Kind] = append(kindGroups[resrc.Kind], resrc)
 	}
-	fmt.Printf("Apply order: %v\n", kindOrder)
-	fmt.Println("Resources to be applied in order:")
 	for _, kind := range kindOrder {
 		for _, res := range kindGroups[kind] {
 			fmt.Printf("- Kind: %s, Name: %s\n", res.Kind, res.Name)
