@@ -19,3 +19,5 @@ func loadResourceFromFileFlag(filePath []string, strict bool) []resource.Resourc
 	}
 	return resources
 }
+
+const FILE_ARGS_DOC = "Specify the files or folders to apply. For folders, all .yaml or .yml files within the folder will be applied, while files in subfolders will be ignored."

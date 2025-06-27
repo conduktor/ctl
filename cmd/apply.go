@@ -143,7 +143,7 @@ func initApply(kinds schema.KindCatalog, strict bool) {
 	rootCmd.AddCommand(applyCmd)
 
 	filePath = applyCmd.
-		PersistentFlags().StringArrayP("file", "f", make([]string, 0, 0), "Specify the files to apply")
+		PersistentFlags().StringArrayP("file", "f", make([]string, 0, 0), FILE_ARGS_DOC)
 
 	dryRun = applyCmd.
 		PersistentFlags().Bool("dry-run", false, "Test potential changes without the effects being applied")
