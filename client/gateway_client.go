@@ -238,8 +238,8 @@ func (client *GatewayClient) DeleteResourceInterceptors(resource *resource.Resou
 	} else if resp.IsError() {
 		if deleteInterceptorPayload == nil {
 			fmt.Println(`This error may be a bug caused by not using the latest versions of CTL (cli) and conduktor-proxy (gateway).
-		Make sure to update your cli and gateway versions to latest
-		As a quick fix, you can fetch your interceptor to see the exact scope and use this when deleting
+		Make sure to update your cli and gateway versions to latest.
+		As a quick fix, you can fetch your interceptor to see the exact scope and use this when deleting.
 		If the error persists after updating the cli and gateway, you can assume the error is expected.`)
 		}
 		return fmt.Errorf(extractApiError(resp))
