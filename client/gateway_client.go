@@ -236,11 +236,11 @@ func (client *GatewayClient) DeleteResourceInterceptors(resource *resource.Resou
 	if err != nil {
 		return err
 	} else if resp.IsError() {
+		msg := extractApiError(resp)
 		if deleteInterceptorPayload == nil {
-			fmt.Println(`This error may be a bug caused by not using the latest version of conduktor-proxy (gateway).
-		As a quick fix, you can fetch your interceptor to see the exact scope and use this when deleting.`)
+			msg += "\nThis error may be a bug caused by not using the latest version of conduktor-proxy (gateway).\nAs a quick fix, you can fetch your interceptor to see the exact scope and use this when deleting."
 		}
-		return fmt.Errorf(extractApiError(resp))
+		return fmt.Errorf("%s", msg)
 	} else {
 		fmt.Printf("%s/%s deleted\n", kind.GetName(), resource.Name)
 	}
