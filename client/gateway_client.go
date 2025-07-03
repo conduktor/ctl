@@ -238,7 +238,7 @@ func (client *GatewayClient) DeleteResourceInterceptors(resource *resource.Resou
 	} else if resp.IsError() {
 		msg := extractApiError(resp)
 		if deleteInterceptorPayload == nil {
-			msg += "\nThis error may be a bug caused by not using the latest version of conduktor-proxy (gateway).\nAs a quick fix, you can fetch your interceptor to see the exact scope and use this when deleting."
+			msg += "\nThis error may be caused by a bug in Conduktor Gateway REST api defaults fixed in version 3.11.0.\nAs a quick fix, you can fetch your interceptor to see the exact scope and use this when deleting."
 		}
 		return fmt.Errorf("%s", msg)
 	} else {
