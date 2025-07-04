@@ -196,14 +196,11 @@ func (client *GatewayClient) DeleteResourceInterceptors(resource *resource.Resou
 	kinds := client.GetKinds()
 	kind, ok := kinds[resource.Kind]
 	scope := resource.Metadata["scope"]
-	var deleteInterceptorPayload DeleteInterceptorPayload
+	var deleteInterceptorPayload *DeleteInterceptorPayload
 	if scope == nil {
-		deleteInterceptorPayload = DeleteInterceptorPayload{
-			VCluster: nil,
-			Group:    nil,
-			Username: nil,
-		}
+		deleteInterceptorPayload = nil
 	} else {
+		deleteInterceptorPayload = &DeleteInterceptorPayload{}
 		vCluster := scope.(map[string]interface{})["vCluster"]
 		var vClusterValue string
 		if vCluster != nil && vCluster.(string) != "" {
@@ -231,11 +228,19 @@ func (client *GatewayClient) DeleteResourceInterceptors(resource *resource.Resou
 		return err
 	}
 	url := client.baseUrl + deletePath
-	resp, err := client.client.R().SetBody(deleteInterceptorPayload).Delete(url)
+	req := client.client.R()
+	if deleteInterceptorPayload != nil {
+		req = req.SetBody(deleteInterceptorPayload)
+	}
+	resp, err := req.Delete(url)
 	if err != nil {
 		return err
 	} else if resp.IsError() {
-		return fmt.Errorf(extractApiError(resp))
+		msg := extractApiError(resp)
+		if deleteInterceptorPayload == nil {
+			msg += "\nThis error may be caused by a bug in Conduktor Gateway REST api defaults fixed in version 3.11.0.\nAs a quick fix, you can fetch your interceptor to see the exact scope and use this when deleting."
+		}
+		return fmt.Errorf("%s", msg)
 	} else {
 		fmt.Printf("%s/%s deleted\n", kind.GetName(), resource.Name)
 	}
