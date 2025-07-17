@@ -116,8 +116,9 @@ func editAndApply(edit *bool, file *string, apply *bool, kinds schema.KindCatalo
 			fmt.Fprintf(os.Stderr, "Could not run %s: %s", editorFromPath, err)
 			os.Exit(8)
 		}
+		recursiveFolder := false
 		if apply != nil && *apply {
-			runApply(kinds, []string{*file}, strict)
+			runApply(kinds, []string{*file}, strict, recursiveFolder)
 		}
 	}
 }

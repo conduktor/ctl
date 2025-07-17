@@ -75,19 +75,23 @@ func FromFile(path string, strict bool) ([]Resource, error) {
 	return FromYamlByte(data, strict)
 }
 
-func FromFolder(path string, strict bool) ([]Resource, error) {
+func FromFolder(path string, strict, recursive bool) ([]Resource, error) {
 	dirEntry, err := os.ReadDir(path)
 	if err != nil {
 		return nil, err
 	}
 	var result = make([]Resource, 0)
 	for _, entry := range dirEntry {
-		if !entry.IsDir() && (strings.HasSuffix(entry.Name(), ".yml") || strings.HasSuffix(entry.Name(), ".yaml")) {
-			resources, err := FromFile(filepath.Join(path, entry.Name()), strict)
-			result = append(result, resources...)
-			if err != nil {
-				return nil, err
-			}
+		var resources []Resource
+		var err error
+		if entry.IsDir() && recursive {
+			resources, err = FromFolder(filepath.Join(path, entry.Name()), strict, recursive)
+		} else if !entry.IsDir() && (strings.HasSuffix(entry.Name(), ".yml") || strings.HasSuffix(entry.Name(), ".yaml")) {
+			resources, err = FromFile(filepath.Join(path, entry.Name()), strict)
+		}
+		result = append(result, resources...)
+		if err != nil {
+			return nil, err
 		}
 	}
 
