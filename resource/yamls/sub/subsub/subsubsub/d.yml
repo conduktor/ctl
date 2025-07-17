@@ -1,0 +1,7 @@
+---
+apiVersion: v2
+kind: d
+metadata:
+  name: d
+spec:
+  data: ddd

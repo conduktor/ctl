@@ -13,14 +13,14 @@ import (
 var dryRun *bool
 var maxParallel *int
 
-func resourceForPath(path string, strict bool) ([]resource.Resource, error) {
+func resourceForPath(path string, strict, recursiveFolder bool) ([]resource.Resource, error) {
 	directory, err := isDirectory(path)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(1)
 	}
 	if directory {
-		return resource.FromFolder(path, strict)
+		return resource.FromFolder(path, strict, recursiveFolder)
 	} else {
 		return resource.FromFile(path, strict)
 	}
@@ -80,8 +80,8 @@ func ApplyResources(resources []resource.Resource,
 	return results
 }
 
-func runApply(kinds schema.KindCatalog, filePath []string, strict bool) {
-	resources := loadResourceFromFileFlag(filePath, strict)
+func runApply(kinds schema.KindCatalog, filePath []string, strict bool, recursiveFolder bool) {
+	resources := loadResourceFromFileFlag(filePath, strict, recursiveFolder)
 	schema.SortResourcesForApply(kinds, resources, *debug)
 	// Group resources by kind
 	kindGroups := make(map[string][]resource.Resource)
@@ -130,13 +130,14 @@ func runApply(kinds schema.KindCatalog, filePath []string, strict bool) {
 
 func initApply(kinds schema.KindCatalog, strict bool) {
 	// applyCmd represents the apply command
+	var recursiveFolder *bool
 	var filePath *[]string
 	var applyCmd = &cobra.Command{
 		Use:   "apply",
 		Short: "Upsert a resource on Conduktor",
 		Long:  ``,
 		Run: func(cmd *cobra.Command, args []string) {
-			runApply(kinds, *filePath, strict)
+			runApply(kinds, *filePath, strict, *recursiveFolder)
 		},
 	}
 
@@ -147,6 +148,9 @@ func initApply(kinds schema.KindCatalog, strict bool) {
 
 	dryRun = applyCmd.
 		PersistentFlags().Bool("dry-run", false, "Test potential changes without the effects being applied")
+
+	recursiveFolder = applyCmd.
+		PersistentFlags().BoolP("recursive", "r", false, "Apply all .yaml or .yml files in the specified folder and its subfolders. If not set, only files in the specified folder will be applied.")
 
 	maxParallel = applyCmd.
 		PersistentFlags().Int("parallelism", 1, "Run each apply in parallel, useful when applying a large number of resources. Must be less than 100.")

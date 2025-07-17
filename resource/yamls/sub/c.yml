@@ -1,0 +1,7 @@
+---
+apiVersion: v1
+kind: c
+metadata:
+  name: c
+spec:
+  data: ccc

@@ -7,10 +7,10 @@ import (
 	"github.com/conduktor/ctl/resource"
 )
 
-func loadResourceFromFileFlag(filePath []string, strict bool) []resource.Resource {
+func loadResourceFromFileFlag(filePath []string, strict, recursiveFolder bool) []resource.Resource {
 	var resources = make([]resource.Resource, 0)
 	for _, path := range filePath {
-		r, err := resourceForPath(path, strict)
+		r, err := resourceForPath(path, strict, recursiveFolder)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%s\n", err)
 			os.Exit(1)
