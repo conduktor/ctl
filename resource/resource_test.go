@@ -104,7 +104,7 @@ metadata:
 }
 
 func TestFromFolder(t *testing.T) {
-	resources, err := FromFolder("yamls", true)
+	resources, err := FromFolder("yamls", true, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -146,6 +146,70 @@ func TestFromFolder(t *testing.T) {
 		Metadata: map[string]interface{}{"name": "b"},
 		Spec:     map[string]interface{}{"data": "lo"},
 		Json:     []byte(`{"apiVersion":"v1","kind":"b","metadata":{"name":"b"},"spec":{"data":"lo"}}`),
+	})
+}
+
+func TestFromFolderRecursive(t *testing.T) {
+	resources, err := FromFolder("yamls", true, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(resources) != 6 {
+		t.Fatalf("Expected to read 4 resources, readed %d", len(resources))
+	}
+
+	checkResource(t, resources[0], Resource{
+		Version:  "v1",
+		Kind:     "a",
+		Name:     "a",
+		Metadata: map[string]interface{}{"name": "a"},
+		Spec:     map[string]interface{}{"data": "data"},
+		Json:     []byte(`{"apiVersion":"v1","kind":"a","metadata":{"name":"a"},"spec":{"data":"data"}}`),
+	})
+
+	checkResource(t, resources[1], Resource{
+		Version:  "v1",
+		Kind:     "a",
+		Name:     "b",
+		Metadata: map[string]interface{}{"name": "b"},
+		Spec:     map[string]interface{}{"data": "data2"},
+		Json:     []byte(`{"apiVersion":"v1","kind":"a","metadata":{"name":"b"},"spec":{"data":"data2"}}`),
+	})
+
+	checkResource(t, resources[2], Resource{
+		Version:  "v1",
+		Kind:     "b",
+		Name:     "a",
+		Metadata: map[string]interface{}{"name": "a"},
+		Spec:     map[string]interface{}{"data": "yo"},
+		Json:     []byte(`{"apiVersion":"v1","kind":"b","metadata":{"name":"a"},"spec":{"data":"yo"}}`),
+	})
+
+	checkResource(t, resources[3], Resource{
+		Version:  "v1",
+		Kind:     "b",
+		Name:     "b",
+		Metadata: map[string]interface{}{"name": "b"},
+		Spec:     map[string]interface{}{"data": "lo"},
+		Json:     []byte(`{"apiVersion":"v1","kind":"b","metadata":{"name":"b"},"spec":{"data":"lo"}}`),
+	})
+
+	checkResource(t, resources[4], Resource{
+		Version:  "v1",
+		Kind:     "c",
+		Name:     "c",
+		Metadata: map[string]interface{}{"name": "c"},
+		Spec:     map[string]interface{}{"data": "ccc"},
+		Json:     []byte(`{"apiVersion":"v1","kind":"c","metadata":{"name":"c"},"spec":{"data":"ccc"}}`),
+	})
+
+	checkResource(t, resources[5], Resource{
+		Version:  "v2",
+		Kind:     "d",
+		Name:     "d",
+		Metadata: map[string]interface{}{"name": "d"},
+		Spec:     map[string]interface{}{"data": "ddd"},
+		Json:     []byte(`{"apiVersion":"v2","kind":"d","metadata":{"name":"d"},"spec":{"data":"ddd"}}`),
 	})
 }
 

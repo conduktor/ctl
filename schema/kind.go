@@ -168,13 +168,39 @@ func (kind *Kind) ApplyPath(resource *resource.Resource) (QueryInfo, error) {
 	return kind.ListPath(parentPathValues, parentQueryValues), nil
 }
 
-func (kind *Kind) DeletePath(resource *resource.Resource) (string, error) {
+func (kind *Kind) DeletePath(resource *resource.Resource) (string, map[string]string, error) {
 	applyPath, err := kind.ApplyPath(resource)
+	queryParam := make(map[string]string)
 	if err != nil {
-		return "", err
+		return "", queryParam, err
+	}
+	kindVersion, ok := kind.Versions[extractVersionFromApiVersion(resource.Version)]
+	if !ok {
+		return "", queryParam, fmt.Errorf("Could not find version %s for kind %s", resource.Version, resource.Kind)
 	}
 
-	return applyPath.Path + "/" + resource.Name, nil
+	for _, param := range kindVersion.GetParentQueryParam() {
+		paramVal, ok := resource.Metadata[param]
+		if !ok {
+			continue
+		}
+		stringParamVar := ""
+		switch v := paramVal.(type) {
+		case string:
+			stringParamVar = v
+		case int:
+			stringParamVar = strconv.Itoa(v)
+		case bool:
+			stringParamVar = strconv.FormatBool(v)
+		default:
+			return "", queryParam, fmt.Errorf("paramVal is of an unknown type")
+		}
+
+		if stringParamVar != "" {
+			queryParam[param] = stringParamVar
+		}
+	}
+	return applyPath.Path + "/" + resource.Name, queryParam, nil
 }
 
 func extractVersionFromApiVersion(apiVersion string) int {

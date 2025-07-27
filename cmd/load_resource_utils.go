@@ -7,10 +7,10 @@ import (
 	"github.com/conduktor/ctl/resource"
 )
 
-func loadResourceFromFileFlag(filePath []string, strict bool) []resource.Resource {
+func loadResourceFromFileFlag(filePath []string, strict, recursiveFolder bool) []resource.Resource {
 	var resources = make([]resource.Resource, 0)
 	for _, path := range filePath {
-		r, err := resourceForPath(path, strict)
+		r, err := resourceForPath(path, strict, recursiveFolder)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%s\n", err)
 			os.Exit(1)
@@ -19,3 +19,5 @@ func loadResourceFromFileFlag(filePath []string, strict bool) []resource.Resourc
 	}
 	return resources
 }
+
+const FILE_ARGS_DOC = "Specify the files or folders to apply. For folders, all .yaml or .yml files within the folder will be applied, while files in subfolders will be ignored."
