@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/conduktor/ctl/client"
 	"github.com/conduktor/ctl/resource"
 	"sync"
 	"testing"
@@ -22,7 +23,7 @@ func TestApplyResources_MaxParallel(t *testing.T) {
 			maxConcurrent := 0
 			currentConcurrent := 0
 
-			applyFunc := func(r *resource.Resource, dryRun bool) (string, error) {
+			applyFunc := func(r *resource.Resource, dryRun bool, printDiff bool) (client.Result, error) {
 				mu.Lock()
 				currentConcurrent++
 				if currentConcurrent > maxConcurrent {
@@ -39,15 +40,17 @@ func TestApplyResources_MaxParallel(t *testing.T) {
 				applyCount++
 				currentConcurrent--
 				mu.Unlock()
-				return "applied", nil
+				var result client.Result
+				result.UpsertResult = "applied"
+				return result, nil
 			}
-			logFunc := func(res resource.Resource, upsertResult string, err error) {
+			logFunc := func(res resource.Resource, upsertResult client.Result, err error) {
 				mu.Lock()
-				logs = append(logs, fmt.Sprintf("%s/%s: %s", res.Kind, res.Name, upsertResult))
+				logs = append(logs, fmt.Sprintf("%s/%s: %s", res.Kind, res.Name, upsertResult.UpsertResult))
 				mu.Unlock()
 			}
 
-			results := ApplyResources(resources, applyFunc, logFunc, false, maxParallel)
+			results := ApplyResources(resources, applyFunc, logFunc, false, false, maxParallel)
 
 			if len(results) != len(resources) {
 				t.Errorf("expected %d results, got %d", len(resources), len(results))

@@ -1,41 +1,18 @@
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/conduktor/ctl/resource"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"gopkg.in/yaml.v3"
-	"slices"
 	"sort"
 )
-
-// List of resource kinds that are supported for diffing
-var supportedTypes = []string{
-	"ServiceAccount",
-}
-
-// DiffIsSupported checks if diffing is supported for the given resource type.
-func DiffIsSupported(res *resource.Resource) bool {
-	if slices.Contains(supportedTypes, res.Kind) {
-		return true
-	} else {
-		return false
-	}
-}
 
 // PrintDiff dispatches the diff operation for supported resource types
 // and prints the resulting diff to stdout.
 func PrintDiff(currentResource *resource.Resource, modifiedResource *resource.Resource) error {
-	var txt string
-	var err error
-
-	switch currentResource.Kind {
-	case "ServiceAccount":
-		txt, err = DiffServiceAccount(currentResource, modifiedResource)
-	default:
-		// Unsupported resource kind; nothing to diff
-		return nil
-	}
+	txt, err := DiffResources(currentResource, modifiedResource)
 
 	if err != nil {
 		return err
@@ -44,33 +21,34 @@ func PrintDiff(currentResource *resource.Resource, modifiedResource *resource.Re
 	return nil
 }
 
-// DiffServiceAccount compares two ServiceAccount objects and returns a unified diff in git-like format.
-func DiffServiceAccount(curSa, newSa *resource.Resource) (string, error) {
+// DiffResources compares two Resources objects and returns a unified diff in git-like format.
+func DiffResources(curRes, newRes *resource.Resource) (string, error) {
+	var curResObj, newResObj interface{}
+	var err error
 
-	// Convert generic resource representations to ServiceAccount-specific structs
-	a, err := curSa.ConvertToServiceAccount()
+	isNotYetCreated := false
+
+	// unmarshall the JSON data into a generic interface{}
+	err = json.Unmarshal(curRes.Json, &curResObj)
 	if err != nil {
-		return "", err
+		isNotYetCreated = true
 	}
-	b, err := newSa.ConvertToServiceAccount()
+	err = json.Unmarshal(newRes.Json, &newResObj)
 	if err != nil {
-		return "", err
+		emptyRes := resource.Resource{}
+		_ = json.Unmarshal(emptyRes.Json, &newResObj)
 	}
 
-	// Sort ACL slices by Name for consistent ordering
-	sort.Slice(a.Spec.Authorization.Acls, func(i, j int) bool {
-		return a.Spec.Authorization.Acls[i].Name < a.Spec.Authorization.Acls[j].Name
-	})
-	sort.Slice(b.Spec.Authorization.Acls, func(i, j int) bool {
-		return b.Spec.Authorization.Acls[i].Name < b.Spec.Authorization.Acls[j].Name
-	})
+	// recursively sort the maps and slices in generic interface{}
+	sortedCurRes := sortInterface(curResObj)
+	sortedNewRes := sortInterface(newResObj)
 
 	// Marshal both structs back to YAML
-	yamlA, err := yaml.Marshal(a)
+	yamlCurRes, err := yaml.Marshal(sortedCurRes)
 	if err != nil {
 		return "", err
 	}
-	yamlB, err := yaml.Marshal(b)
+	yamlNewRes, err := yaml.Marshal(sortedNewRes)
 	if err != nil {
 		return "", err
 	}
@@ -78,10 +56,42 @@ func DiffServiceAccount(curSa, newSa *resource.Resource) (string, error) {
 	// Create a new diff instance
 	dmp := diffmatchpatch.New()
 
+	if isNotYetCreated {
+		yamlCurRes = []byte{0}
+	}
 	// Generate unified diff
-	diffs := dmp.DiffMain(string(yamlA), string(yamlB), false)
+	diffs := dmp.DiffMain(string(yamlCurRes), string(yamlNewRes), false)
 
 	// Format the diff nicely
 	diffText := dmp.DiffPrettyText(diffs)
 	return diffText, nil
+}
+
+func sortInterface(input interface{}) interface{} {
+	switch v := input.(type) {
+	case map[string]interface{}:
+		// Sort map keys
+		sortedMap := make(map[string]interface{})
+		keys := make([]string, 0, len(v))
+		for key := range v {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		for _, key := range keys {
+			sortedMap[key] = sortInterface(v[key])
+		}
+		return sortedMap
+	case []interface{}:
+		// Sort slices
+		for i := range v {
+			v[i] = sortInterface(v[i])
+		}
+		sort.SliceStable(v, func(i, j int) bool {
+			return fmt.Sprintf("%v", v[i]) < fmt.Sprintf("%v", v[j])
+		})
+		return v
+	default:
+		// Return other types as-is
+		return v
+	}
 }

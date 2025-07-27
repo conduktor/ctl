@@ -314,15 +314,21 @@ func (client *GatewayClient) Run(run schema.Run, pathValue []string, queryParams
 	return resp.Body(), nil
 }
 
-func (client *GatewayClient) Apply(resource *resource.Resource, dryMode bool) (string, error) {
+func (client *GatewayClient) Apply(resource *resource.Resource, dryMode bool, diffMode bool) (Result, error) {
+	var result Result
+	result.UpsertResult = ""
+	if diffMode {
+		fmt.Printf("Showing differences for Gateway Ressources is not yet supported.")
+	}
+
 	kinds := client.GetKinds()
 	kind, ok := kinds[resource.Kind]
 	if !ok {
-		return "", fmt.Errorf("kind %s not found", resource.Kind)
+		return result, fmt.Errorf("kind %s not found", resource.Kind)
 	}
 	applyQueryInfo, err := kind.ApplyPath(resource)
 	if err != nil {
-		return "", err
+		return result, err
 	}
 	url := client.baseUrl + applyQueryInfo.Path
 	builder := client.client.R().SetBody(resource.Json)
@@ -334,18 +340,18 @@ func (client *GatewayClient) Apply(resource *resource.Resource, dryMode bool) (s
 	}
 	resp, err := builder.Put(url)
 	if err != nil {
-		return "", err
+		return result, err
 	} else if resp.IsError() {
-		return "", fmt.Errorf(extractApiError(resp))
+		return result, fmt.Errorf(extractApiError(resp))
 	}
 	bodyBytes := resp.Body()
-	var upsertResponse UpsertResponse
-	err = json.Unmarshal(bodyBytes, &upsertResponse)
+	err = json.Unmarshal(bodyBytes, &result)
 	//in case backend format change (not json string anymore). Let not fail the client for that
 	if err != nil {
-		return resp.String(), nil
+		result.UpsertResult = resp.String()
+		return result, nil
 	}
-	return upsertResponse.UpsertResult, nil
+	return result, nil
 }
 
 func (client *GatewayClient) GetOpenApi() ([]byte, error) {
