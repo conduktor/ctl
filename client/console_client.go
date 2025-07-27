@@ -276,7 +276,7 @@ func (client *Client) Apply(resource *resource.Resource, dryMode bool, diffMode 
 		if err != nil {
 			return result, err
 		}
-		result.Diff = "\n" + diff
+		result.Diff = diff
 	}
 
 	resp, err := builder.Put(url)

@@ -62,9 +62,23 @@ func DiffResources(curRes, newRes *resource.Resource) (string, error) {
 	// Generate unified diff
 	diffs := dmp.DiffMain(string(yamlCurRes), string(yamlNewRes), false)
 
+	// Check if there are any actual differences
+	hasChanges := false
+	for _, diff := range diffs {
+		if diff.Type != diffmatchpatch.DiffEqual {
+			hasChanges = true
+			break
+		}
+	}
+
+	// Return empty string if no changes
+	if !hasChanges {
+		return "", nil
+	}
+
 	// Format the diff nicely
 	diffText := dmp.DiffPrettyText(diffs)
-	return diffText, nil
+	return "\n" + diffText, nil
 }
 
 func sortInterface(input interface{}) interface{} {
