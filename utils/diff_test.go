@@ -15,132 +15,120 @@ func TestDiffResources(t *testing.T) {
 		name        string
 		currentRes  *resource.Resource
 		modifiedRes *resource.Resource
-		expectError bool
 		expectDiff  bool
 	}{
 		{
-			name: "identical resources",
+			name: "identical resources produce no diff",
 			currentRes: &resource.Resource{
 				Json: []byte(`{"name": "test", "value": 1}`),
 			},
 			modifiedRes: &resource.Resource{
 				Json: []byte(`{"name": "test", "value": 1}`),
 			},
-			expectError: false,
-			expectDiff:  false,
+			expectDiff: false,
 		},
 		{
-			name: "different values",
+			name: "different values produce diff",
 			currentRes: &resource.Resource{
 				Json: []byte(`{"name": "test", "value": 1}`),
 			},
 			modifiedRes: &resource.Resource{
 				Json: []byte(`{"name": "test", "value": 2}`),
 			},
-			expectError: false,
-			expectDiff:  true,
+			expectDiff: true,
 		},
 		{
-			name: "different keys",
+			name: "additional keys produce diff",
 			currentRes: &resource.Resource{
 				Json: []byte(`{"name": "test"}`),
 			},
 			modifiedRes: &resource.Resource{
 				Json: []byte(`{"name": "test", "newKey": "value"}`),
 			},
-			expectError: false,
-			expectDiff:  true,
+			expectDiff: true,
 		},
 		{
-			name: "nested objects",
+			name: "nested object changes detected",
 			currentRes: &resource.Resource{
 				Json: []byte(`{"config": {"host": "localhost", "port": 8080}}`),
 			},
 			modifiedRes: &resource.Resource{
 				Json: []byte(`{"config": {"host": "localhost", "port": 9090}}`),
 			},
-			expectError: false,
-			expectDiff:  true,
+			expectDiff: true,
 		},
 		{
-			name: "arrays",
+			name: "array changes detected",
 			currentRes: &resource.Resource{
 				Json: []byte(`{"items": [1, 2, 3]}`),
 			},
 			modifiedRes: &resource.Resource{
 				Json: []byte(`{"items": [1, 2, 3, 4]}`),
 			},
-			expectError: false,
-			expectDiff:  true,
+			expectDiff: true,
 		},
 		{
-			name: "unsorted arrays should be sorted",
+			name: "unsorted arrays identical after sorting",
 			currentRes: &resource.Resource{
 				Json: []byte(`{"items": [3, 1, 2]}`),
 			},
 			modifiedRes: &resource.Resource{
 				Json: []byte(`{"items": [1, 2, 3]}`),
 			},
-			expectError: false,
-			expectDiff:  false, // Should be identical after sorting
+			expectDiff: false,
 		},
 		{
-			name: "unsorted maps should be sorted",
+			name: "unsorted maps identical after sorting",
 			currentRes: &resource.Resource{
 				Json: []byte(`{"z": 1, "a": 2, "m": 3}`),
 			},
 			modifiedRes: &resource.Resource{
 				Json: []byte(`{"a": 2, "m": 3, "z": 1}`),
 			},
-			expectError: false,
-			expectDiff:  false, // Should be identical after sorting
+			expectDiff: false,
 		},
 		{
-			name: "invalid current resource JSON (not yet created scenario)",
+			name: "invalid current JSON triggers not-yet-created path",
 			currentRes: &resource.Resource{
 				Json: []byte(`invalid json`),
 			},
 			modifiedRes: &resource.Resource{
 				Json: []byte(`{"name": "test"}`),
 			},
-			expectError: false,
-			expectDiff:  true,
+			expectDiff: true,
 		},
 		{
-			name: "invalid modified resource JSON",
+			name: "invalid modified JSON handled gracefully",
 			currentRes: &resource.Resource{
 				Json: []byte(`{"name": "test"}`),
 			},
 			modifiedRes: &resource.Resource{
 				Json: []byte(`invalid json`),
 			},
-			expectError: false, // Function handles this gracefully
-			expectDiff:  true,
+			expectDiff: true,
 		},
 		{
-			name: "both invalid JSON",
+			name: "both invalid JSON treated as empty",
 			currentRes: &resource.Resource{
 				Json: []byte(`invalid json 1`),
 			},
 			modifiedRes: &resource.Resource{
 				Json: []byte(`invalid json 2`),
 			},
-			expectError: false,
-			expectDiff:  false, // Both will be treated as empty
+			expectDiff: false,
 		},
 		{
-			name: "empty resources",
+			name: "empty resources are identical",
 			currentRes: &resource.Resource{
 				Json: []byte(`{}`),
 			},
 			modifiedRes: &resource.Resource{
 				Json: []byte(`{}`),
 			},
-			expectError: false,
-			expectDiff:  false,
+			expectDiff: false,
 		},
 		{
-			name: "complex nested structure",
+			name: "complex nested structure changes detected",
 			currentRes: &resource.Resource{
 				Json: []byte(`{
 					"metadata": {
@@ -171,8 +159,7 @@ func TestDiffResources(t *testing.T) {
 					}
 				}`),
 			},
-			expectError: false,
-			expectDiff:  true,
+			expectDiff: true,
 		},
 	}
 
@@ -180,16 +167,13 @@ func TestDiffResources(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := DiffResources(tt.currentRes, tt.modifiedRes)
 
-			if tt.expectError {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-				if tt.expectDiff {
-					assert.NotEmpty(t, result)
-					// Check that diff contains some indication of changes
-					// The exact format depends on diffmatchpatch implementation
-					assert.True(t, len(result) > 0, "Expected diff output but got empty string")
-				}
+			assert.NoError(t, err)
+
+			if tt.expectDiff {
+				assert.NotEmpty(t, result, "Expected diff output but got empty string")
+				// Check that diff contains some indication of changes
+				// The exact format depends on diffmatchpatch implementation
+				assert.True(t, len(result) > 0, "Expected diff output but got empty string")
 			}
 		})
 	}
