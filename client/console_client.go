@@ -249,8 +249,8 @@ func (client *Client) ActivateDebug() {
 }
 
 func (client *Client) Apply(resource *resource.Resource, dryMode bool, diffMode bool) (Result, error) {
-	var result Result
-	result.UpsertResult = ""
+	var result = Result{}
+
 	client.setAuthMethodFromEnvIfNeeded()
 	kinds := client.GetKinds()
 	kind, ok := kinds[resource.Kind]
