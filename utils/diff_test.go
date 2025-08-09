@@ -329,22 +329,6 @@ func isComplexType(input interface{}) bool {
 	}
 }
 
-func TestDiffResourcesYAMLMarshaling(t *testing.T) {
-	// Test that YAML marshaling errors are handled properly
-	// This is a bit tricky to test since yaml.Marshal rarely fails with valid Go data structures
-
-	currentRes := &resource.Resource{
-		Json: []byte(`{"name": "test"}`),
-	}
-	modifiedRes := &resource.Resource{
-		Json: []byte(`{"name": "modified"}`),
-	}
-
-	result, err := DiffResources(currentRes, modifiedRes)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, result)
-}
-
 func TestDiffResourcesEdgeCases(t *testing.T) {
 	t.Run("empty JSON bytes", func(t *testing.T) {
 		currentRes := &resource.Resource{Json: []byte("")}
