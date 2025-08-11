@@ -69,11 +69,11 @@ func TestApplyShouldWork(t *testing.T) {
 		responder,
 	)
 
-	body, err := client.Apply(&topic, false)
+	body, err := client.Apply(&topic, false, false)
 	if err != nil {
 		t.Error(err)
 	}
-	if body != "NotChanged" {
+	if body.UpsertResult != "NotChanged" {
 		t.Errorf("Bad result expected NotChanged got: %s", body)
 	}
 }
@@ -118,11 +118,11 @@ func TestApplyShouldWorkWithExternalAuthMode(t *testing.T) {
 		responder,
 	)
 
-	body, err := client.Apply(&topic, false)
+	body, err := client.Apply(&topic, false, false)
 	if err != nil {
 		t.Error(err)
 	}
-	if body != "NotChanged" {
+	if body.UpsertResult != "NotChanged" {
 		t.Errorf("Bad result expected NotChanged got: %s", body)
 	}
 }
@@ -218,11 +218,11 @@ func TestApplyShouldWorkWithQueryParams(t *testing.T) {
 		responder,
 	)
 
-	body, err := client.Apply(&topic, false)
+	body, err := client.Apply(&topic, false, false)
 	if err != nil {
 		t.Error(err)
 	}
-	if body != "NotChanged" {
+	if body.UpsertResult != "NotChanged" {
 		t.Errorf("Bad result expected NotChanged got: %s", body)
 	}
 }
@@ -259,11 +259,11 @@ func TestApplyWithDryModeShouldWork(t *testing.T) {
 		responder,
 	)
 
-	body, err := client.Apply(&topic, true)
+	body, err := client.Apply(&topic, true, false)
 	if err != nil {
 		t.Error(err)
 	}
-	if body != "NotChanged" {
+	if body.UpsertResult != "NotChanged" {
 		t.Errorf("Bad result expected NotChanged got: %s", body)
 	}
 }
@@ -303,7 +303,7 @@ func TestApplyShouldFailIfNo2xx(t *testing.T) {
 		responder,
 	)
 
-	_, err = client.Apply(&topic, false)
+	_, err = client.Apply(&topic, false, false)
 	if err == nil {
 		t.Failed()
 	}

@@ -5,12 +5,14 @@ import (
 	"os"
 	"sync"
 
+	"github.com/conduktor/ctl/client"
 	"github.com/conduktor/ctl/resource"
 	"github.com/conduktor/ctl/schema"
 	"github.com/spf13/cobra"
 )
 
 var dryRun *bool
+var printDiff *bool
 var maxParallel *int
 
 func resourceForPath(path string, strict, recursiveFolder bool) ([]resource.Resource, error) {
@@ -28,17 +30,18 @@ func resourceForPath(path string, strict, recursiveFolder bool) ([]resource.Reso
 
 // Globally accessible for testing purposes
 func ApplyResources(resources []resource.Resource,
-	applyFunc func(*resource.Resource, bool) (string, error),
-	logFunc func(resource.Resource, string, error),
+	applyFunc func(*resource.Resource, bool, bool) (client.Result, error),
+	logFunc func(resource.Resource, client.Result, error),
 	dryRun bool,
+	diffMode bool,
 	maxParallel int) []struct {
 	Resource     resource.Resource
-	UpsertResult string
+	UpsertResult client.Result
 	Err          error
 } {
 	results := make([]struct {
 		Resource     resource.Resource
-		UpsertResult string
+		UpsertResult client.Result
 		Err          error
 	}, len(resources))
 
@@ -49,32 +52,33 @@ func ApplyResources(resources []resource.Resource,
 		for i, resrc := range resources {
 			wg.Add(1)
 			sem <- struct{}{} // acquire a slot
-			go func(i int, resrc resource.Resource) {
+			go func(i int, res resource.Resource) {
 				defer func() {
 					wg.Done()
 					<-sem // release the slot
 				}()
-				upsertResult, err := applyFunc(&resrc, dryRun)
+				upsertResult, err := applyFunc(&res, dryRun, diffMode)
 				results[i] = struct {
 					Resource     resource.Resource
-					UpsertResult string
+					UpsertResult client.Result
 					Err          error
-				}{resrc, upsertResult, err}
+				}{res, upsertResult, err}
 				mu.Lock()
-				logFunc(resrc, upsertResult, err)
+				logFunc(res, upsertResult, err)
 				mu.Unlock()
 			}(i, resrc)
 		}
 		wg.Wait()
 	} else {
-		for i, resrc := range resources {
-			upsertResult, err := applyFunc(&resrc, dryRun)
+		for i, res := range resources {
+			var err error
+			upsertResult, err := applyFunc(&res, dryRun, diffMode)
 			results[i] = struct {
 				Resource     resource.Resource
-				UpsertResult string
+				UpsertResult client.Result
 				Err          error
-			}{resrc, upsertResult, err}
-			logFunc(resrc, upsertResult, err)
+			}{res, upsertResult, err}
+			logFunc(res, upsertResult, err)
 		}
 	}
 	return results
@@ -99,22 +103,24 @@ func runApply(kinds schema.KindCatalog, filePath []string, strict bool, recursiv
 		if len(group) == 0 {
 			continue
 		}
-		logFunc := func(res resource.Resource, upsertResult string, err error) {
+		logFunc := func(res resource.Resource, upsertResult client.Result, err error) {
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Could not apply resource %s/%s: %s\n", res.Kind, res.Name, err)
-			} else if upsertResult != "" {
-				fmt.Printf("%s/%s: %s\n", res.Kind, res.Name, upsertResult)
+			} else if upsertResult.UpsertResult != "" {
+				fmt.Printf("%s", upsertResult.Diff)
+				fmt.Printf("%s/%s: %s\n", res.Kind, res.Name, upsertResult.UpsertResult)
 			}
 		}
 		var results []struct {
 			Resource     resource.Resource
-			UpsertResult string
+			UpsertResult client.Result
 			Err          error
 		}
+
 		if isGatewayResource(group[0], kinds) {
-			results = ApplyResources(group, gatewayApiClient().Apply, logFunc, *dryRun, *maxParallel)
+			results = ApplyResources(group, gatewayApiClient().Apply, logFunc, *dryRun, *printDiff, *maxParallel)
 		} else {
-			results = ApplyResources(group, consoleApiClient().Apply, logFunc, *dryRun, *maxParallel)
+			results = ApplyResources(group, consoleApiClient().Apply, logFunc, *dryRun, *printDiff, *maxParallel)
 		}
 		for _, r := range results {
 			if r.Err != nil {
@@ -148,6 +154,9 @@ func initApply(kinds schema.KindCatalog, strict bool) {
 
 	dryRun = applyCmd.
 		PersistentFlags().Bool("dry-run", false, "Test potential changes without the effects being applied")
+
+	printDiff = applyCmd.
+		PersistentFlags().Bool("print-diff", false, "Print the diff between the current resource and the one to be applied")
 
 	recursiveFolder = applyCmd.
 		PersistentFlags().BoolP("recursive", "r", false, "Apply all .yaml or .yml files in the specified folder and its subfolders. If not set, only files in the specified folder will be applied.")
