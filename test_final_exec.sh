@@ -35,6 +35,9 @@ main() {
 	run conduktor token delete 0-0-0-0-0
 	run conduktor sql 'select * from "julien-cloud_sql_test"' -n 100
 
+	# Edit command test
+	run -e EDITOR="/mock_editor.sh" conduktor edit Topic edit-test-topic --cluster=edit-cluster
+
 	# Gateway
 	run conduktor apply -f /test_resource_gw.yml
 	run conduktor delete VirtualCluster vcluster1
