@@ -1,7 +1,8 @@
 module github.com/conduktor/ctl
 
-go 1.22.0
-toolchain go1.24.1
+go 1.23.0
+
+toolchain go1.24.7
 
 require (
 	github.com/Jeffail/gabs/v2 v2.7.0

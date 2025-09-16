@@ -6,7 +6,7 @@ on:
     types: [published]
 
 env:
-  GO_VERSION: 1.22.0
+  GO_VERSION: 1.25.1
 
 jobs:
   check-version:
