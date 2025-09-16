@@ -86,6 +86,7 @@ func init() {
 	strict := !*permissive
 	initGet(catalog.Kind)
 	initTemplate(catalog.Kind, strict)
+	initEdit(catalog.Kind, strict)
 	initDelete(catalog.Kind, strict)
 	initApply(catalog.Kind, strict)
 	intConsoleMakeCatalog()

@@ -12,6 +12,7 @@ services:
     volumes:
       - ./test_resource.yml:/test_resource.yml
       - ./test_resource_gw.yml:/test_resource_gw.yml
+      - ./mock_editor.sh:/mock_editor.sh
 
   mock:
     image: mockserver/mockserver:latest

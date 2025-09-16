@@ -113,6 +113,7 @@ Available Commands:
   apply              Upsert a resource on Conduktor
   completion         Generate the autocompletion script for the specified shell
   delete             Delete resource of a given kind and name
+  edit               Edit a resource in a text editor and apply changes
   get                Get resource of a given kind
   help               Help about any command
   login              Login user using username password to get a JWT token

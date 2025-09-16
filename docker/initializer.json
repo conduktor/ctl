@@ -292,6 +292,66 @@
   },
   {
     "httpRequest": {
+      "method": "Get",
+      "path": "/api/public/kafka/v2/cluster/edit-cluster/topic/edit-test-topic",
+      "headers": {
+        "Authorization": "Bearer yo"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": {
+        "metadata": {
+          "name": "edit-test-topic",
+          "cluster": "toto"
+        },
+        "spec": {
+          "replicationFactor": 1,
+          "partitions": 3
+        }
+      },
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "Put",
+      "path": "/api/public/kafka/v2/cluster/edit-cluster/topic",
+      "headers": {
+        "Authorization": "Bearer yo"
+      },
+      "body": {
+        "apiVersion": "v2",
+        "kind": "Topic",
+        "metadata": {
+          "cluster": "edit-cluster",
+          "name": "edit-test-topic"
+        },
+        "spec": {
+          "configs": {
+            "retention.ms": 604800000
+          },
+          "partitions": 3,
+          "replicationFactor": 1
+        }
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "\"Updated\"",
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
       "method": "POST",
       "path": "/api/public/partner-zone/v2/yo/generate-credentials",
       "headers": {
