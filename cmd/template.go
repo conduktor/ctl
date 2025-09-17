@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"os/exec"
 
 	"github.com/conduktor/ctl/schema"
 	"github.com/spf13/cobra"
@@ -71,7 +70,7 @@ func initTemplate(kinds schema.KindCatalog, strict bool) {
 						defer f.Close()
 						w := bufio.NewWriter(f)
 						if apply != nil && *apply {
-							_, err = w.WriteString("# WARNING: Your file will be applied automatically once saved. If you do not want to apply anything, save an empty file.\n")
+							_, err = w.WriteString(AutoApplyWarningMessage)
 						}
 						_, err = w.WriteString("---\n")
 						_, err = w.WriteString(kind.GetLatestKindVersion().GetApplyExample())
@@ -95,29 +94,16 @@ func initTemplate(kinds schema.KindCatalog, strict bool) {
 
 func editAndApply(edit *bool, file *string, apply *bool, kinds schema.KindCatalog, strict bool) {
 	if edit != nil && *edit {
-		//run $EDITOR on the file
-		editor := os.Getenv("EDITOR")
-		if editor == "" {
-			if *debug {
-				fmt.Fprintln(os.Stderr, "No editor set. Set $EDITOR to your preferred editor")
-			}
-			editor = "nano"
-		}
-		editorFromPath, err := exec.LookPath(editor)
+		// Run editor on the file
+		err := runEditor(*file)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Could not find %s in path: %s\n", editor, err)
+			fmt.Fprintf(os.Stderr, "Editor error: %s\n", err)
 			os.Exit(7)
 		}
-		cmd := exec.Command(editorFromPath, *file)
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		if err := cmd.Run(); err != nil {
-			fmt.Fprintf(os.Stderr, "Could not run %s: %s", editorFromPath, err)
-			os.Exit(8)
-		}
+		
+		recursiveFolder := false
 		if apply != nil && *apply {
-			runApply(kinds, []string{*file}, strict)
+			runApply(kinds, []string{*file}, strict, recursiveFolder)
 		}
 	}
 }

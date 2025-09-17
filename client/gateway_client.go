@@ -136,16 +136,20 @@ func (client *GatewayClient) Delete(kind *schema.Kind, parentPathValue []string,
 
 func (client *GatewayClient) DeleteResourceByName(resource *resource.Resource) error {
 	kinds := client.GetKinds()
+	requestBuilder := client.client.R()
 	kind, ok := kinds[resource.Kind]
 	if !ok {
 		return fmt.Errorf("kind %s not found", resource.Kind)
 	}
-	deletePath, err := kind.DeletePath(resource)
+	deletePath, queryParams, err := kind.DeletePath(resource)
 	if err != nil {
 		return err
 	}
 	url := client.baseUrl + deletePath
-	resp, err := client.client.R().Delete(url)
+	if queryParams != nil {
+		requestBuilder = requestBuilder.SetQueryParams(queryParams)
+	}
+	resp, err := requestBuilder.Delete(url)
 	if err != nil {
 		return err
 	} else if resp.IsError() {
@@ -192,14 +196,11 @@ func (client *GatewayClient) DeleteResourceInterceptors(resource *resource.Resou
 	kinds := client.GetKinds()
 	kind, ok := kinds[resource.Kind]
 	scope := resource.Metadata["scope"]
-	var deleteInterceptorPayload DeleteInterceptorPayload
+	var deleteInterceptorPayload *DeleteInterceptorPayload
 	if scope == nil {
-		deleteInterceptorPayload = DeleteInterceptorPayload{
-			VCluster: nil,
-			Group:    nil,
-			Username: nil,
-		}
+		deleteInterceptorPayload = nil
 	} else {
+		deleteInterceptorPayload = &DeleteInterceptorPayload{}
 		vCluster := scope.(map[string]interface{})["vCluster"]
 		var vClusterValue string
 		if vCluster != nil && vCluster.(string) != "" {
@@ -222,16 +223,24 @@ func (client *GatewayClient) DeleteResourceInterceptors(resource *resource.Resou
 	if !ok {
 		return fmt.Errorf("kind %s not found", resource.Kind)
 	}
-	deletePath, err := kind.DeletePath(resource)
+	deletePath, _, err := kind.DeletePath(resource)
 	if err != nil {
 		return err
 	}
 	url := client.baseUrl + deletePath
-	resp, err := client.client.R().SetBody(deleteInterceptorPayload).Delete(url)
+	req := client.client.R()
+	if deleteInterceptorPayload != nil {
+		req = req.SetBody(deleteInterceptorPayload)
+	}
+	resp, err := req.Delete(url)
 	if err != nil {
 		return err
 	} else if resp.IsError() {
-		return fmt.Errorf(extractApiError(resp))
+		msg := extractApiError(resp)
+		if deleteInterceptorPayload == nil {
+			msg += "\nThis error may be caused by a bug in Conduktor Gateway REST api defaults fixed in version 3.11.0.\nAs a quick fix, you can fetch your interceptor to see the exact scope and use this when deleting."
+		}
+		return fmt.Errorf("%s", msg)
 	} else {
 		fmt.Printf("%s/%s deleted\n", kind.GetName(), resource.Name)
 	}
@@ -305,15 +314,17 @@ func (client *GatewayClient) Run(run schema.Run, pathValue []string, queryParams
 	return resp.Body(), nil
 }
 
-func (client *GatewayClient) Apply(resource *resource.Resource, dryMode bool) (string, error) {
+func (client *GatewayClient) Apply(resource *resource.Resource, dryMode bool, diffMode bool) (Result, error) {
+	var result = Result{}
+
 	kinds := client.GetKinds()
 	kind, ok := kinds[resource.Kind]
 	if !ok {
-		return "", fmt.Errorf("kind %s not found", resource.Kind)
+		return result, fmt.Errorf("kind %s not found", resource.Kind)
 	}
 	applyQueryInfo, err := kind.ApplyPath(resource)
 	if err != nil {
-		return "", err
+		return result, err
 	}
 	url := client.baseUrl + applyQueryInfo.Path
 	builder := client.client.R().SetBody(resource.Json)
@@ -323,20 +334,28 @@ func (client *GatewayClient) Apply(resource *resource.Resource, dryMode bool) (s
 	if dryMode {
 		builder = builder.SetQueryParam("dryMode", "true")
 	}
+	if diffMode {
+		currentRes, err := client.GetFromResource(resource)
+		diff, err := utils.DiffResources(&currentRes, resource)
+		if err != nil {
+			return result, err
+		}
+		result.Diff = diff
+	}
 	resp, err := builder.Put(url)
 	if err != nil {
-		return "", err
+		return result, err
 	} else if resp.IsError() {
-		return "", fmt.Errorf(extractApiError(resp))
+		return result, fmt.Errorf(extractApiError(resp))
 	}
 	bodyBytes := resp.Body()
-	var upsertResponse UpsertResponse
-	err = json.Unmarshal(bodyBytes, &upsertResponse)
+	err = json.Unmarshal(bodyBytes, &result)
 	//in case backend format change (not json string anymore). Let not fail the client for that
 	if err != nil {
-		return resp.String(), nil
+		result.UpsertResult = resp.String()
+		return result, nil
 	}
-	return upsertResponse.UpsertResult, nil
+	return result, nil
 }
 
 func (client *GatewayClient) GetOpenApi() ([]byte, error) {
@@ -373,4 +392,45 @@ func (client *GatewayClient) GetKinds() schema.KindCatalog {
 
 func (client *GatewayClient) GetCatalog() *schema.Catalog {
 	return client.schemaCatalog
+}
+
+func (client *GatewayClient) GetFromResource(res *resource.Resource) (resource.Resource, error) {
+	var results []resource.Resource
+	kinds := client.GetKinds()
+	kind, ok := kinds[res.Kind]
+	if !ok {
+		return resource.Resource{}, fmt.Errorf("kind %s not found", res.Kind)
+	}
+	applyQueryInfo, err := kind.ApplyPath(res)
+	if err != nil {
+		return resource.Resource{}, err
+	}
+	url := client.baseUrl + applyQueryInfo.Path
+	builder := client.client.R().SetBody(res.Json)
+
+	for _, param := range applyQueryInfo.QueryParams {
+		builder = builder.SetQueryParam(param.Name, param.Value)
+	}
+
+	resp, err := builder.Get(url)
+	if err != nil {
+		return resource.Resource{}, err
+	}
+
+	if resp.IsError() {
+		return resource.Resource{}, fmt.Errorf(extractApiError(resp))
+	}
+
+	err = json.Unmarshal(resp.Body(), &results)
+	if err != nil {
+		return resource.Resource{}, err
+	}
+
+	// Find the resource by name from the response list
+	for _, element := range results {
+		if element.Name == res.Name {
+			return element, nil
+		}
+	}
+	return resource.Resource{}, fmt.Errorf("could not find any matching resource")
 }

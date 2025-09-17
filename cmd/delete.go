@@ -9,6 +9,7 @@ import (
 )
 
 func initDelete(kinds schema.KindCatalog, strict bool) {
+	var recursiveFolder *bool
 	var filePath *[]string
 	var deleteCmd = &cobra.Command{
 		Use:   "delete",
@@ -17,7 +18,7 @@ func initDelete(kinds schema.KindCatalog, strict bool) {
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			// Root command does nothing
-			resources := loadResourceFromFileFlag(*filePath, strict)
+			resources := loadResourceFromFileFlag(*filePath, strict, *recursiveFolder)
 			schema.SortResourcesForDelete(kinds, resources, *debug)
 			allSuccess := true
 			for _, resource := range resources {
@@ -47,7 +48,10 @@ func initDelete(kinds schema.KindCatalog, strict bool) {
 
 	rootCmd.AddCommand(deleteCmd)
 
-	filePath = deleteCmd.Flags().StringArrayP("file", "f", make([]string, 0, 0), "The files to apply")
+	filePath = deleteCmd.Flags().StringArrayP("file", "f", make([]string, 0, 0), FILE_ARGS_DOC)
+
+	recursiveFolder = deleteCmd.
+		Flags().BoolP("recursive", "r", false, "Delete all .yaml or .yml files in the specified folder and its subfolders. If not set, only files in the specified folder will be applied.")
 
 	deleteCmd.MarkFlagRequired("file")
 

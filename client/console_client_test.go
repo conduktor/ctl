@@ -69,11 +69,11 @@ func TestApplyShouldWork(t *testing.T) {
 		responder,
 	)
 
-	body, err := client.Apply(&topic, false)
+	body, err := client.Apply(&topic, false, false)
 	if err != nil {
 		t.Error(err)
 	}
-	if body != "NotChanged" {
+	if body.UpsertResult != "NotChanged" {
 		t.Errorf("Bad result expected NotChanged got: %s", body)
 	}
 }
@@ -118,11 +118,11 @@ func TestApplyShouldWorkWithExternalAuthMode(t *testing.T) {
 		responder,
 	)
 
-	body, err := client.Apply(&topic, false)
+	body, err := client.Apply(&topic, false, false)
 	if err != nil {
 		t.Error(err)
 	}
-	if body != "NotChanged" {
+	if body.UpsertResult != "NotChanged" {
 		t.Errorf("Bad result expected NotChanged got: %s", body)
 	}
 }
@@ -218,11 +218,11 @@ func TestApplyShouldWorkWithQueryParams(t *testing.T) {
 		responder,
 	)
 
-	body, err := client.Apply(&topic, false)
+	body, err := client.Apply(&topic, false, false)
 	if err != nil {
 		t.Error(err)
 	}
-	if body != "NotChanged" {
+	if body.UpsertResult != "NotChanged" {
 		t.Errorf("Bad result expected NotChanged got: %s", body)
 	}
 }
@@ -259,11 +259,11 @@ func TestApplyWithDryModeShouldWork(t *testing.T) {
 		responder,
 	)
 
-	body, err := client.Apply(&topic, true)
+	body, err := client.Apply(&topic, true, false)
 	if err != nil {
 		t.Error(err)
 	}
-	if body != "NotChanged" {
+	if body.UpsertResult != "NotChanged" {
 		t.Errorf("Bad result expected NotChanged got: %s", body)
 	}
 }
@@ -303,7 +303,7 @@ func TestApplyShouldFailIfNo2xx(t *testing.T) {
 		responder,
 	)
 
-	_, err = client.Apply(&topic, false)
+	_, err = client.Apply(&topic, false, false)
 	if err == nil {
 		t.Failed()
 	}
@@ -518,6 +518,44 @@ func TestDeleteResourceShouldWork(t *testing.T) {
 	)
 
 	resource, err := resource.FromYamlByte([]byte(`{"apiVersion":"v2","kind":"Topic","metadata":{"name":"toto","cluster":"local"},"spec":{}}`), true)
+	if err != nil {
+		t.Error(err)
+	}
+	err = client.DeleteResource(&resource[0])
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestDeleteResourceWhenMetadataContainsQueryParameter(t *testing.T) {
+	defer httpmock.Reset()
+	baseUrl := "http://baseUrl"
+	apiKey := "aToken"
+	client, err := Make(ApiParameter{
+		ApiKey:  apiKey,
+		BaseUrl: baseUrl,
+	})
+	if err != nil {
+		panic(err)
+	}
+	httpmock.ActivateNonDefault(
+		client.client.GetClient(),
+	)
+	responder, err := httpmock.NewJsonResponder(200, "[]")
+	if err != nil {
+		panic(err)
+	}
+
+	httpmock.RegisterMatcherResponderWithQuery(
+		"DELETE",
+		"http://baseUrl/api/public/monitoring/v3/alert/alert1",
+		"group=admin",
+		httpmock.HeaderIs("Authorization", "Bearer "+apiKey).
+			And(httpmock.HeaderIs("X-CDK-CLIENT", "CLI/unknown")),
+		responder,
+	)
+
+	resource, err := resource.FromYamlByte([]byte(`{"apiVersion":"v3","kind":"Alert","metadata":{"name":"alert1","group":"admin"},"spec":{}}`), true)
 	if err != nil {
 		t.Error(err)
 	}

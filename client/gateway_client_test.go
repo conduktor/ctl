@@ -44,11 +44,11 @@ func TestGwApplyShouldWork(t *testing.T) {
 		responder,
 	)
 
-	body, err := gatewayClient.Apply(&aVClusterResource, false)
+	body, err := gatewayClient.Apply(&aVClusterResource, false, false)
 	if err != nil {
 		t.Error(err)
 	}
-	if body != "NotChanged" {
+	if body.UpsertResult != "NotChanged" {
 		t.Errorf("Bad result expected NotChanged got: %s", body)
 	}
 }
@@ -79,11 +79,11 @@ func TestGwApplyWithDryModeShouldWork(t *testing.T) {
 		responder,
 	)
 
-	body, err := gatewayClient.Apply(&aVClusterResource, true)
+	body, err := gatewayClient.Apply(&aVClusterResource, true, false)
 	if err != nil {
 		t.Error(err)
 	}
-	if body != "NotChanged" {
+	if body.UpsertResult != "NotChanged" {
 		t.Errorf("Bad result expected NotChanged got: %s", body)
 	}
 }
@@ -118,7 +118,7 @@ func TestGwApplyShouldFailIfNo2xx(t *testing.T) {
 		responder,
 	)
 
-	_, err = gatewayClient.Apply(&aVClusterResource, false)
+	_, err = gatewayClient.Apply(&aVClusterResource, false, false)
 	if err == nil {
 		t.Failed()
 	}

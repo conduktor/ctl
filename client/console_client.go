@@ -163,16 +163,17 @@ func MakeFromEnv() (*Client, error) {
 	return client, nil
 }
 
-type UpsertResponse struct {
+type Result struct {
 	UpsertResult string
+	Diff         string
 }
 
-func (c *Client) IgnoreUntrustedCertificate() {
-	c.client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
+func (client *Client) IgnoreUntrustedCertificate() {
+	client.client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 }
 
-func (c *Client) setAuthMethodFromEnvIfNeeded() {
-	if c.authMethod == nil {
+func (client *Client) setAuthMethodFromEnvIfNeeded() {
+	if client.authMethod == nil {
 		authMode := strings.ToLower(os.Getenv("CDK_AUTH_MODE"))
 		apiKey := os.Getenv("CDK_API_KEY")
 
@@ -196,9 +197,9 @@ func (c *Client) setAuthMethodFromEnvIfNeeded() {
 			}
 
 			if apiKey != "" {
-				c.authMethod = BearerToken{apiKey}
+				client.authMethod = BearerToken{apiKey}
 			} else {
-				c.authMethod = BasicAuth{user, password}
+				client.authMethod = BasicAuth{user, password}
 			}
 		} else if authMode == "" || authMode == "conduktor" {
 			if apiKey == "" {
@@ -206,27 +207,27 @@ func (c *Client) setAuthMethodFromEnvIfNeeded() {
 				os.Exit(1)
 			}
 
-			c.authMethod = BearerToken{apiKey}
+			client.authMethod = BearerToken{apiKey}
 		} else {
 			fmt.Fprintf(os.Stderr, "CDK_AUTH_MODE was: \"%s\". Accepted values are \"conduktor\" or \"external\"\n.", authMode)
 			os.Exit(1)
 		}
 
-		c.setAuthMethodInRestClient()
+		client.setAuthMethodInRestClient()
 	}
 }
 
-func (c *Client) setAuthMethodInRestClient() {
-	if c.authMethod == nil {
+func (client *Client) setAuthMethodInRestClient() {
+	if client.authMethod == nil {
 		fmt.Fprintln(os.Stderr, "No authentication method defined. Please set CDK_API_KEY or CDK_USER/CDK_PASSWORD")
 		os.Exit(1)
 	}
-	c.client = c.client.SetHeader("Authorization", c.authMethod.AuthorizationHeader())
+	client.client = client.client.SetHeader("Authorization", client.authMethod.AuthorizationHeader())
 }
 
-func (c *Client) SetApiKey(apiKey string) {
-	c.authMethod = BearerToken{apiKey}
-	c.setAuthMethodInRestClient()
+func (client *Client) SetApiKey(apiKey string) {
+	client.authMethod = BearerToken{apiKey}
+	client.setAuthMethodInRestClient()
 }
 
 func extractApiError(resp *resty.Response) string {
@@ -247,16 +248,18 @@ func (client *Client) ActivateDebug() {
 	client.client.SetDebug(true)
 }
 
-func (client *Client) Apply(resource *resource.Resource, dryMode bool) (string, error) {
+func (client *Client) Apply(resource *resource.Resource, dryMode bool, diffMode bool) (Result, error) {
+	var result = Result{}
+
 	client.setAuthMethodFromEnvIfNeeded()
 	kinds := client.GetKinds()
 	kind, ok := kinds[resource.Kind]
 	if !ok {
-		return "", fmt.Errorf("kind %s not found", resource.Kind)
+		return result, fmt.Errorf("kind %s not found", resource.Kind)
 	}
 	applyQueryInfo, err := kind.ApplyPath(resource)
 	if err != nil {
-		return "", err
+		return result, err
 	}
 	url := client.baseUrl + applyQueryInfo.Path
 	builder := client.client.R().SetBody(resource.Json)
@@ -266,20 +269,31 @@ func (client *Client) Apply(resource *resource.Resource, dryMode bool) (string, 
 	if dryMode {
 		builder = builder.SetQueryParam("dryMode", "true")
 	}
+
+	if diffMode {
+		currentRes, err := client.GetFromResource(resource)
+		diff, err := utils.DiffResources(&currentRes, resource)
+		if err != nil {
+			return result, err
+		}
+		result.Diff = diff
+	}
+
 	resp, err := builder.Put(url)
 	if err != nil {
-		return "", err
+		return result, err
 	} else if resp.IsError() {
-		return "", fmt.Errorf(extractApiError(resp))
+		return result, fmt.Errorf(extractApiError(resp))
 	}
 	bodyBytes := resp.Body()
-	var upsertResponse UpsertResponse
-	err = json.Unmarshal(bodyBytes, &upsertResponse)
+
+	err = json.Unmarshal(bodyBytes, &result)
 	//in case backend format change (not json string anymore). Let not fail the client for that
 	if err != nil {
-		return resp.String(), nil
+		result.UpsertResult = resp.String()
+		return result, nil
 	}
-	return upsertResponse.UpsertResult, nil
+	return result, nil
 }
 
 func (client *Client) Get(kind *schema.Kind, parentPathValue []string, parentQueryValue []string, queryParams map[string]string) ([]resource.Resource, error) {
@@ -302,6 +316,50 @@ func (client *Client) Get(kind *schema.Kind, parentPathValue []string, parentQue
 	}
 	err = json.Unmarshal(resp.Body(), &result)
 	return result, err
+}
+
+// GetFromResource fetches the current version of a resource from the server by name and kind.
+// It builds the appropriate URL and query parameters based on the resource's kind configuration.
+func (client *Client) GetFromResource(res *resource.Resource) (resource.Resource, error) {
+	var results []resource.Resource
+	client.setAuthMethodFromEnvIfNeeded()
+	kinds := client.GetKinds()
+	kind, ok := kinds[res.Kind]
+	if !ok {
+		return resource.Resource{}, fmt.Errorf("kind %s not found", res.Kind)
+	}
+	applyQueryInfo, err := kind.ApplyPath(res)
+	if err != nil {
+		return resource.Resource{}, err
+	}
+	url := client.baseUrl + applyQueryInfo.Path
+	builder := client.client.R().SetBody(res.Json)
+
+	for _, param := range applyQueryInfo.QueryParams {
+		builder = builder.SetQueryParam(param.Name, param.Value)
+	}
+
+	resp, err := builder.Get(url)
+	if err != nil {
+		return resource.Resource{}, err
+	}
+
+	if resp.IsError() {
+		return resource.Resource{}, fmt.Errorf(extractApiError(resp))
+	}
+
+	err = json.Unmarshal(resp.Body(), &results)
+	if err != nil {
+		return resource.Resource{}, err
+	}
+
+	// Find the resource by name from the response list
+	for _, element := range results {
+		if element.Name == res.Name {
+			return element, nil
+		}
+	}
+	return resource.Resource{}, fmt.Errorf("could not find any matching resource")
 }
 
 func (client *Client) Run(run schema.Run, pathValue []string, queryParams map[string]string, body interface{}) ([]byte, error) {
@@ -390,16 +448,20 @@ func (client *Client) Delete(kind *schema.Kind, parentPathValue []string, parent
 func (client *Client) DeleteResource(resource *resource.Resource) error {
 	client.setAuthMethodFromEnvIfNeeded()
 	kinds := client.GetKinds()
+	requestBuilder := client.client.R()
 	kind, ok := kinds[resource.Kind]
 	if !ok {
 		return fmt.Errorf("kind %s not found", resource.Kind)
 	}
-	deletePath, err := kind.DeletePath(resource)
+	deletePath, queryParams, err := kind.DeletePath(resource)
 	if err != nil {
 		return err
 	}
 	url := client.baseUrl + deletePath
-	resp, err := client.client.R().Delete(url)
+	if queryParams != nil {
+		requestBuilder = requestBuilder.SetQueryParams(queryParams)
+	}
+	resp, err := requestBuilder.Delete(url)
 	if err != nil {
 		return err
 	} else if resp.IsError() {
@@ -538,6 +600,6 @@ func (client *Client) GetKinds() schema.KindCatalog {
 	return client.schemaCatalog.Kind
 }
 
-func (c *Client) GetCatalog() *schema.Catalog {
-	return c.schemaCatalog
+func (client *Client) GetCatalog() *schema.Catalog {
+	return client.schemaCatalog
 }
