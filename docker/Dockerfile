@@ -1,4 +1,4 @@
-FROM golang:1.22 as build
+FROM golang:1.25.1 as build
 ARG version=unknown
 ARG hash=unknown
 WORKDIR /app
