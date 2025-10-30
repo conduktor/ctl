@@ -4,34 +4,34 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/conduktor/ctl/client"
-	"github.com/conduktor/ctl/schema"
+	"github.com/conduktor/ctl/internal/client"
+	"github.com/conduktor/ctl/internal/schema"
 	"github.com/spf13/cobra"
 )
 
 var debug *bool
 var apiClient_ *client.Client
-var consoleApiClientError error
-var gatewayApiClient_ *client.GatewayClient
-var gatewayApiClientError error
+var consoleAPIClientError error
+var gatewayAPIClient_ *client.GatewayClient
+var gatewayAPIClientError error
 
-func consoleApiClient() *client.Client {
-	if consoleApiClientError != nil {
-		fmt.Fprintf(os.Stderr, "Cannot create client: %s", consoleApiClientError)
+func consoleAPIClient() *client.Client {
+	if consoleAPIClientError != nil {
+		fmt.Fprintf(os.Stderr, "Cannot create client: %s", consoleAPIClientError)
 		os.Exit(1)
 	}
 	return apiClient_
 }
 
-func gatewayApiClient() *client.GatewayClient {
-	if gatewayApiClientError != nil {
-		fmt.Fprintf(os.Stderr, "Cannot create gateway client: %s", gatewayApiClientError)
+func gatewayAPIClient() *client.GatewayClient {
+	if gatewayAPIClientError != nil {
+		fmt.Fprintf(os.Stderr, "Cannot create gateway client: %s", gatewayAPIClientError)
 		os.Exit(1)
 	}
-	return gatewayApiClient_
+	return gatewayAPIClient_
 }
 
-// rootCmd represents the base command when called without any subcommands
+// rootCmd represents the base command when called without any subcommands.
 var rootCmd = &cobra.Command{
 	Use:   "conduktor",
 	Short: "Command line tools for conduktor",
@@ -42,16 +42,16 @@ For server TLS authentication, you can ignore the certificate by setting CDK_INS
 		if *debug {
 			// ActivateDebug() will enable debug mode for the resty client.
 			// Doesn't need to be set if the client was not initialised correctly.
-			if consoleApiClientError == nil {
-				consoleApiClient().ActivateDebug()
+			if consoleAPIClientError == nil {
+				consoleAPIClient().ActivateDebug()
 			}
-			if gatewayApiClientError == nil {
-				gatewayApiClient().ActivateDebug()
+			if gatewayAPIClientError == nil {
+				gatewayAPIClient().ActivateDebug()
 			}
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Help()
+		_ = cmd.Help()
 		os.Exit(1)
 	},
 }
@@ -66,17 +66,17 @@ func Execute() {
 }
 
 func init() {
-	apiClient_, consoleApiClientError = client.MakeFromEnv()
+	apiClient_, consoleAPIClientError = client.MakeFromEnv()
 	var consoleKinds *schema.Catalog
-	if consoleApiClientError == nil {
+	if consoleAPIClientError == nil {
 		consoleKinds = apiClient_.GetCatalog()
 	} else {
 		consoleKinds = schema.ConsoleDefaultCatalog()
 	}
-	gatewayApiClient_, gatewayApiClientError = client.MakeGatewayClientFromEnv()
+	gatewayAPIClient_, gatewayAPIClientError = client.MakeGatewayClientFromEnv()
 	var gatewayKinds *schema.Catalog
-	if gatewayApiClientError == nil {
-		gatewayKinds = gatewayApiClient().GetCatalog()
+	if gatewayAPIClientError == nil {
+		gatewayKinds = gatewayAPIClient().GetCatalog()
 	} else {
 		gatewayKinds = schema.GatewayDefaultCatalog()
 	}
@@ -92,6 +92,6 @@ func init() {
 	intConsoleMakeCatalog()
 	initGatewayMakeCatalog()
 	initPrintCatalog(catalog)
-	initSql(catalog.Kind)
+	initSQL(catalog.Kind)
 	initRun(catalog.Run)
 }

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/conduktor/ctl/schema"
+	"github.com/conduktor/ctl/internal/schema"
 	"github.com/spf13/cobra"
 )
 
@@ -26,7 +26,7 @@ func buildDeleteByVClusterAndNameCmd(kind schema.Kind) *cobra.Command {
 			}
 			bodyParams["vCluster"] = vClusterValue
 
-			err = gatewayApiClient().DeleteKindByNameAndVCluster(&kind, bodyParams)
+			err = gatewayAPIClient().DeleteKindByNameAndVCluster(&kind, bodyParams)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "%s\n", err)
 				os.Exit(1)
@@ -66,7 +66,7 @@ func buildDeleteInterceptorsCmd(kind schema.Kind) *cobra.Command {
 				bodyParams["username"] = usernameValue
 			}
 
-			err = gatewayApiClient().DeleteInterceptor(&kind, nameValue, bodyParams)
+			err = gatewayAPIClient().DeleteInterceptor(&kind, nameValue, bodyParams)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "%s\n", err)
 				os.Exit(1)

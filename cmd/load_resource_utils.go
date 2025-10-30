@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/conduktor/ctl/resource"
+	"github.com/conduktor/ctl/internal/resource"
 )
 
 func loadResourceFromFileFlag(filePath []string, strict, recursiveFolder bool) []resource.Resource {
@@ -20,4 +20,5 @@ func loadResourceFromFileFlag(filePath []string, strict, recursiveFolder bool) [
 	return resources
 }
 
+//nolint:staticcheck
 const FILE_ARGS_DOC = "Specify the files or folders to apply. For folders, all .yaml or .yml files within the folder will be applied, while files in subfolders will be ignored."

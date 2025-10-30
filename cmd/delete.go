@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/conduktor/ctl/schema"
+	"github.com/conduktor/ctl/internal/schema"
 	"github.com/spf13/cobra"
 )
 
@@ -26,14 +26,14 @@ func initDelete(kinds schema.KindCatalog, strict bool) {
 				kind := kinds[resource.Kind]
 				if isGatewayKind(kind) {
 					if isResourceIdentifiedByName(resource) {
-						err = gatewayApiClient().DeleteResourceByName(&resource)
+						err = gatewayAPIClient().DeleteResourceByName(&resource)
 					} else if isResourceIdentifiedByNameAndVCluster(resource) {
-						err = gatewayApiClient().DeleteResourceByNameAndVCluster(&resource)
+						err = gatewayAPIClient().DeleteResourceByNameAndVCluster(&resource)
 					} else if isResourceInterceptor(resource) {
-						err = gatewayApiClient().DeleteResourceInterceptors(&resource)
+						err = gatewayAPIClient().DeleteResourceInterceptors(&resource)
 					}
 				} else {
-					err = consoleApiClient().DeleteResource(&resource)
+					err = consoleAPIClient().DeleteResource(&resource)
 				}
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "Could not delete resource %s/%s: %s\n", resource.Kind, resource.Name, err)
@@ -48,12 +48,12 @@ func initDelete(kinds schema.KindCatalog, strict bool) {
 
 	rootCmd.AddCommand(deleteCmd)
 
-	filePath = deleteCmd.Flags().StringArrayP("file", "f", make([]string, 0, 0), FILE_ARGS_DOC)
+	filePath = deleteCmd.Flags().StringArrayP("file", "f", make([]string, 0), FILE_ARGS_DOC)
 
 	recursiveFolder = deleteCmd.
 		Flags().BoolP("recursive", "r", false, "Delete all .yaml or .yml files in the specified folder and its subfolders. If not set, only files in the specified folder will be applied.")
 
-	deleteCmd.MarkFlagRequired("file")
+	_ = deleteCmd.MarkFlagRequired("file")
 
 	for name, kind := range kinds {
 		if isKindIdentifiedByNameAndVCluster(kind) {
@@ -84,9 +84,9 @@ func initDelete(kinds schema.KindCatalog, strict bool) {
 
 					var err error
 					if isGatewayKind(kind) {
-						err = gatewayApiClient().Delete(&kind, parentValue, parentQueryValue, args[0])
+						err = gatewayAPIClient().Delete(&kind, parentValue, parentQueryValue, args[0])
 					} else {
-						err = consoleApiClient().Delete(&kind, parentValue, parentQueryValue, args[0])
+						err = consoleAPIClient().Delete(&kind, parentValue, parentQueryValue, args[0])
 					}
 					if err != nil {
 						fmt.Fprintf(os.Stderr, "%s\n", err)
@@ -96,7 +96,7 @@ func initDelete(kinds schema.KindCatalog, strict bool) {
 			}
 			for i, flag := range kind.GetParentFlag() {
 				parentFlagValue[i] = kindCmd.Flags().String(flag, "", "Parent "+flag)
-				kindCmd.MarkFlagRequired(flag)
+				_ = kindCmd.MarkFlagRequired(flag)
 			}
 			for i, flag := range parentQueryFlags {
 				parentQueryFlagValue[i] = kindCmd.Flags().String(flag, "", "Parent "+flag)

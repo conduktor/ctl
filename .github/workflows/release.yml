@@ -175,10 +175,12 @@ jobs:
           context: .
           platforms: ${{ env.PLATFORMS }}
           push:  ${{ github.event.release.prerelease == false }} # only push on final release
-          file: docker/Dockerfile
+          file: Dockerfile
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           build-args: |
+            ldflags="-s -w"
             hash=${{ github.sha }}
             version=${{ github.event.release.tag_name }}
+

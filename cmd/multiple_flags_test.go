@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/conduktor/ctl/schema"
+	"github.com/conduktor/ctl/internal/schema"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/spf13/cobra"
 	"reflect"

@@ -1,0 +1,30 @@
+services:
+  conduktor:
+    build:
+      dockerfile: Dockerfile
+      context: ../../..
+    environment:
+      CDK_API_KEY: yo
+      CDK_BASE_URL: http://mock:1080
+      CDK_GATEWAY_BASE_URL: http://mockGateway:1090
+      CDK_GATEWAY_USER: admin
+      CDK_GATEWAY_PASSWORD: conduktor
+    volumes:
+      - ./test_resource.yml:/test_resource.yml
+      - ./test_resource_gw.yml:/test_resource_gw.yml
+      - ./mock_editor.sh:/mock_editor.sh
+
+  mock:
+    image: mockserver/mockserver:latest
+    volumes:
+      - ./initializer.json:/config/initializer.json
+    environment:
+      MOCKSERVER_INITIALIZATION_JSON_PATH: /config/initializer.json
+
+  mockGateway:
+    image: mockserver/mockserver:latest
+    volumes:
+      - ./initializerGw.json:/config/initializer.json
+    environment:
+      MOCKSERVER_INITIALIZATION_JSON_PATH: /config/initializer.json
+      MOCKSERVER_SERVER_PORT: 1090
