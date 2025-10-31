@@ -42,7 +42,7 @@ Look for assets of the last release at https://github.com/conduktor/ctl/releases
 
 ### Using Docker image
 How to get the latest docker image:
-```
+```bash
 docker pull conduktor/conduktor-ctl:latest
 ```
 
@@ -50,8 +50,8 @@ docker pull conduktor/conduktor-ctl:latest
 You will need Go 1.22+ installed and configured on your machine.
 
 To build simply run
-```
-go build -o conduktor .
+```bash
+make build # or go build -o conduktor .
 ```
 You will find the `conduktor` binary at the root of the project.
 
@@ -66,41 +66,41 @@ To use Conduktor CLI, you need to:
 **Define 2 environment variables for Console**:
  -   The URL of Conduktor Console
  -   Your API token (either a User Token or Application Token). You can generate an API token on `/settings/public-api-keys` page of your Console instance, or create one through the [CLI](https://docs.conduktor.io/platform/reference/cli-reference/#admin-api-key).
-````yaml
+```bash
 CDK_BASE_URL=http://localhost:8080
 CDK_API_KEY=<admin-token>
-````
+```
 
 **Define 3 environment variables for Gateway**:
  -   The URL of the Conduktor Gateway API
  -   Your Gateway User for the API 
  -   Your Gatway Password for the API
-````yaml
+```bash
 CDK_GATEWAY_BASE_URL=http://localhost:8888
 CDK_GATEWAY_USER=admin
 CDK_GATEWAY_PASSWORD=conduktor
-````
+```
 
 ### Configuring the CLI for authenticating through an API Gateway
 Console has the ability to delegate the authentication to an API Gateway.
 To provide the credentials to the API Gateway you can either use a bearer token: 
-````yaml
+```bash
 CDK_BASE_URL=http://localhost:8080
 CDK_AUTH_MODE=external
 CDK_API_KEY=<token>
-````
+```
 
 or basic auth:
-````yaml
+```bash
 CDK_BASE_URL=http://localhost:8080
 CDK_AUTH_MODE=external
 CDK_USER=<client_id>
 CDK_PASSWORD=<client_secret>
-````
+```
 
 
 ### Commands Usage
-````
+```
 You need to define the CDK_API_KEY and CDK_BASE_URL environment variables to use this tool.
 You can also use the CDK_KEY,CDK_CERT to use a certificate for tls authentication.
 If you have an untrusted certificate you can use the CDK_INSECURE=true variable to disable tls verification or you can use CACERT.
@@ -129,18 +129,18 @@ Flags:
   -v, --verbose      show more information for debugging
 
 Use "conduktor [command] --help" for more information about a command.
-````
+```
 
 You can find more usage details on our:
- - [Console CLI documentation](https://docs.conduktor.io/platform/reference/cli-reference/)
- - [Gateway CLI documentation](https://docs.conduktor.io/gateway/reference/cli-reference/)
+ - [Console CLI documentation](https://docs.conduktor.io/guide/conduktor-in-production/automate/cli-automation#configure-console-cli)
+ - [Gateway CLI documentation](https://docs.conduktor.io/guide/conduktor-in-production/automate/cli-automation#configure-gateway-cli)
 
 
 #### How to use behind teleport
 If you are using Conduktor behind a teleport proxy, you will need to provide the certificate and key to the CLI using `CDK_CERT` and `CDK_KEY` environment variables.
 
 First login to your teleport proxy, for example:
-```
+```bash
 tsh login --proxy="$TELEPORT_SERVER" --auth="$TELEPORT_AUTH_METHOD"
 tsh apps login console
 export CDK_CERT=$(tsh apps config --format=cert)
@@ -186,23 +186,37 @@ conduktor apply -f
 
 ### Development
 
-How to run:
-```
-read CDK_API_KEY
-export CDK_API_KEY
+#### How to run:
+```bash
+export CDK_API_KEY=<your console API token>
 export CDK_BASE_URL=http://localhost:8080
 go run . 
 ```
 
-How to run unit test:
-```
-go test ./...
+#### How to format and lint code
+```bash
+make fmt  # use standard go fmt
+make lint # use golangci-lint linter
 ```
 
-How to run integration test:
+#### How to run unit test:
+```bash
+make test # will run unit and integration tests
+
+# or unit tests only
+go test ./...
+# integration tests
+./scritps/test_final_exec.sh
 ```
-./test_final_exec.sh
+
+#### Install git hooks
+
+To install git hooks simply run 
+```bash
+make setup-hooks
 ```
+It will install (if not already in `PATH`) tools like [pre-commit](https://pre-commit.com/#install), [detect-secrets](https://github.com/Yelp/detect-secrets/tree/master), [golangci-lint](https://github.com/golangci/golangci-lint) before installing secrets.
+
 
 ## Contributing
 
@@ -218,4 +232,3 @@ Before v0.2.6, versions used to follow the following format `X.Y.Z` like any oth
 When the conduktor team started to work on a terraform plugin, we wanted it to use gomod to reuse the client part of the CLI.
 We realize that gomod requires version tags to start with a `v` (see: https://github.com/golang/go/issues/32945).
 Therefore now, conduktor ctl version like any other go project starts with a v
-

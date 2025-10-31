@@ -11,14 +11,14 @@ help: ## Prints help for targets with comments
 
 .PHONY: build
 build:	## Build the provider
-	go build
+	go build -o conduktor .
 
 .PHONY: fmt
 fmt: ## Run go fmt
 	go fmt ./...
 
 tools:
-	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GO_LINT_VERSION)
+	@go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GO_LINT_VERSION)
 
 .PHONY: lint
 lint: tools ## Run Golang linters
@@ -31,3 +31,13 @@ lint: tools ## Run Golang linters
 test: ## Run tests only (no setup or cleanup)
 	go test ./... -v $(TESTARGS) -timeout 10m
 	./scripts/test_final_exec.sh
+
+.PHONY: install
+install: ## Install required tools and dependencies
+	@./scripts/install_dev_dependencies.sh
+
+.PHONY: setup-hooks
+setup-hooks: install ## Setup pre-commit hooks
+	@command -v pre-commit >/dev/null 2>&1 || { echo "pre-commit not found. Run 'make install' first."; exit 1; }
+	@echo "[*] installing pre-commit hooks..."
+	@pre-commit install
