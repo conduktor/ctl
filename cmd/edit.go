@@ -8,8 +8,8 @@ import (
 
 	"github.com/conduktor/ctl/internal/orderedjson"
 	"github.com/conduktor/ctl/internal/printutils"
-	"github.com/conduktor/ctl/internal/resource"
-	"github.com/conduktor/ctl/internal/schema"
+	"github.com/conduktor/ctl/pkg/resource"
+	"github.com/conduktor/ctl/pkg/schema"
 	"github.com/spf13/cobra"
 )
 

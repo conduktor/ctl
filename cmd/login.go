@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/conduktor/ctl/internal/client"
 	"github.com/conduktor/ctl/internal/utils"
+	"github.com/conduktor/ctl/pkg/client"
 	"github.com/spf13/cobra"
 )
 

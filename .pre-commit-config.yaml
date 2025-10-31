@@ -3,6 +3,7 @@ repos:
     rev: v4.4.0
     hooks:
       - id: check-yaml
+        args: ['--allow-multiple-documents']
       - id: check-added-large-files
       - id: check-merge-conflict
       - id: detect-private-key
@@ -16,7 +17,7 @@ repos:
           - '--baseline'
           - '.secrets.baseline'
           - '--exclude-files'
-          - 'internal/schema/testdata/.*'
+          - 'pkg/schema/testdata/.*'
         
   # - repo: https://github.com/tekwizely/pre-commit-golang
   #   rev: v0.8.3

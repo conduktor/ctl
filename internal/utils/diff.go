@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/conduktor/ctl/internal/resource"
+	"github.com/conduktor/ctl/pkg/resource"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"gopkg.in/yaml.v3"
 )

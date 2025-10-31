@@ -6,7 +6,7 @@ import (
 
 	"text/tabwriter"
 
-	"github.com/conduktor/ctl/internal/schema"
+	"github.com/conduktor/ctl/pkg/schema"
 	"github.com/spf13/cobra"
 )
 

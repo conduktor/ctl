@@ -6,7 +6,7 @@ import (
 	"os"
 	"sort"
 
-	"github.com/conduktor/ctl/internal/resource"
+	"github.com/conduktor/ctl/pkg/resource"
 )
 
 const DefaultPriority = 1000 //update  json annotation for Order when changing this value

@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/conduktor/ctl/internal/resource"
+	"github.com/conduktor/ctl/pkg/resource"
 )
 
 type Kind struct {

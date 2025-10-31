@@ -7,8 +7,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/conduktor/ctl/internal/resource"
-	"github.com/conduktor/ctl/internal/schema"
+	"github.com/conduktor/ctl/pkg/resource"
+	"github.com/conduktor/ctl/pkg/schema"
 	"github.com/spf13/cobra"
 	"github.com/thediveo/enumflag/v2"
 )

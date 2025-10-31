@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/conduktor/ctl/internal/resource"
+	"github.com/conduktor/ctl/pkg/resource"
 )
 
 func loadResourceFromFileFlag(filePath []string, strict, recursiveFolder bool) []resource.Resource {

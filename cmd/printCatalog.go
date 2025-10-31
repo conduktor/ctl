@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/conduktor/ctl/internal/schema"
 	"github.com/conduktor/ctl/internal/utils"
+	"github.com/conduktor/ctl/pkg/schema"
 	"github.com/spf13/cobra"
 )
 

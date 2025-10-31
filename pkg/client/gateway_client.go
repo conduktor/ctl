@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/conduktor/ctl/internal/resource"
-	"github.com/conduktor/ctl/internal/schema"
 	"github.com/conduktor/ctl/internal/utils"
+	"github.com/conduktor/ctl/pkg/resource"
+	"github.com/conduktor/ctl/pkg/schema"
 	"github.com/go-resty/resty/v2"
 )
 

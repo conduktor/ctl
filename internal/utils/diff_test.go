@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/conduktor/ctl/internal/resource"
+	"github.com/conduktor/ctl/pkg/resource"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

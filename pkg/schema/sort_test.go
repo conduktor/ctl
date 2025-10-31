@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/conduktor/ctl/internal/resource"
+	"github.com/conduktor/ctl/pkg/resource"
 )
 
 func TestSortResources(t *testing.T) {
