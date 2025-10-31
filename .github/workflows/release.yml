@@ -55,7 +55,7 @@ jobs:
           goos: ${{ matrix.goos }}
           goarch: ${{ matrix.goarch }}
           goversion: "${{ env.GO_VERSION }}"
-          ldflags: -X 'github.com/conduktor/ctl/utils.version=${{ github.event.release.tag_name }}' -X 'github.com/conduktor/ctl/utils.hash=${{ github.sha }}'
+          ldflags: -s -w -X 'github.com/conduktor/ctl/utils.version=${{ github.event.release.tag_name }}' -X 'github.com/conduktor/ctl/utils.hash=${{ github.sha }}'
           project_path: "./"
           binary_name: "conduktor"
 
