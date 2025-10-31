@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: IndexedTopic
-metadata:
-  cluster: julien-cloud
-  name: sql_test
-spec:
-  retentionTimeInSecond: 360000
