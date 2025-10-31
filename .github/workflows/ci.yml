@@ -73,6 +73,6 @@ jobs:
           labels: ${{ steps.docker_meta.outputs.labels }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           build-args: |
-            ldflags=""
+            ldflags="-s -w"
             hash=${{ github.sha }}
             version=${{ github.ref_name }}

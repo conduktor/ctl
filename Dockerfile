@@ -1,7 +1,8 @@
-FROM golang:1.25.1 as build
+FROM golang:1.25.1 AS build
 ARG version=unknown
 ARG hash=unknown
-ARG ldflags=""
+ARG ldflags="-s -w"
+
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
