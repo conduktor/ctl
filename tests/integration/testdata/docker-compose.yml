@@ -3,6 +3,10 @@ services:
     build:
       dockerfile: Dockerfile
       context: ../../..
+      args:
+        - ldflags=
+        - hash=dev
+        - version=dev
     environment:
       CDK_API_KEY: yo
       CDK_BASE_URL: http://mock:1080

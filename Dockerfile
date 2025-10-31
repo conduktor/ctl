@@ -1,7 +1,7 @@
 FROM golang:1.25.1 AS build
 ARG version=unknown
 ARG hash=unknown
-ARG ldflags="-s -w"
+ARG ldflags=
 
 WORKDIR /app
 COPY go.mod go.sum ./

@@ -180,7 +180,7 @@ jobs:
           labels: ${{ steps.docker_meta.outputs.labels }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           build-args: |
-            ldflags="-s -w"
+            ldflags=-s -w
             hash=${{ github.sha }}
             version=${{ github.event.release.tag_name }}
 
