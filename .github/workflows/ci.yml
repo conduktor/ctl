@@ -38,10 +38,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: run test
-        run: ./test_final_exec.sh
+        run: ./scripts/test_final_exec.sh
 
   docker-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       IMAGE_NAME: "conduktor-ctl"
       PLATFORMS: "linux/amd64,linux/arm64"
@@ -68,10 +69,11 @@ jobs:
           context: .
           platforms: ${{ env.PLATFORMS }}
           push: false
-          file: docker/Dockerfile
+          file: Dockerfile
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           build-args: |
+            ldflags=
             hash=${{ github.sha }}
             version=${{ github.ref_name }}

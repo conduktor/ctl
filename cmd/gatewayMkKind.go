@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"github.com/conduktor/ctl/schema"
-	"github.com/conduktor/ctl/utils"
+	"github.com/conduktor/ctl/internal/utils"
+	"github.com/conduktor/ctl/pkg/schema"
 	"github.com/spf13/cobra"
 )
 
@@ -18,7 +18,7 @@ func initGatewayMakeCatalog() {
 		Args:    cobra.RangeArgs(0, 1),
 		Hidden:  !utils.CdkDevMode(),
 		Run: func(cmd *cobra.Command, args []string) {
-			runMakeCatalog(cmd, args, *prettyPrint, *nonStrict, func() ([]byte, error) { return gatewayApiClient().GetOpenApi() }, func(schema *schema.OpenApiParser, strict bool) (*schema.Catalog, error) {
+			runMakeCatalog(cmd, args, *prettyPrint, *nonStrict, func() ([]byte, error) { return gatewayAPIClient().GetOpenAPI() }, func(schema *schema.OpenAPIParser, strict bool) (*schema.Catalog, error) {
 				return schema.GetGatewayCatalog(strict)
 			})
 		},

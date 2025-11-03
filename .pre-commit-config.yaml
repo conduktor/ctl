@@ -1,0 +1,45 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: check-yaml
+        args: ['--allow-multiple-documents']
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: detect-aws-credentials
+        args: ['--allow-missing-credentials']
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.2.0
+    hooks:
+      - id: detect-secrets
+        args:
+          - '--baseline'
+          - '.secrets.baseline'
+          - '--exclude-files'
+          - 'pkg/schema/testdata/.*'
+        
+  # - repo: https://github.com/tekwizely/pre-commit-golang
+  #   rev: v0.8.3
+  #   hooks:
+  #   - id: go-build-mod
+  #   - id: go-build-pkg
+  #   - id: go-build-repo-mod
+  #   - id: go-build-repo-pkg
+  #   - id: go-fmt
+  #   - id: golangci-lint
+  #   - id: go-build-pkg
+  - repo: local
+    hooks:
+      - id: go-fmt
+        name: Go Fmt
+        description: Formats Go code using gofmt
+        entry: make fmt
+        language: system
+        types: [file]
+      - id: golangci-lint
+        name: GolangCI-Lint
+        description: Validates Go code using GolangCI-Lint
+        entry: make lint
+        language: system
+        types: [file]

@@ -7,8 +7,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/conduktor/ctl/resource"
-	"github.com/conduktor/ctl/schema"
+	"github.com/conduktor/ctl/pkg/resource"
+	"github.com/conduktor/ctl/pkg/schema"
 	"github.com/spf13/cobra"
 	"github.com/thediveo/enumflag/v2"
 )
@@ -37,7 +37,7 @@ var getCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Root command does nothing
-		cmd.Help()
+		_ = cmd.Help()
 		os.Exit(1)
 	},
 }
@@ -81,10 +81,10 @@ func printResource(result interface{}, format OutputFormat) error {
 		case []resource.Resource:
 			for _, r := range res {
 				fmt.Println("---") // '---' indicates the start of a new document in YAML
-				r.PrintPreservingOriginalFieldOrder()
+				_ = r.PrintPreservingOriginalFieldOrder()
 			}
 		case resource.Resource:
-			res.PrintPreservingOriginalFieldOrder()
+			_ = res.PrintPreservingOriginalFieldOrder()
 		default:
 			return fmt.Errorf("unexpected resource type")
 		}
@@ -119,14 +119,14 @@ func initGet(kinds schema.KindCatalog) {
 			var allResources []resource.Resource
 
 			kindsByName := sortedKeys(kinds)
-			if gatewayApiClientError != nil {
+			if gatewayAPIClientError != nil {
 				if *debug || *onlyGateway {
-					fmt.Fprintf(os.Stderr, "Cannot create Gateway client: %s\n", gatewayApiClientError)
+					fmt.Fprintf(os.Stderr, "Cannot create Gateway client: %s\n", gatewayAPIClientError)
 				}
 			}
-			if consoleApiClientError != nil {
+			if consoleAPIClientError != nil {
 				if *debug || *onlyConsole {
-					fmt.Fprintf(os.Stderr, "Cannot create Console client: %s\n", consoleApiClientError)
+					fmt.Fprintf(os.Stderr, "Cannot create Console client: %s\n", consoleAPIClientError)
 
 				}
 			}
@@ -138,10 +138,10 @@ func initGet(kinds schema.KindCatalog) {
 				}
 				var resources []resource.Resource
 				var err error
-				if isGateway(kind) && !*onlyConsole && gatewayApiClientError == nil {
-					resources, err = gatewayApiClient().Get(&kind, []string{}, []string{}, map[string]string{})
-				} else if isConsole(kind) && !*onlyGateway && consoleApiClientError == nil {
-					resources, err = consoleApiClient().Get(&kind, []string{}, []string{}, map[string]string{})
+				if isGateway(kind) && !*onlyConsole && gatewayAPIClientError == nil {
+					resources, err = gatewayAPIClient().Get(&kind, []string{}, []string{}, map[string]string{})
+				} else if isConsole(kind) && !*onlyGateway && consoleAPIClientError == nil {
+					resources, err = consoleAPIClient().Get(&kind, []string{}, []string{}, map[string]string{})
 				}
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "Error fetching resource %s: %s\n", kind.GetName(), err)
@@ -169,7 +169,7 @@ func initGet(kinds schema.KindCatalog) {
 		use := fmt.Sprintf("%s [name]", name)
 		if isGatewayKind && !gatewayKind.GetAvailable {
 			args = cobra.NoArgs
-			use = fmt.Sprintf("%s", name)
+			use = name
 		}
 		parentFlags := kind.GetParentFlag()
 		parentQueryFlags := kind.GetParentQueryFlag()
@@ -198,9 +198,9 @@ func initGet(kinds schema.KindCatalog) {
 				if len(args) == 0 {
 					var result []resource.Resource
 					if isGatewayKind {
-						result, err = gatewayApiClient().Get(&kind, parentValue, parentQueryValue, queryParams)
+						result, err = gatewayAPIClient().Get(&kind, parentValue, parentQueryValue, queryParams)
 					} else {
-						result, err = consoleApiClient().Get(&kind, parentValue, parentQueryValue, queryParams)
+						result, err = consoleAPIClient().Get(&kind, parentValue, parentQueryValue, queryParams)
 					}
 					if err != nil {
 						fmt.Fprintf(os.Stderr, "Error fetching resources: %s\n", err)
@@ -210,9 +210,9 @@ func initGet(kinds schema.KindCatalog) {
 				} else if len(args) == 1 {
 					var result resource.Resource
 					if isGatewayKind {
-						result, err = gatewayApiClient().Describe(&kind, parentValue, parentQueryValue, args[0])
+						result, err = gatewayAPIClient().Describe(&kind, parentValue, parentQueryValue, args[0])
 					} else {
-						result, err = consoleApiClient().Describe(&kind, parentValue, parentQueryValue, args[0])
+						result, err = consoleAPIClient().Describe(&kind, parentValue, parentQueryValue, args[0])
 					}
 					if err != nil {
 						fmt.Fprintf(os.Stderr, "Error describing resource: %s\n", err)
@@ -228,7 +228,7 @@ func initGet(kinds schema.KindCatalog) {
 		}
 		for i, flag := range parentFlags {
 			parentFlagValue[i] = kindCmd.Flags().String(flag, "", "Parent "+flag)
-			kindCmd.MarkFlagRequired(flag)
+			_ = kindCmd.MarkFlagRequired(flag)
 		}
 		for i, flag := range parentQueryFlags {
 			parentQueryFlagValue[i] = kindCmd.Flags().String(flag, "", "Parent "+flag)

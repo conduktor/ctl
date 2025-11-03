@@ -3,8 +3,8 @@ package cmd
 import (
 	"strings"
 
-	"github.com/conduktor/ctl/resource"
-	"github.com/conduktor/ctl/schema"
+	"github.com/conduktor/ctl/pkg/resource"
+	"github.com/conduktor/ctl/pkg/schema"
 )
 
 func isGatewayKind(kind schema.Kind) bool {

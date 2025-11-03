@@ -55,7 +55,7 @@ jobs:
           goos: ${{ matrix.goos }}
           goarch: ${{ matrix.goarch }}
           goversion: "${{ env.GO_VERSION }}"
-          ldflags: -X 'github.com/conduktor/ctl/utils.version=${{ github.event.release.tag_name }}' -X 'github.com/conduktor/ctl/utils.hash=${{ github.sha }}'
+          ldflags: -s -w -X 'github.com/conduktor/ctl/utils.version=${{ github.event.release.tag_name }}' -X 'github.com/conduktor/ctl/utils.hash=${{ github.sha }}'
           project_path: "./"
           binary_name: "conduktor"
 
@@ -175,10 +175,12 @@ jobs:
           context: .
           platforms: ${{ env.PLATFORMS }}
           push:  ${{ github.event.release.prerelease == false }} # only push on final release
-          file: docker/Dockerfile
+          file: Dockerfile
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           build-args: |
+            ldflags=-s -w
             hash=${{ github.sha }}
             version=${{ github.event.release.tag_name }}
+

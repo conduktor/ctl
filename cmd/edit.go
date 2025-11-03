@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/conduktor/ctl/orderedjson"
-	"github.com/conduktor/ctl/printutils"
-	"github.com/conduktor/ctl/resource"
-	"github.com/conduktor/ctl/schema"
+	"github.com/conduktor/ctl/internal/orderedjson"
+	"github.com/conduktor/ctl/internal/printutils"
+	"github.com/conduktor/ctl/pkg/resource"
+	"github.com/conduktor/ctl/pkg/schema"
 	"github.com/spf13/cobra"
 )
 
@@ -19,7 +19,7 @@ var editCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Root command does nothing
-		cmd.Help()
+		_ = cmd.Help()
 		os.Exit(1)
 	},
 }
@@ -66,9 +66,9 @@ func initEdit(kinds schema.KindCatalog, strict bool) {
 				var err error
 
 				if isGatewayKind {
-					result, err = gatewayApiClient().Describe(&kind, parentValue, parentQueryValue, resourceName)
+					result, err = gatewayAPIClient().Describe(&kind, parentValue, parentQueryValue, resourceName)
 				} else {
-					result, err = consoleApiClient().Describe(&kind, parentValue, parentQueryValue, resourceName)
+					result, err = consoleAPIClient().Describe(&kind, parentValue, parentQueryValue, resourceName)
 				}
 
 				if err != nil {
@@ -144,7 +144,7 @@ func initEdit(kinds schema.KindCatalog, strict bool) {
 		// Add parent flags
 		for i, flag := range parentFlags {
 			parentFlagValue[i] = kindCmd.Flags().String(flag, "", "Parent "+flag)
-			kindCmd.MarkFlagRequired(flag)
+			_ = kindCmd.MarkFlagRequired(flag)
 		}
 		for i, flag := range parentQueryFlags {
 			parentQueryFlagValue[i] = kindCmd.Flags().String(flag, "", "Parent "+flag)

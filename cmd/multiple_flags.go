@@ -1,10 +1,11 @@
 package cmd
 
 import (
-	"github.com/conduktor/ctl/schema"
-	"github.com/conduktor/ctl/utils"
-	"github.com/spf13/cobra"
 	"strconv"
+
+	"github.com/conduktor/ctl/internal/utils"
+	"github.com/conduktor/ctl/pkg/schema"
+	"github.com/spf13/cobra"
 )
 
 type MultipleFlags struct {
@@ -34,7 +35,7 @@ func NewMultipleFlags(command *cobra.Command, flagParams map[string]schema.FlagP
 			println("Unknown flag type: " + flag.Type)
 		}
 		if isFlagSet && flag.Required {
-			command.MarkFlagRequired(flag.FlagName)
+			_ = command.MarkFlagRequired(flag.FlagName)
 		}
 	}
 

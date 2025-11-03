@@ -6,11 +6,11 @@ import (
 
 	"text/tabwriter"
 
-	"github.com/conduktor/ctl/schema"
+	"github.com/conduktor/ctl/pkg/schema"
 	"github.com/spf13/cobra"
 )
 
-func initSql(kinds schema.KindCatalog) {
+func initSQL(kinds schema.KindCatalog) {
 	_, ok := kinds["IndexedTopic"]
 	if ok {
 		numLine := 1
@@ -19,7 +19,7 @@ func initSql(kinds schema.KindCatalog) {
 			Short: "Run a sql command on indexed topics",
 			Args:  cobra.ExactArgs(1),
 			Run: func(cmd *cobra.Command, args []string) {
-				sqlResult, err := consoleApiClient().ExecuteSql(numLine, args[0])
+				sqlResult, err := consoleAPIClient().ExecuteSQL(numLine, args[0])
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "Could not execute SQL: %s\n", err)
 					os.Exit(1)

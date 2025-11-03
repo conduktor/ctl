@@ -1,0 +1,50 @@
+version: "2"
+linters:
+  default: none
+  enable:
+    - copyloopvar
+    - durationcheck
+    - errcheck
+    - forcetypeassert
+    - godot
+    - govet
+    - ineffassign
+    - makezero
+    - misspell
+    - nilerr
+    - predeclared
+    - staticcheck
+    - unconvert
+    - unparam
+    - unused
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$ 
+  settings:
+    staticcheck:
+      checks: 
+        - "all"
+        - "-ST1005" # ignore error string should not be capitalized
+        - "-SA1006" # ignore printf-style function with dynamic format string
+        - "-ST1023" # ignore redundant type in variable declaration
+        - "-QF1011" # ignore redundant type in variable declaration
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+formatters:
+  enable:
+    - gofmt
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

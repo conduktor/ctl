@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/conduktor/ctl/schema"
+	"github.com/conduktor/ctl/pkg/schema"
 	"github.com/spf13/cobra"
 )
 
@@ -15,7 +15,7 @@ var templateCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Root command does nothing
-		cmd.Help()
+		_ = cmd.Help()
 		os.Exit(1)
 	},
 }
@@ -71,16 +71,24 @@ func initTemplate(kinds schema.KindCatalog, strict bool) {
 						w := bufio.NewWriter(f)
 						if apply != nil && *apply {
 							_, err = w.WriteString(AutoApplyWarningMessage)
+							if err != nil {
+								fmt.Fprintf(os.Stderr, "Error writing to file %s: %s\n", *file, err)
+								os.Exit(4)
+							}
 						}
 						_, err = w.WriteString("---\n")
+						if err != nil {
+							fmt.Fprintf(os.Stderr, "Error writing to file %s: %s\n", *file, err)
+							os.Exit(4)
+						}
 						_, err = w.WriteString(kind.GetLatestKindVersion().GetApplyExample())
 						if err != nil {
-							fmt.Fprintf(os.Stderr, "Error writting to file %s: %s\n", *file, err)
+							fmt.Fprintf(os.Stderr, "Error writing to file %s: %s\n", *file, err)
 							os.Exit(4)
 						}
 						err = w.Flush()
 						if err != nil {
-							fmt.Fprintf(os.Stderr, "Error writting to file %s: %s\n", *file, err)
+							fmt.Fprintf(os.Stderr, "Error writing to file %s: %s\n", *file, err)
 							os.Exit(5)
 						}
 						editAndApply(edit, file, apply, kinds, strict)
@@ -100,7 +108,7 @@ func editAndApply(edit *bool, file *string, apply *bool, kinds schema.KindCatalo
 			fmt.Fprintf(os.Stderr, "Editor error: %s\n", err)
 			os.Exit(7)
 		}
-		
+
 		recursiveFolder := false
 		if apply != nil && *apply {
 			runApply(kinds, []string{*file}, strict, recursiveFolder)

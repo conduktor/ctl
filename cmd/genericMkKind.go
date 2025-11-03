@@ -5,18 +5,19 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/conduktor/ctl/schema"
+	"github.com/conduktor/ctl/pkg/schema"
 	"github.com/spf13/cobra"
 )
 
-func runMakeCatalog(cmd *cobra.Command, args []string, prettyPrint bool, nonStrict bool, getOpenApi func() ([]byte, error), getCatalog func(*schema.OpenApiParser, bool) (*schema.Catalog, error)) {
+// nolint: unparam
+func runMakeCatalog(cmd *cobra.Command, args []string, prettyPrint bool, nonStrict bool, getOpenAPI func() ([]byte, error), getCatalog func(*schema.OpenAPIParser, bool) (*schema.Catalog, error)) {
 	var kinds *schema.Catalog
 	if len(args) == 1 {
 		data, err := os.ReadFile(args[0])
 		if err != nil {
 			panic(err)
 		}
-		schema, err := schema.NewOpenApiParser(data)
+		schema, err := schema.NewOpenAPIParser(data)
 		if err != nil {
 			panic(err)
 		}
@@ -25,11 +26,11 @@ func runMakeCatalog(cmd *cobra.Command, args []string, prettyPrint bool, nonStri
 			panic(err)
 		}
 	} else {
-		data, err := getOpenApi()
+		data, err := getOpenAPI()
 		if err != nil {
 			panic(err)
 		}
-		schema, err := schema.NewOpenApiParser(data)
+		schema, err := schema.NewOpenAPIParser(data)
 		if err != nil {
 			panic(err)
 		}

@@ -3,9 +3,10 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/conduktor/ctl/schema"
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/conduktor/ctl/pkg/schema"
+	"github.com/spf13/cobra"
 )
 
 var runCmd = &cobra.Command{
@@ -14,16 +15,16 @@ var runCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Root command does nothing
-		cmd.Help()
+		_ = cmd.Help()
 		os.Exit(1)
 	},
 }
 
 func printExecuteResult(result []byte) {
-	var stringJson string
-	err := json.Unmarshal(result, &stringJson)
+	var stringJSON string
+	err := json.Unmarshal(result, &stringJSON)
 	if err == nil {
-		fmt.Println(stringJson)
+		fmt.Println(stringJSON)
 		return
 	}
 	var jsonResult interface{}
@@ -72,11 +73,12 @@ func initRun(runs schema.RunCatalog) {
 					body = nil
 				}
 				var result []byte
-				if run.BackendType == schema.CONSOLE {
-					result, err = consoleApiClient().Run(run, pathValues, queryParams, body)
-				} else if run.BackendType == schema.GATEWAY {
-					result, err = gatewayApiClient().Run(run, pathValues, queryParams, body)
-				} else {
+				switch run.BackendType {
+				case schema.CONSOLE:
+					result, err = consoleAPIClient().Run(run, pathValues, queryParams, body)
+				case schema.GATEWAY:
+					result, err = gatewayAPIClient().Run(run, pathValues, queryParams, body)
+				default:
 					panic("Unknown backend type")
 				}
 				if err != nil {

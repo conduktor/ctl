@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/conduktor/ctl/client"
-	"github.com/conduktor/ctl/resource"
+	"github.com/conduktor/ctl/pkg/client"
+	"github.com/conduktor/ctl/pkg/resource"
 	"sync"
 	"testing"
 )

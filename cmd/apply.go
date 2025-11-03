@@ -5,9 +5,9 @@ import (
 	"os"
 	"sync"
 
-	"github.com/conduktor/ctl/client"
-	"github.com/conduktor/ctl/resource"
-	"github.com/conduktor/ctl/schema"
+	"github.com/conduktor/ctl/pkg/client"
+	"github.com/conduktor/ctl/pkg/resource"
+	"github.com/conduktor/ctl/pkg/schema"
 	"github.com/spf13/cobra"
 )
 
@@ -28,7 +28,7 @@ func resourceForPath(path string, strict, recursiveFolder bool) ([]resource.Reso
 	}
 }
 
-// Globally accessible for testing purposes
+// Globally accessible for testing purposes.
 func ApplyResources(resources []resource.Resource,
 	applyFunc func(*resource.Resource, bool, bool) (client.Result, error),
 	logFunc func(resource.Resource, client.Result, error),
@@ -118,9 +118,9 @@ func runApply(kinds schema.KindCatalog, filePath []string, strict bool, recursiv
 		}
 
 		if isGatewayResource(group[0], kinds) {
-			results = ApplyResources(group, gatewayApiClient().Apply, logFunc, *dryRun, *printDiff, *maxParallel)
+			results = ApplyResources(group, gatewayAPIClient().Apply, logFunc, *dryRun, *printDiff, *maxParallel)
 		} else {
-			results = ApplyResources(group, consoleApiClient().Apply, logFunc, *dryRun, *printDiff, *maxParallel)
+			results = ApplyResources(group, consoleAPIClient().Apply, logFunc, *dryRun, *printDiff, *maxParallel)
 		}
 		for _, r := range results {
 			if r.Err != nil {
@@ -150,7 +150,7 @@ func initApply(kinds schema.KindCatalog, strict bool) {
 	rootCmd.AddCommand(applyCmd)
 
 	filePath = applyCmd.
-		PersistentFlags().StringArrayP("file", "f", make([]string, 0, 0), FILE_ARGS_DOC)
+		PersistentFlags().StringArrayP("file", "f", make([]string, 0), FILE_ARGS_DOC)
 
 	dryRun = applyCmd.
 		PersistentFlags().Bool("dry-run", false, "Test potential changes without the effects being applied")
@@ -164,7 +164,7 @@ func initApply(kinds schema.KindCatalog, strict bool) {
 	maxParallel = applyCmd.
 		PersistentFlags().Int("parallelism", 1, "Run each apply in parallel, useful when applying a large number of resources. Must be less than 100.")
 
-	applyCmd.MarkPersistentFlagRequired("file")
+	_ = applyCmd.MarkPersistentFlagRequired("file")
 
 	applyCmd.PreRun = func(cmd *cobra.Command, args []string) {
 		if *maxParallel > 100 || *maxParallel < 1 {

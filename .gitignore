@@ -36,6 +36,7 @@ go.work
 # User-specific stuff
 .idea
 .envrc
+.direnv
 
 # AWS User-specific
 .idea/**/aws.xml
