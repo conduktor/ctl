@@ -3,16 +3,16 @@
 # if nix-direnv is installed, just add `use nix` in your .envrc file
 { pkgs ? import <nixpkgs> {} }:
 let
-  unstableTarball = fetchTarball https://github.com/NixOS/nixpkgs/archive/nixos-unstable.tar.gz;
+  unstableTarball = builtins.fetchTarball https://github.com/NixOS/nixpkgs/archive/nixos-unstable.tar.gz;
   pkgs = import <nixpkgs> {};
   unstable = import unstableTarball {};
 
   shell = pkgs.mkShell {
     buildInputs = [
-       pkgs.go
-       unstable.golangci-lint
-       pkgs.pre-commit
-       pkgs.python313Packages.detect-secrets
+      pkgs.go
+      unstable.golangci-lint
+      pkgs.pre-commit
+      pkgs.python313Packages.detect-secrets
      ];
   };
 in shell
