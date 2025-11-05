@@ -10,7 +10,9 @@ import (
 
 var dryRun *bool
 var printDiff *bool
+var stateEnabled *bool
 var maxParallel *int
+var stateFile *string
 
 func initApply(rootContext cli.RootContext) {
 	// applyCmd represents the apply command
@@ -41,6 +43,12 @@ func initApply(rootContext cli.RootContext) {
 
 	maxParallel = applyCmd.
 		PersistentFlags().Int("parallelism", 1, "Run each apply in parallel, useful when applying a large number of resources. Must be less than 100.")
+
+	stateEnabled = applyCmd.
+		PersistentFlags().Bool("enable-state", false, "Enable state management for the resource.")
+
+	stateFile = applyCmd.
+		PersistentFlags().String("state-file", "", "Path to the state file to use for state management. By default, use $HOME/.conduktor/ctl/state.yaml")
 
 	_ = applyCmd.MarkPersistentFlagRequired("file")
 
