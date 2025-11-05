@@ -13,7 +13,7 @@ require (
 	github.com/pb33f/libopenapi v0.15.14
 	github.com/sergi/go-diff v1.1.0
 	github.com/spf13/cobra v1.8.0
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.11.1
 	github.com/thediveo/enumflag/v2 v2.0.5
 	github.com/wk8/go-ordered-map/v2 v2.1.8
 	golang.org/x/text v0.23.0

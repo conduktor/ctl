@@ -29,8 +29,12 @@ lint: tools ## Run Golang linters
 
 .PHONY: test
 test: ## Run tests only (no setup or cleanup)
-	go test ./... -v $(TESTARGS) -timeout 10m
-	./scripts/test_final_exec.sh
+	@echo "==> Running unit tests ..."
+	@go test ./... -v $(TESTARGS) -timeout 10m
+	@echo "==> All unit tests passed!"
+	@echo "==> Running integration tests ..."
+	@./scripts/test_final_exec.sh
+	@echo "==> All integration tests passed!"
 
 .PHONY: install
 install: ## Install required tools and dependencies

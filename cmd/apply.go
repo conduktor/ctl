@@ -5,6 +5,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/conduktor/ctl/internal/state"
 	"github.com/conduktor/ctl/pkg/client"
 	"github.com/conduktor/ctl/pkg/resource"
 	"github.com/conduktor/ctl/pkg/schema"
@@ -13,7 +14,9 @@ import (
 
 var dryRun *bool
 var printDiff *bool
+var stateEnabled *bool
 var maxParallel *int
+var stateFile *string
 
 func resourceForPath(path string, strict, recursiveFolder bool) ([]resource.Resource, error) {
 	directory, err := isDirectory(path)
@@ -97,6 +100,16 @@ func runApply(kinds schema.KindCatalog, filePath []string, strict bool, recursiv
 		kindGroups[resrc.Kind] = append(kindGroups[resrc.Kind], resrc)
 	}
 
+	var stateRef *state.State
+	if *stateEnabled {
+		var err error
+		stateRef, err = state.LoadStateFromFile(stateFile)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Could not load state file: %s\n", err)
+			os.Exit(1)
+		}
+	}
+
 	allSuccess := true
 	for _, kind := range kindOrder {
 		group := kindGroups[kind]
@@ -111,6 +124,7 @@ func runApply(kinds schema.KindCatalog, filePath []string, strict bool, recursiv
 				fmt.Printf("%s/%s: %s\n", res.Kind, res.Name, upsertResult.UpsertResult)
 			}
 		}
+
 		var results []struct {
 			Resource     resource.Resource
 			UpsertResult client.Result
@@ -126,7 +140,18 @@ func runApply(kinds schema.KindCatalog, filePath []string, strict bool, recursiv
 			if r.Err != nil {
 				allSuccess = false
 				break
+			} else {
+				if *stateEnabled {
+					stateRef.AddManagedResource(r.Resource)
+				}
 			}
+		}
+	}
+	if *stateEnabled {
+		err := stateRef.SaveToFile()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Could not save state file: %s\n", err)
+			os.Exit(2)
 		}
 	}
 	if !allSuccess {
@@ -163,6 +188,12 @@ func initApply(kinds schema.KindCatalog, strict bool) {
 
 	maxParallel = applyCmd.
 		PersistentFlags().Int("parallelism", 1, "Run each apply in parallel, useful when applying a large number of resources. Must be less than 100.")
+
+	stateEnabled = applyCmd.
+		PersistentFlags().Bool("enable-state", false, "Enable state management for the resource.")
+
+	stateFile = applyCmd.
+		PersistentFlags().String("state-file", "", "Path to the state file to use for state management. By default, use $HOME/.conduktor/ctl/state.yaml")
 
 	_ = applyCmd.MarkPersistentFlagRequired("file")
 
