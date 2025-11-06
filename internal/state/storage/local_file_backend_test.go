@@ -2,6 +2,7 @@ package storage
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -172,6 +173,7 @@ func TestLocalFileBackend_LoadState_CorruptedFile(t *testing.T) {
 	// Try to load corrupted file
 	_, err = backend.LoadState()
 	assert.Error(t, err)
+	assert.Equal(t, "file storage error: failed to unmarshal state JSON. Cause: unexpected end of JSON input", err.Error())
 }
 
 func TestLocalFileBackend_SaveState_ReadOnlyDirectory(t *testing.T) {
@@ -202,6 +204,8 @@ func TestLocalFileBackend_SaveState_ReadOnlyDirectory(t *testing.T) {
 	// Should fail to save to read-only directory
 	err = backend.SaveState(testState)
 	assert.Error(t, err)
+	expectedError := fmt.Sprintf("file storage error: failed to write state to %s. Cause: open %s: permission denied", stateFilePath, stateFilePath)
+	assert.Equal(t, expectedError, err.Error())
 }
 
 func TestLocalFileBackend_IntegrationWithState(t *testing.T) {
