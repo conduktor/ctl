@@ -6,6 +6,8 @@ import (
 	"sync"
 
 	"github.com/conduktor/ctl/internal/state"
+	"github.com/conduktor/ctl/internal/state/model"
+	"github.com/conduktor/ctl/internal/state/storage"
 	"github.com/conduktor/ctl/pkg/client"
 	"github.com/conduktor/ctl/pkg/resource"
 	"github.com/conduktor/ctl/pkg/schema"
@@ -100,10 +102,13 @@ func runApply(kinds schema.KindCatalog, filePath []string, strict bool, recursiv
 		kindGroups[resrc.Kind] = append(kindGroups[resrc.Kind], resrc)
 	}
 
-	var stateRef *state.State
+	var stateRef *model.State
+	var stateService *state.StateService
 	if *stateEnabled {
+		config := storage.NewStorageConfig(stateFile)
 		var err error
-		stateRef, err = state.LoadStateFromFile(stateFile)
+		stateService = state.NewStateService(config)
+		stateRef, err = stateService.LoadState()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Could not load state file: %s\n", err)
 			os.Exit(1)
@@ -148,7 +153,7 @@ func runApply(kinds schema.KindCatalog, filePath []string, strict bool, recursiv
 		}
 	}
 	if *stateEnabled {
-		err := stateRef.SaveToFile()
+		err := stateService.SaveState(stateRef)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Could not save state file: %s\n", err)
 			os.Exit(2)
