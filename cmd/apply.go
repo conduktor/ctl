@@ -110,7 +110,7 @@ func runApply(kinds schema.KindCatalog, filePath []string, strict bool, recursiv
 		stateService = state.NewStateService(config)
 		stateRef, err = stateService.LoadState()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Could not load state file: %s\n", err)
+			fmt.Fprintf(os.Stderr, "%s\n", err)
 			os.Exit(1)
 		}
 	}
@@ -155,7 +155,7 @@ func runApply(kinds schema.KindCatalog, filePath []string, strict bool, recursiv
 	if *stateEnabled {
 		err := stateService.SaveState(stateRef)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Could not save state file: %s\n", err)
+			fmt.Fprintf(os.Stderr, "%s\n", err)
 			os.Exit(2)
 		}
 	}

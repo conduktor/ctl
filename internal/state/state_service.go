@@ -19,9 +19,17 @@ func NewStateService(config storage.StorageConfig) *StateService {
 }
 
 func (s *StateService) LoadState() (*model.State, error) {
-	return s.backend.LoadState()
+	state, err := s.backend.LoadState()
+	if err != nil {
+		return nil, NewStateError("Could not load state", err)
+	}
+	return state, nil
 }
 
 func (s *StateService) SaveState(state *model.State) error {
-	return s.backend.SaveState(state)
+	err := s.backend.SaveState(state)
+	if err != nil {
+		return NewStateError("Could not save state", err)
+	}
+	return nil
 }
