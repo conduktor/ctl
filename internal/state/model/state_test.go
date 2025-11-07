@@ -139,7 +139,7 @@ func TestState_GetRemovedResources(t *testing.T) {
 
 	assert.Len(t, removedResources, 1)
 	if len(removedResources) > 0 {
-		assert.Equal(t, "TestState_GetRemovedResources-resource2", (*removedResources[0].Metadata)["name"])
+		assert.Equal(t, "TestState_GetRemovedResources-resource2", removedResources[0].Name)
 	}
 }
 

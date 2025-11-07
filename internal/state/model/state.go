@@ -38,8 +38,8 @@ func (s *State) RemoveManagedResource(apiVersion, kind string, metadata *map[str
 	}
 }
 
-func (s *State) GetRemovedResources(activeResources []resource.Resource) []ResourceState {
-	removed := make([]ResourceState, 0)
+func (s *State) GetRemovedResources(activeResources []resource.Resource) []resource.Resource {
+	removed := make([]resource.Resource, 0)
 	for _, stateRes := range s.Resources {
 		found := false
 		for _, currRes := range activeResources {
@@ -50,7 +50,7 @@ func (s *State) GetRemovedResources(activeResources []resource.Resource) []Resou
 			}
 		}
 		if !found {
-			removed = append(removed, stateRes)
+			removed = append(removed, stateRes.ToResource())
 		}
 	}
 	return removed

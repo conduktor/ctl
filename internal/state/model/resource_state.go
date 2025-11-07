@@ -41,3 +41,13 @@ func (r *ResourceState) Equal(other *ResourceState) bool {
 	}
 	return true
 }
+
+func (r *ResourceState) ToResource() resource.Resource {
+	name, _ := (*r.Metadata)["name"].(string)
+	return resource.Resource{
+		Version:  r.APIVersion,
+		Kind:     r.Kind,
+		Metadata: *r.Metadata,
+		Name:     name,
+	}
+}
