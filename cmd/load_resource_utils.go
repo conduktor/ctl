@@ -7,6 +7,26 @@ import (
 	"github.com/conduktor/ctl/pkg/resource"
 )
 
+func resourceForPath(path string, strict, recursiveFolder bool) ([]resource.Resource, error) {
+	directory, err := isDirectory(path)
+	if err != nil {
+		return nil, err
+	}
+	if directory {
+		return resource.FromFolder(path, strict, recursiveFolder)
+	} else {
+		return resource.FromFile(path, strict)
+	}
+}
+
+func isDirectory(path string) (bool, error) {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return false, err
+	}
+	return fileInfo.IsDir(), nil
+}
+
 func loadResourceFromFileFlag(filePath []string, strict, recursiveFolder bool) []resource.Resource {
 	var resources = make([]resource.Resource, 0)
 	for _, path := range filePath {

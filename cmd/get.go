@@ -4,9 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"sort"
-	"strings"
 
+	"github.com/conduktor/ctl/internal/cli"
 	"github.com/conduktor/ctl/pkg/resource"
 	"github.com/conduktor/ctl/pkg/schema"
 	"github.com/spf13/cobra"
@@ -42,18 +41,109 @@ var getCmd = &cobra.Command{
 	},
 }
 
-func removeTrailingSIfAny(name string) string {
-	return strings.TrimSuffix(name, "s")
+func initGet(rootContext cli.RootContext, kinds schema.KindCatalog) {
+	var format OutputFormat = YAML
+	getCmd.PersistentFlags().VarP(enumflag.New(&format, "output", OutputFormatIds, enumflag.EnumCaseInsensitive), "output", "o", "Output format. One of: json|yaml|name")
+	rootCmd.AddCommand(getCmd)
+
+	var onlyGateway *bool
+	var onlyConsole *bool
+	var allCmd = &cobra.Command{
+		Use:   "all",
+		Short: "Get all global resources",
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			getAllCommandRun(rootContext, onlyGateway, onlyConsole, format)
+		},
+	}
+	onlyGateway = allCmd.Flags().BoolP("gateway", "g", false, "Only show gateway resources")
+	onlyConsole = allCmd.Flags().BoolP("console", "c", false, "Only show console resources")
+	allCmd.MarkFlagsMutuallyExclusive("gateway", "console")
+	getCmd.AddCommand(allCmd)
+
+	// Add all kinds to the 'get' command
+	for name, kind := range kinds {
+		gatewayKind, isGatewayKind := kind.GetLatestKindVersion().(*schema.GatewayKindVersion)
+		args := cobra.MaximumNArgs(1)
+		use := fmt.Sprintf("%s [name]", name)
+		if isGatewayKind && !gatewayKind.GetAvailable {
+			args = cobra.NoArgs
+			use = name
+		}
+		parentFlags := kind.GetParentFlag()
+		parentQueryFlags := kind.GetParentQueryFlag()
+		parentFlagValue := make([]*string, len(parentFlags))
+		parentQueryFlagValue := make([]*string, len(parentQueryFlags))
+		var multipleFlags *MultipleFlags
+		kindCmd := &cobra.Command{
+			Use:     use,
+			Short:   "Get resource of kind " + name,
+			Args:    args,
+			Long:    `If name not provided it will list all resource`,
+			Aliases: buildAlias(name),
+			Run: func(cmd *cobra.Command, args []string) {
+				getKindCommandRun(rootContext, kind, args, parentFlagValue, parentQueryFlagValue, multipleFlags, format)
+			},
+		}
+		for i, flag := range parentFlags {
+			parentFlagValue[i] = kindCmd.Flags().String(flag, "", "Parent "+flag)
+			_ = kindCmd.MarkFlagRequired(flag)
+		}
+		for i, flag := range parentQueryFlags {
+			parentQueryFlagValue[i] = kindCmd.Flags().String(flag, "", "Parent "+flag)
+		}
+		multipleFlags = NewMultipleFlags(kindCmd, kind.GetListFlag())
+		getCmd.AddCommand(kindCmd)
+	}
 }
 
-func buildAlias(name string) []string {
-	aliases := []string{strings.ToLower(name)}
-	// This doesn't seem to be needed since none of the kinds ends with an S
-	// However I'm leaving it here as a conditional so it won't affect the usage
-	if strings.HasSuffix(name, "s") {
-		aliases = append(aliases, removeTrailingSIfAny(name), removeTrailingSIfAny(strings.ToLower(name)))
+func getAllCommandRun(rootContext cli.RootContext, onlyGateway *bool, onlyConsole *bool, format OutputFormat) {
+	cmdCtx := cli.GetAllHandlerContext{
+		OnlyGateway: onlyGateway,
+		OnlyConsole: onlyConsole,
 	}
-	return aliases
+
+	allResources, errors := cli.GetAllsHandler(rootContext, cmdCtx)
+	for _, err := range errors {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+	}
+
+	err := printResource(allResources, format)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		os.Exit(1)
+	}
+}
+
+func getKindCommandRun(
+	rootContext cli.RootContext,
+	kind schema.Kind,
+	args []string,
+	parentFlagValue []*string,
+	parentQueryFlagValue []*string,
+	multipleFlags *MultipleFlags,
+	format OutputFormat) {
+
+	cmdCtx := cli.GetKindHandlerContext{
+		Args:                 args,
+		ParentFlagValue:      parentFlagValue,
+		ParentQueryFlagValue: parentQueryFlagValue,
+		QueryParams:          multipleFlags.ExtractFlagValueForQueryParam(),
+	}
+
+	result, errors := cli.GetKindHandler(kind, rootContext, cmdCtx)
+	if len(errors) > 0 {
+		for _, err := range errors {
+			fmt.Fprintf(os.Stderr, "%s\n", err)
+		}
+		os.Exit(1)
+	}
+
+	err := printResource(result, format)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		os.Exit(1)
+	}
 }
 
 func printResource(result interface{}, format OutputFormat) error {
@@ -92,157 +182,4 @@ func printResource(result interface{}, format OutputFormat) error {
 		return fmt.Errorf("invalid output format %s", format.String())
 	}
 	return nil
-}
-
-func isGateway(kind schema.Kind) bool {
-	_, isGatewayKind := kind.GetLatestKindVersion().(*schema.GatewayKindVersion)
-	return isGatewayKind
-}
-
-func isConsole(kind schema.Kind) bool {
-	_, isConsoleKind := kind.GetLatestKindVersion().(*schema.ConsoleKindVersion)
-	return isConsoleKind
-}
-
-func initGet(kinds schema.KindCatalog) {
-	var format OutputFormat = YAML
-	getCmd.PersistentFlags().VarP(enumflag.New(&format, "output", OutputFormatIds, enumflag.EnumCaseInsensitive), "output", "o", "Output format. One of: json|yaml|name")
-	rootCmd.AddCommand(getCmd)
-
-	var onlyGateway *bool
-	var onlyConsole *bool
-	var allCmd = &cobra.Command{
-		Use:   "all",
-		Short: "Get all global resources",
-		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			var allResources []resource.Resource
-
-			kindsByName := sortedKeys(kinds)
-			if gatewayAPIClientError != nil {
-				if *debug || *onlyGateway {
-					fmt.Fprintf(os.Stderr, "Cannot create Gateway client: %s\n", gatewayAPIClientError)
-				}
-			}
-			if consoleAPIClientError != nil {
-				if *debug || *onlyConsole {
-					fmt.Fprintf(os.Stderr, "Cannot create Console client: %s\n", consoleAPIClientError)
-
-				}
-			}
-			for _, key := range kindsByName {
-				kind := kinds[key]
-				// keep only the Kinds where listing is provided TODO fix if config is provided
-				if !kind.IsRootKind() {
-					continue
-				}
-				var resources []resource.Resource
-				var err error
-				if isGateway(kind) && !*onlyConsole && gatewayAPIClientError == nil {
-					resources, err = gatewayAPIClient().Get(&kind, []string{}, []string{}, map[string]string{})
-				} else if isConsole(kind) && !*onlyGateway && consoleAPIClientError == nil {
-					resources, err = consoleAPIClient().Get(&kind, []string{}, []string{}, map[string]string{})
-				}
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "Error fetching resource %s: %s\n", kind.GetName(), err)
-					continue
-				}
-
-				allResources = append(allResources, resources...)
-			}
-			err := printResource(allResources, format)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "%s\n", err)
-				os.Exit(1)
-			}
-		},
-	}
-	onlyGateway = allCmd.Flags().BoolP("gateway", "g", false, "Only show gateway resources")
-	onlyConsole = allCmd.Flags().BoolP("console", "c", false, "Only show console resources")
-	allCmd.MarkFlagsMutuallyExclusive("gateway", "console")
-	getCmd.AddCommand(allCmd)
-
-	// Add all kinds to the 'get' command
-	for name, kind := range kinds {
-		gatewayKind, isGatewayKind := kind.GetLatestKindVersion().(*schema.GatewayKindVersion)
-		args := cobra.MaximumNArgs(1)
-		use := fmt.Sprintf("%s [name]", name)
-		if isGatewayKind && !gatewayKind.GetAvailable {
-			args = cobra.NoArgs
-			use = name
-		}
-		parentFlags := kind.GetParentFlag()
-		parentQueryFlags := kind.GetParentQueryFlag()
-		parentFlagValue := make([]*string, len(parentFlags))
-		parentQueryFlagValue := make([]*string, len(parentQueryFlags))
-		var multipleFlags *MultipleFlags
-		kindCmd := &cobra.Command{
-			Use:     use,
-			Short:   "Get resource of kind " + name,
-			Args:    args,
-			Long:    `If name not provided it will list all resource`,
-			Aliases: buildAlias(name),
-			Run: func(cmd *cobra.Command, args []string) {
-				parentValue := make([]string, len(parentFlagValue))
-				parentQueryValue := make([]string, len(parentQueryFlagValue))
-				queryParams := multipleFlags.ExtractFlagValueForQueryParam()
-				for i, v := range parentFlagValue {
-					parentValue[i] = *v
-				}
-				for i, v := range parentQueryFlagValue {
-					parentQueryValue[i] = *v
-				}
-
-				var err error
-
-				if len(args) == 0 {
-					var result []resource.Resource
-					if isGatewayKind {
-						result, err = gatewayAPIClient().Get(&kind, parentValue, parentQueryValue, queryParams)
-					} else {
-						result, err = consoleAPIClient().Get(&kind, parentValue, parentQueryValue, queryParams)
-					}
-					if err != nil {
-						fmt.Fprintf(os.Stderr, "Error fetching resources: %s\n", err)
-						return
-					}
-					err = printResource(result, format)
-				} else if len(args) == 1 {
-					var result resource.Resource
-					if isGatewayKind {
-						result, err = gatewayAPIClient().Describe(&kind, parentValue, parentQueryValue, args[0])
-					} else {
-						result, err = consoleAPIClient().Describe(&kind, parentValue, parentQueryValue, args[0])
-					}
-					if err != nil {
-						fmt.Fprintf(os.Stderr, "Error describing resource: %s\n", err)
-						return
-					}
-					err = printResource(result, format)
-				}
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "%s\n", err)
-					os.Exit(1)
-				}
-			},
-		}
-		for i, flag := range parentFlags {
-			parentFlagValue[i] = kindCmd.Flags().String(flag, "", "Parent "+flag)
-			_ = kindCmd.MarkFlagRequired(flag)
-		}
-		for i, flag := range parentQueryFlags {
-			parentQueryFlagValue[i] = kindCmd.Flags().String(flag, "", "Parent "+flag)
-		}
-		multipleFlags = NewMultipleFlags(kindCmd, kind.GetListFlag())
-		getCmd.AddCommand(kindCmd)
-	}
-}
-
-func sortedKeys(kinds schema.KindCatalog) []string {
-	keys := make([]string, 0, len(kinds))
-	for key := range kinds {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	return keys
 }

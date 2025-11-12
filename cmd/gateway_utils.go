@@ -12,6 +12,7 @@ func isGatewayKind(kind schema.Kind) bool {
 	return ok
 }
 
+//nolint:unused
 func isGatewayResource(resource resource.Resource, kinds schema.KindCatalog) bool {
 	kind, ok := kinds[resource.Kind]
 	return ok && isGatewayKind(kind)

@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/conduktor/ctl/internal/cli"
 	"github.com/conduktor/ctl/pkg/client"
 	"github.com/conduktor/ctl/pkg/schema"
 	"github.com/spf13/cobra"
 )
 
+var rootContext cli.RootContext
 var debug *bool
 var apiClient_ *client.Client
 var consoleAPIClientError error
@@ -84,11 +86,22 @@ func init() {
 	debug = rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Show more information for debugging")
 	var permissive = rootCmd.PersistentFlags().Bool("permissive", false, "Permissive mode, allow undefined environment variables")
 	strict := !*permissive
-	initGet(catalog.Kind)
-	initTemplate(catalog.Kind, strict)
-	initEdit(catalog.Kind, strict)
+
+	rootContext = cli.NewRootContext(
+		apiClient_,
+		consoleAPIClientError,
+		gatewayAPIClient_,
+		gatewayAPIClientError,
+		catalog.Kind,
+		strict,
+		debug,
+	)
+
+	initGet(rootContext, catalog.Kind)
+	initTemplate(rootContext, catalog.Kind)
+	initEdit(rootContext, catalog.Kind)
 	initDelete(catalog.Kind, strict)
-	initApply(catalog.Kind, strict)
+	initApply(rootContext)
 	intConsoleMakeCatalog()
 	initGatewayMakeCatalog()
 	initPrintCatalog(catalog)

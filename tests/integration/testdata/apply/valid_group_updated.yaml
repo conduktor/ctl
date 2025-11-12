@@ -1,0 +1,7 @@
+apiVersion: v2
+kind: Group
+metadata:
+    name: team-a
+spec:
+    displayName: Team A update
+    description: Updated Group for Team A members
