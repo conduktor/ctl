@@ -2,18 +2,10 @@ package integration
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
-
-func testDataFilePath(t *testing.T, fileName string) string {
-	workDir, err := os.Getwd()
-	assert.NoError(t, err, "Failed to get working directory")
-	fmt.Printf("Current working directory: %s\n", workDir)
-	return fmt.Sprintf("%s/testdata/apply/%s", workDir, fileName)
-}
 
 func Test_Apply_Empty_File(t *testing.T) {
 	fmt.Println("Test CLI Apply with empty file")
@@ -43,6 +35,17 @@ func Test_Apply_Invalid_Resource(t *testing.T) {
 	assert.Error(t, err, "Expected command to fail for invalid resource")
 
 	expectedError := "Could not apply resource InvalidResource/invalid-resource: kind InvalidResource not found"
+	assert.NotEmptyf(t, stderr, "Expected stderr to contain '%s', got empty stderr", expectedError)
+	assert.Containsf(t, stderr, expectedError, "Expected stderr to contain '%s', got: %s", expectedError, stderr)
+}
+
+func Test_Apply_Failure(t *testing.T) {
+	fmt.Println("Test CLI Apply with resource missing a dependency")
+	filePath := testDataFilePath(t, "invalid_topic.yaml")
+	_, stderr, err := runConsoleCommand("apply", "-f", filePath)
+	assert.Error(t, err, "Expected command to fail for invalid resource")
+
+	expectedError := "Could not apply resource Topic/invalid-topic: Cluster unkown-cluster not found"
 	assert.NotEmptyf(t, stderr, "Expected stderr to contain '%s', got empty stderr", expectedError)
 	assert.Containsf(t, stderr, expectedError, "Expected stderr to contain '%s', got: %s", expectedError, stderr)
 }

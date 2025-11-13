@@ -1,4 +1,4 @@
-apiVersion: unkown
+apiVersion: v2
 kind: InvalidResource
 metadata:
   name: invalid-resource

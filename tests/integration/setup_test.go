@@ -222,3 +222,10 @@ func parseStdoutAsJsonObject(t *testing.T, stdout string) map[string]any {
 	assert.NoErrorf(t, err, "Failed to parse JSON object: %v\nOutput: %s", err, stdout)
 	return results
 }
+
+func testDataFilePath(t *testing.T, fileName string) string {
+	workDir, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get working directory")
+	fmt.Printf("Current working directory: %s\n", workDir)
+	return fmt.Sprintf("%s/testdata/resources/%s", workDir, fileName)
+}

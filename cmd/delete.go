@@ -23,8 +23,7 @@ func initDelete(kinds schema.KindCatalog, strict bool) {
 			allSuccess := true
 			for _, resource := range resources {
 				var err error
-				kind := kinds[resource.Kind]
-				if isGatewayKind(kind) {
+				if isGatewayResource(resource, kinds) {
 					if isResourceIdentifiedByName(resource) {
 						err = gatewayAPIClient().DeleteResourceByName(&resource)
 					} else if isResourceIdentifiedByNameAndVCluster(resource) {

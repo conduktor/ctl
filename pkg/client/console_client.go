@@ -443,7 +443,7 @@ func (client *Client) Delete(kind *schema.Kind, parentPathValue []string, parent
 	} else if resp.IsError() {
 		return fmt.Errorf(extractAPIError(resp))
 	} else {
-		fmt.Printf("%s/%s deleted\n", kind.GetName(), name)
+		fmt.Printf("%s/%s: Deleted\n", kind.GetName(), name)
 	}
 
 	return err
@@ -471,7 +471,7 @@ func (client *Client) DeleteResource(resource *resource.Resource) error {
 	} else if resp.IsError() {
 		return fmt.Errorf(extractAPIError(resp))
 	} else {
-		fmt.Printf("%s/%s deleted\n", kind.GetName(), resource.Name)
+		fmt.Printf("%s/%s: Deleted\n", kind.GetName(), resource.Name)
 	}
 
 	return err

@@ -1,0 +1,15 @@
+apiVersion: v2
+kind: Group
+metadata:
+    name: team-b
+spec:
+    displayName: Team B
+    description: Group for Team B members
+---
+apiVersion: v2
+kind: Group
+metadata:
+    name: team-c
+spec:
+    displayName: Team C
+    description: Group for Team C members
