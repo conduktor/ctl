@@ -17,6 +17,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var composeFilePath = "./testdata/docker-compose.integration-test.yml"
 var consoleVersion = "1.38.0"
 var gatewayVersion = "3.14.0"
 
@@ -30,6 +31,11 @@ var gatewayAdminPassword = "conduktor"
 var debugLogger = log.New(os.Stderr, "", 1)
 
 func TestMain(m *testing.M) {
+	if !strings.EqualFold(os.Getenv("INTEGRATION_TESTS"), "true") {
+		fmt.Println("Skipping integration tests. Set INTEGRATION_TESTS=true to enable.")
+		return
+	}
+
 	// Start Docker Compose
 	if err := setupDocker(); err != nil {
 		debugLogger.Printf("Failed to setup: %v\n", err)
@@ -66,7 +72,7 @@ func setupDocker() error {
 
 	setComposeEnv()
 	cmd := exec.CommandContext(ctx, "docker", "compose",
-		"-f", "docker-compose.test.yml",
+		"-f", composeFilePath,
 		"up", "-d", "--build")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -77,7 +83,7 @@ func setupDocker() error {
 func teardownDocker() {
 	// setComposeEnv()
 	cmd := exec.Command("docker", "compose",
-		"-f", "docker-compose.test.yml",
+		"-f", composeFilePath,
 		"down", "-v")
 	err := cmd.Run()
 	if err != nil {

@@ -38,7 +38,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: run test
-        run: ./scripts/test_final_exec.sh
+        run: |
+         INTEGRATION_TESTS=true go test ./tests/integration/... -v -timeout 30m
+         echo "Integration tests completed"
+
+         echo "Running final exec script"
+         ./scripts/test_final_exec.sh
 
   docker-test:
     runs-on: ubuntu-latest

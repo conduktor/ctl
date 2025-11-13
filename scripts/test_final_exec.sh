@@ -9,18 +9,18 @@ TESTDATA_DIR="$REPO_DIR/tests/integration/testdata"
 echo "Using test data directory: $TESTDATA_DIR"
 
 function cleanup {
-	docker compose -f "$TESTDATA_DIR/docker-compose.yml" down
+	docker compose -f "$TESTDATA_DIR/docker-compose.mock.yml" down
 }
 
 run() {
-	docker compose -f "$TESTDATA_DIR/docker-compose.yml" run --rm "$@"
+	docker compose -f "$TESTDATA_DIR/docker-compose.mock.yml" run --rm "$@"
 }
 
 trap cleanup EXIT
 main() {
 	cd "$TESTDATA_DIR"
-	docker compose -f docker-compose.yml build
-	docker compose -f docker-compose.yml up -d mock mockGateway
+	docker compose -f docker-compose.mock.yml build
+	docker compose -f docker-compose.mock.yml up -d mock mockGateway
 	sleep 2
 	run conduktor apply -f ./test_resource.yml
 	run conduktor apply -f ./
