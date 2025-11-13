@@ -97,10 +97,10 @@ func init() {
 		debug,
 	)
 
-	initGet(rootContext, catalog.Kind)
-	initTemplate(rootContext, catalog.Kind)
-	initEdit(rootContext, catalog.Kind)
-	initDelete(rootContext, catalog.Kind)
+	initGet(rootContext)
+	initTemplate(rootContext)
+	initEdit(rootContext)
+	initDelete(rootContext)
 	initApply(rootContext)
 	intConsoleMakeCatalog()
 	initGatewayMakeCatalog()

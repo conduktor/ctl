@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func initDelete(rootContext cli.RootContext, kinds schema.KindCatalog) {
+func initDelete(rootContext cli.RootContext) {
 	var recursiveFolder *bool
 	var filePath *[]string
 	var deleteCmd = &cobra.Command{
@@ -31,7 +31,7 @@ func initDelete(rootContext cli.RootContext, kinds schema.KindCatalog) {
 
 	_ = deleteCmd.MarkFlagRequired("file")
 
-	for name, kind := range kinds {
+	for name, kind := range rootContext.Catalog.Kind {
 		if cli.IsKindIdentifiedByNameAndVCluster(kind) {
 			byVClusterAndNameDeleteCmd := buildDeleteByVClusterAndNameCmd(rootContext, kind)
 			deleteCmd.AddCommand(byVClusterAndNameDeleteCmd)

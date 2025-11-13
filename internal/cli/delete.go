@@ -47,20 +47,20 @@ func NewDeleteHandler(rootCtx RootContext) *DeleteHandler {
 
 func (h *DeleteHandler) HandleFromFiles(cmdCtx DeleteFileHandlerContext) ([]DeleteResult, error) {
 	// Load resources from files
-	resources, err := LoadResourcesFromFiles(cmdCtx.FilePaths, h.rootCtx.strict, cmdCtx.RecursiveFolder)
+	resources, err := LoadResourcesFromFiles(cmdCtx.FilePaths, h.rootCtx.Strict, cmdCtx.RecursiveFolder)
 	if err != nil {
 		return nil, err
 	}
 
 	// Sort resources for proper delete order
-	schema.SortResourcesForDelete(h.rootCtx.catalog.Kind, resources, *h.rootCtx.debug)
+	schema.SortResourcesForDelete(h.rootCtx.Catalog.Kind, resources, *h.rootCtx.Debug)
 
 	var results []DeleteResult
 
 	// Process each resource
 	for _, res := range resources {
 		var err error
-		if h.rootCtx.catalog.IsGatewayResource(res) {
+		if h.rootCtx.Catalog.IsGatewayResource(res) {
 			if isResourceIdentifiedByName(res) {
 				err = h.rootCtx.GatewayAPIClient().DeleteResourceByName(&res)
 			} else if isResourceIdentifiedByNameAndVCluster(res) {

@@ -11,11 +11,11 @@ import (
 func TestNewDeleteHandler(t *testing.T) {
 	debug := false
 	rootCtx := RootContext{
-		catalog: schema.Catalog{
+		Catalog: schema.Catalog{
 			Kind: schema.KindCatalog{},
 		},
-		strict: true,
-		debug:  &debug,
+		Strict: true,
+		Debug:  &debug,
 	}
 
 	handler := NewDeleteHandler(rootCtx)

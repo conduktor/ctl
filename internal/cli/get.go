@@ -24,19 +24,19 @@ func GetAllsHandler(rootCtx RootContext, cmdCtx GetAllHandlerContext) ([]resourc
 	var allResources []resource.Resource
 	var allErrors []error
 
-	kindsByName := sortedKeys(rootCtx.catalog.Kind)
+	kindsByName := sortedKeys(rootCtx.Catalog.Kind)
 	if rootCtx.gatewayAPIClientError != nil {
-		if *rootCtx.debug || *cmdCtx.OnlyGateway {
+		if *rootCtx.Debug || *cmdCtx.OnlyGateway {
 			return allResources, []error{fmt.Errorf("Cannot create Gateway client: %s\n", rootCtx.gatewayAPIClientError)}
 		}
 	}
 	if rootCtx.consoleAPIClientError != nil {
-		if *rootCtx.debug || *cmdCtx.OnlyConsole {
+		if *rootCtx.Debug || *cmdCtx.OnlyConsole {
 			return allResources, []error{fmt.Errorf("Cannot create Console client: %s\n", rootCtx.consoleAPIClientError)}
 		}
 	}
 	for _, key := range kindsByName {
-		kind := rootCtx.catalog.Kind[key]
+		kind := rootCtx.Catalog.Kind[key]
 		// keep only the Kinds where listing is provided TODO fix if config is provided
 		if !kind.IsRootKind() {
 			continue

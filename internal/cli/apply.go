@@ -34,13 +34,13 @@ func NewApplyHandler(rootCtx RootContext) *ApplyHandler {
 
 func (h *ApplyHandler) Handle(cmdCtx ApplyHandlerContext) ([]ApplyResult, error) {
 	// Load resources from files
-	resources, err := LoadResourcesFromFiles(cmdCtx.FilePaths, h.rootCtx.strict, cmdCtx.RecursiveFolder)
+	resources, err := LoadResourcesFromFiles(cmdCtx.FilePaths, h.rootCtx.Strict, cmdCtx.RecursiveFolder)
 	if err != nil {
 		return nil, err
 	}
 
 	// Sort resources for proper apply order
-	schema.SortResourcesForApply(h.rootCtx.catalog.Kind, resources, *h.rootCtx.debug)
+	schema.SortResourcesForApply(h.rootCtx.Catalog.Kind, resources, *h.rootCtx.Debug)
 
 	// Group resources by kind
 	kindGroups := make(map[string][]resource.Resource)
@@ -62,7 +62,7 @@ func (h *ApplyHandler) Handle(cmdCtx ApplyHandlerContext) ([]ApplyResult, error)
 		}
 
 		var groupResults []ApplyResult
-		if h.rootCtx.catalog.IsGatewayResource(kindResources[0]) {
+		if h.rootCtx.Catalog.IsGatewayResource(kindResources[0]) {
 			groupResults = h.applyResources(kindResources, h.rootCtx.GatewayAPIClient().Apply, cmdCtx)
 		} else {
 			groupResults = h.applyResources(kindResources, h.rootCtx.ConsoleAPIClient().Apply, cmdCtx)

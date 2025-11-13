@@ -25,11 +25,11 @@ var editCmd = &cobra.Command{
 	},
 }
 
-func initEdit(rootContext cli.RootContext, kinds schema.KindCatalog) {
+func initEdit(rootContext cli.RootContext) {
 	rootCmd.AddCommand(editCmd)
 
 	// Add all kinds to the 'edit' command
-	for name, kind := range kinds {
+	for name, kind := range rootContext.Catalog.Kind {
 		gatewayKind, isGatewayKind := kind.GetLatestKindVersion().(*schema.GatewayKindVersion)
 		args := cobra.ExactArgs(1) // edit command requires a resource name
 		use := fmt.Sprintf("%s <name>", name)

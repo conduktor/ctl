@@ -13,9 +13,9 @@ type RootContext struct {
 	consoleAPIClientError error
 	gatewayAPIClient      *client.GatewayClient
 	gatewayAPIClientError error
-	catalog               schema.Catalog
-	strict                bool
-	debug                 *bool
+	Catalog               schema.Catalog
+	Strict                bool
+	Debug                 *bool
 }
 
 func NewRootContext(
@@ -24,7 +24,6 @@ func NewRootContext(
 	gatewayAPIClient *client.GatewayClient,
 	gatewayAPIClientError error,
 	catalog schema.Catalog,
-	// kinds schema.KindCatalog,
 	strict bool,
 	debug *bool,
 ) RootContext {
@@ -33,9 +32,9 @@ func NewRootContext(
 		consoleAPIClientError: consoleAPIClientError,
 		gatewayAPIClient:      gatewayAPIClient,
 		gatewayAPIClientError: gatewayAPIClientError,
-		catalog:               catalog,
-		strict:                strict,
-		debug:                 debug,
+		Catalog:               catalog,
+		Strict:                strict,
+		Debug:                 debug,
 	}
 }
 

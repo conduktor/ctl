@@ -41,7 +41,7 @@ var getCmd = &cobra.Command{
 	},
 }
 
-func initGet(rootContext cli.RootContext, kinds schema.KindCatalog) {
+func initGet(rootContext cli.RootContext) {
 	var format OutputFormat = YAML
 	getCmd.PersistentFlags().VarP(enumflag.New(&format, "output", OutputFormatIds, enumflag.EnumCaseInsensitive), "output", "o", "Output format. One of: json|yaml|name")
 	rootCmd.AddCommand(getCmd)
@@ -62,7 +62,7 @@ func initGet(rootContext cli.RootContext, kinds schema.KindCatalog) {
 	getCmd.AddCommand(allCmd)
 
 	// Add all kinds to the 'get' command
-	for name, kind := range kinds {
+	for name, kind := range rootContext.Catalog.Kind {
 		gatewayKind, isGatewayKind := kind.GetLatestKindVersion().(*schema.GatewayKindVersion)
 		args := cobra.MaximumNArgs(1)
 		use := fmt.Sprintf("%s [name]", name)

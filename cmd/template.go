@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/conduktor/ctl/internal/cli"
-	"github.com/conduktor/ctl/pkg/schema"
 	"github.com/spf13/cobra"
 )
 
@@ -21,7 +20,7 @@ var templateCmd = &cobra.Command{
 	},
 }
 
-func initTemplate(rootContext cli.RootContext, kinds schema.KindCatalog) {
+func initTemplate(rootContext cli.RootContext) {
 	rootCmd.AddCommand(templateCmd)
 	var file *string
 	var edit *bool
@@ -31,7 +30,7 @@ func initTemplate(rootContext cli.RootContext, kinds schema.KindCatalog) {
 	apply = templateCmd.PersistentFlags().BoolP("apply", "a", false, "Apply the YAML file post-editing; this works only with --edit.")
 
 	// Add all kinds to the 'template' command
-	for name, kind := range kinds {
+	for name, kind := range rootContext.Catalog.Kind {
 		kindCmd := &cobra.Command{
 			Use:     name,
 			Short:   "Get a yaml example for resource of kind " + name,
