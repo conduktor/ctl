@@ -24,7 +24,7 @@ func GetAllsHandler(rootCtx RootContext, cmdCtx GetAllHandlerContext) ([]resourc
 	var allResources []resource.Resource
 	var allErrors []error
 
-	kindsByName := sortedKeys(rootCtx.kinds)
+	kindsByName := sortedKeys(rootCtx.catalog.Kind)
 	if rootCtx.gatewayAPIClientError != nil {
 		if *rootCtx.debug || *cmdCtx.OnlyGateway {
 			return allResources, []error{fmt.Errorf("Cannot create Gateway client: %s\n", rootCtx.gatewayAPIClientError)}
@@ -36,16 +36,16 @@ func GetAllsHandler(rootCtx RootContext, cmdCtx GetAllHandlerContext) ([]resourc
 		}
 	}
 	for _, key := range kindsByName {
-		kind := rootCtx.kinds[key]
+		kind := rootCtx.catalog.Kind[key]
 		// keep only the Kinds where listing is provided TODO fix if config is provided
 		if !kind.IsRootKind() {
 			continue
 		}
 		var resources []resource.Resource
 		var err error
-		if isGateway(kind) && !*cmdCtx.OnlyConsole && rootCtx.gatewayAPIClientError == nil {
+		if kind.IsGatewayKind() && !*cmdCtx.OnlyConsole && rootCtx.gatewayAPIClientError == nil {
 			resources, err = rootCtx.GatewayAPIClient().Get(&kind, []string{}, []string{}, map[string]string{})
-		} else if isConsole(kind) && !*cmdCtx.OnlyGateway && rootCtx.consoleAPIClientError == nil {
+		} else if kind.IsConsoleKind() && !*cmdCtx.OnlyGateway && rootCtx.consoleAPIClientError == nil {
 			resources, err = rootCtx.ConsoleAPIClient().Get(&kind, []string{}, []string{}, map[string]string{})
 		}
 		if err != nil {
@@ -63,7 +63,7 @@ func GetKindHandler(kind schema.Kind, rootCtx RootContext, cmdCtx GetKindHandler
 	var result []resource.Resource
 	var errors []error
 
-	_, isGatewayKind := kind.GetLatestKindVersion().(*schema.GatewayKindVersion)
+	isGatewayKind := kind.IsGatewayKind()
 
 	parentValue := make([]string, len(cmdCtx.ParentFlagValue))
 	parentQueryValue := make([]string, len(cmdCtx.ParentQueryFlagValue))
@@ -109,14 +109,4 @@ func sortedKeys(kinds schema.KindCatalog) []string {
 	}
 	sort.Strings(keys)
 	return keys
-}
-
-func isGateway(kind schema.Kind) bool {
-	_, isGatewayKind := kind.GetLatestKindVersion().(*schema.GatewayKindVersion)
-	return isGatewayKind
-}
-
-func isConsole(kind schema.Kind) bool {
-	_, isConsoleKind := kind.GetLatestKindVersion().(*schema.ConsoleKindVersion)
-	return isConsoleKind
 }

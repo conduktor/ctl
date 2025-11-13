@@ -28,7 +28,9 @@ func TestApplyResources_MaxParallel(t *testing.T) {
 			// Create a handler with minimal setup
 			debug := false
 			handler := &ApplyHandler{rootCtx: RootContext{
-				kinds:  schema.KindCatalog{},
+				catalog: schema.Catalog{
+					Kind: schema.KindCatalog{},
+				},
 				strict: true,
 				debug:  &debug,
 			}}
@@ -78,9 +80,10 @@ func TestApplyResources_MaxParallel(t *testing.T) {
 
 func TestNewApplyHandler(t *testing.T) {
 	debug := false
-	kinds := schema.KindCatalog{}
 	rootCtx := RootContext{
-		kinds:  kinds,
+		catalog: schema.Catalog{
+			Kind: schema.KindCatalog{},
+		},
 		strict: true,
 		debug:  &debug,
 	}
@@ -94,7 +97,9 @@ func TestNewApplyHandler(t *testing.T) {
 func TestApplyHandler_applyResources_Sequential(t *testing.T) {
 	debug := false
 	handler := &ApplyHandler{rootCtx: RootContext{
-		kinds:  schema.KindCatalog{},
+		catalog: schema.Catalog{
+			Kind: schema.KindCatalog{},
+		},
 		strict: true,
 		debug:  &debug,
 	}}

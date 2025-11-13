@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -26,25 +27,27 @@ var gatewayURL = "http://localhost:8888"
 var gatewayAdmin = "admin"
 var gatewayAdminPassword = "conduktor"
 
+var debugLogger = log.New(os.Stderr, "", 1)
+
 func TestMain(m *testing.M) {
 	// Start Docker Compose
 	if err := setupDocker(); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to setup: %v\n", err)
+		debugLogger.Printf("Failed to setup: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Println("Wait 30s for compose to be up and running")
+	debugLogger.Println("Wait 30s for compose to be up and running")
 	time.Sleep(30 * time.Second)
 
 	// Wait for API to be ready
 	if err := waitForConsole(); err != nil {
 		teardownDocker()
-		fmt.Fprintf(os.Stderr, "API not ready: %v\n", err)
+		debugLogger.Printf("API not ready: %v\n", err)
 		os.Exit(1)
 	}
 
 	if err := waitForGateway(); err != nil {
 		teardownDocker()
-		fmt.Fprintf(os.Stderr, "API not ready: %v\n", err)
+		debugLogger.Printf("API not ready: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -57,7 +60,7 @@ func TestMain(m *testing.M) {
 }
 
 func setupDocker() error {
-	fmt.Println("Start integration docker stack")
+	debugLogger.Println("Start integration docker stack")
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
@@ -78,12 +81,12 @@ func teardownDocker() {
 		"down", "-v")
 	err := cmd.Run()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to teardown docker compose: %v\n", err)
+		debugLogger.Printf("Failed to teardown docker compose: %v\n", err)
 	}
 }
 
 func setComposeEnv() {
-	fmt.Printf("Setting up environment variables for Docker Compose\n")
+	debugLogger.Println("Setting up environment variables for Docker Compose")
 	logAndSetEnv("CONDUKTOR_CONSOLE_IMAGE", fmt.Sprintf("conduktor/conduktor-console:%s", consoleVersion))
 	logAndSetEnv("CONDUKTOR_CONSOLE_CORTEX_IMAGE", fmt.Sprintf("conduktor/conduktor-console-cortex:%s", consoleVersion))
 	logAndSetEnv("CONDUKTOR_GATEWAY_IMAGE", fmt.Sprintf("conduktor/conduktor-gateway:%s", gatewayVersion))
@@ -96,33 +99,33 @@ func setComposeEnv() {
 }
 
 func setCLIConsoleEnv() {
-	fmt.Println("Setting up environment variables for CLI Console")
+	debugLogger.Println("Setting up environment variables for CLI Console")
 	logAndSetEnv("CDK_BASE_URL", consoleURL)
 	logAndSetEnv("CDK_USER", consoleAdminEmail)
 	logAndSetEnv("CDK_PASSWORD", consoleAdminPassword)
 }
 
 func setCLIGatewayEnv() {
-	fmt.Println("Setting up environment variables for CLI Gateway")
+	debugLogger.Println("Setting up environment variables for CLI Gateway")
 	logAndSetEnv("CDK_GATEWAY_BASE_URL", gatewayURL)
 	logAndSetEnv("CDK_GATEWAY_USER", gatewayAdmin)
 	logAndSetEnv("CDK_GATEWAY_PASSWORD", gatewayAdminPassword)
 }
 
 func logAndSetEnv(key, value string) {
-	fmt.Printf("Set env %s=%s\n", key, value)
+	debugLogger.Printf("Set env %s=%s\n", key, value)
 	os.Setenv(key, value)
 }
 
 func waitForConsole() error {
-	fmt.Printf("Wait for Console API to be ready on %s\n", consoleURL)
+	debugLogger.Printf("Wait for Console API to be ready on %s\n", consoleURL)
 	client := &http.Client{Timeout: 2 * time.Second}
 
 	for i := 0; i < 60; i++ {
 		resp, err := client.Get(consoleURL + "/api/health/ready")
 		if err == nil && resp.StatusCode == 200 {
 			resp.Body.Close()
-			fmt.Println("Console API ready !")
+			debugLogger.Println("Console API ready !")
 			return nil
 		}
 		if resp != nil {
@@ -135,14 +138,14 @@ func waitForConsole() error {
 }
 
 func waitForGateway() error {
-	fmt.Printf("Wait for Gateway API to be ready on %s\n", gatewayURL)
+	debugLogger.Printf("Wait for Gateway API to be ready on %s\n", gatewayURL)
 	client := &http.Client{Timeout: 2 * time.Second}
 
 	for i := 0; i < 60; i++ {
 		resp, err := client.Get(gatewayURL + "/health/ready")
 		if err == nil && resp.StatusCode == 200 {
 			resp.Body.Close()
-			fmt.Println("Gateway API ready !")
+			debugLogger.Println("Gateway API ready !")
 			return nil
 		}
 		if resp != nil {
@@ -167,9 +170,9 @@ func runConsoleCommand(args ...string) (string, string, error) {
 
 	err := cmd.Run()
 
-	fmt.Printf("Run command : %v\n", command)
-	fmt.Printf("####stdout \n%s\n", stdout.String())
-	fmt.Printf("####stderr \n%s\n", stderr.String())
+	debugLogger.Printf("Run command : %v\n", command)
+	debugLogger.Printf("####stdout \n%s\n", stdout.String())
+	debugLogger.Printf("####stderr \n%s\n", stderr.String())
 
 	return stdout.String(), stderr.String(), err
 }
@@ -187,9 +190,9 @@ func runGatewayCommand(args ...string) (string, string, error) {
 
 	err := cmd.Run()
 
-	fmt.Printf("Run command : %v\n", command)
-	fmt.Printf("	stdout %s", stdout.String())
-	fmt.Printf("	stderr %s", stderr.String())
+	debugLogger.Printf("Run command : %v\n", command)
+	debugLogger.Printf("####stdout %s", stdout.String())
+	debugLogger.Printf("####stderr %s", stderr.String())
 
 	return stdout.String(), stderr.String(), err
 }
@@ -226,6 +229,6 @@ func parseStdoutAsJsonObject(t *testing.T, stdout string) map[string]any {
 func testDataFilePath(t *testing.T, fileName string) string {
 	workDir, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get working directory")
-	fmt.Printf("Current working directory: %s\n", workDir)
+	debugLogger.Printf("Current working directory: %s\n", workDir)
 	return fmt.Sprintf("%s/testdata/resources/%s", workDir, fileName)
 }

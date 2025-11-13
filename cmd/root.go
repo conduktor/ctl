@@ -92,7 +92,7 @@ func init() {
 		consoleAPIClientError,
 		gatewayAPIClient_,
 		gatewayAPIClientError,
-		catalog.Kind,
+		catalog,
 		strict,
 		debug,
 	)
@@ -100,7 +100,7 @@ func init() {
 	initGet(rootContext, catalog.Kind)
 	initTemplate(rootContext, catalog.Kind)
 	initEdit(rootContext, catalog.Kind)
-	initDelete(catalog.Kind, strict)
+	initDelete(rootContext, catalog.Kind)
 	initApply(rootContext)
 	intConsoleMakeCatalog()
 	initGatewayMakeCatalog()

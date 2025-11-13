@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/conduktor/ctl/internal/cli"
 	"github.com/conduktor/ctl/pkg/schema"
 	"github.com/spf13/cobra"
 )
 
-func initDelete(kinds schema.KindCatalog, strict bool) {
+func initDelete(rootContext cli.RootContext, kinds schema.KindCatalog) {
 	var recursiveFolder *bool
 	var filePath *[]string
 	var deleteCmd = &cobra.Command{
@@ -17,31 +18,7 @@ func initDelete(kinds schema.KindCatalog, strict bool) {
 		Long:  ``,
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			// Root command does nothing
-			resources := loadResourceFromFileFlag(*filePath, strict, *recursiveFolder)
-			schema.SortResourcesForDelete(kinds, resources, *debug)
-			allSuccess := true
-			for _, resource := range resources {
-				var err error
-				if isGatewayResource(resource, kinds) {
-					if isResourceIdentifiedByName(resource) {
-						err = gatewayAPIClient().DeleteResourceByName(&resource)
-					} else if isResourceIdentifiedByNameAndVCluster(resource) {
-						err = gatewayAPIClient().DeleteResourceByNameAndVCluster(&resource)
-					} else if isResourceInterceptor(resource) {
-						err = gatewayAPIClient().DeleteResourceInterceptors(&resource)
-					}
-				} else {
-					err = consoleAPIClient().DeleteResource(&resource)
-				}
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "Could not delete resource %s/%s: %s\n", resource.Kind, resource.Name, err)
-					allSuccess = false
-				}
-			}
-			if !allSuccess {
-				os.Exit(1)
-			}
+			runDeleteFromFiles(rootContext, *filePath, *recursiveFolder)
 		},
 	}
 
@@ -55,11 +32,11 @@ func initDelete(kinds schema.KindCatalog, strict bool) {
 	_ = deleteCmd.MarkFlagRequired("file")
 
 	for name, kind := range kinds {
-		if isKindIdentifiedByNameAndVCluster(kind) {
-			byVClusterAndNameDeleteCmd := buildDeleteByVClusterAndNameCmd(kind)
+		if cli.IsKindIdentifiedByNameAndVCluster(kind) {
+			byVClusterAndNameDeleteCmd := buildDeleteByVClusterAndNameCmd(rootContext, kind)
 			deleteCmd.AddCommand(byVClusterAndNameDeleteCmd)
-		} else if isKindInterceptor(kind) {
-			interceptorsDeleteCmd := buildDeleteInterceptorsCmd(kind)
+		} else if cli.IsKindInterceptor(kind) {
+			interceptorsDeleteCmd := buildDeleteInterceptorsCmd(rootContext, kind)
 			deleteCmd.AddCommand(interceptorsDeleteCmd)
 		} else {
 			flags := kind.GetParentFlag()
@@ -72,25 +49,7 @@ func initDelete(kinds schema.KindCatalog, strict bool) {
 				Args:    cobra.MatchAll(cobra.ExactArgs(1)),
 				Aliases: buildAlias(name),
 				Run: func(cmd *cobra.Command, args []string) {
-					parentValue := make([]string, len(parentFlagValue))
-					parentQueryValue := make([]string, len(parentQueryFlagValue))
-					for i, v := range parentFlagValue {
-						parentValue[i] = *v
-					}
-					for i, v := range parentQueryFlagValue {
-						parentQueryValue[i] = *v
-					}
-
-					var err error
-					if isGatewayKind(kind) {
-						err = gatewayAPIClient().Delete(&kind, parentValue, parentQueryValue, args[0])
-					} else {
-						err = consoleAPIClient().Delete(&kind, parentValue, parentQueryValue, args[0])
-					}
-					if err != nil {
-						fmt.Fprintf(os.Stderr, "%s\n", err)
-						os.Exit(1)
-					}
+					runDeleteKind(rootContext, kind, args, parentFlagValue, parentQueryFlagValue)
 				},
 			}
 			for i, flag := range kind.GetParentFlag() {
@@ -102,5 +61,130 @@ func initDelete(kinds schema.KindCatalog, strict bool) {
 			}
 			deleteCmd.AddCommand(kindCmd)
 		}
+	}
+}
+
+func runDeleteFromFiles(rootContext cli.RootContext, filePaths []string, recursiveFolder bool) {
+	deleteHandler := cli.NewDeleteHandler(rootContext)
+
+	cmdCtx := cli.DeleteFileHandlerContext{
+		FilePaths:       filePaths,
+		RecursiveFolder: recursiveFolder,
+	}
+
+	results, err := deleteHandler.HandleFromFiles(cmdCtx)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error during delete: %s\n", err)
+		os.Exit(1)
+	}
+
+	allSuccess := true
+	for _, result := range results {
+		if result.Err != nil {
+			fmt.Fprintf(os.Stderr, "Could not delete resource %s/%s: %s\n", result.Resource.Kind, result.Resource.Name, result.Err)
+			allSuccess = false
+		}
+	}
+
+	if !allSuccess {
+		os.Exit(1)
+	}
+}
+
+func buildDeleteByVClusterAndNameCmd(rootContext cli.RootContext, kind schema.Kind) *cobra.Command {
+	const vClusterFlag = "vcluster"
+	name := kind.GetName()
+	var vClusterValue string
+	var deleteCmd = &cobra.Command{
+		Use:     fmt.Sprintf("%s [name]", name),
+		Short:   "Delete resource of kind " + name,
+		Args:    cobra.ExactArgs(1),
+		Aliases: buildAlias(name),
+		Run: func(cmd *cobra.Command, args []string) {
+			runDeleteByVClusterAndName(rootContext, kind, args[0], vClusterValue)
+		},
+	}
+
+	deleteCmd.Flags().StringVar(&vClusterValue, vClusterFlag, "passthrough", "vCluster of the "+name)
+
+	return deleteCmd
+}
+
+func buildDeleteInterceptorsCmd(rootContext cli.RootContext, kind schema.Kind) *cobra.Command {
+	const vClusterFlag = "vcluster"
+	const groupFlag = "group"
+	const usernameFlag = "username"
+	var vClusterValue string
+	var groupValue string
+	var usernameValue string
+	name := kind.GetName()
+	var interceptorDeleteCmd = &cobra.Command{
+		Use:     fmt.Sprintf("%s [name]", name),
+		Short:   "Delete resource of kind " + name,
+		Args:    cobra.ExactArgs(1),
+		Aliases: buildAlias(name),
+		Run: func(cmd *cobra.Command, args []string) {
+			runDeleteInterceptor(rootContext, kind, args[0], vClusterValue, groupValue, usernameValue)
+		},
+	}
+
+	interceptorDeleteCmd.Flags().StringVar(&vClusterValue, vClusterFlag, "", "vCluster of the "+name)
+	interceptorDeleteCmd.Flags().StringVar(&groupValue, groupFlag, "", "Group of the "+name)
+	interceptorDeleteCmd.Flags().StringVar(&usernameValue, usernameFlag, "", "Username of the "+name)
+
+	return interceptorDeleteCmd
+}
+
+func runDeleteByVClusterAndName(rootContext cli.RootContext, kind schema.Kind, name string, vCluster string) {
+	deleteHandler := cli.NewDeleteHandler(rootContext)
+
+	cmdCtx := cli.DeleteByVClusterAndNameHandlerContext{
+		Name:     name,
+		VCluster: vCluster,
+	}
+
+	err := deleteHandler.HandleByVClusterAndName(kind, cmdCtx)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		os.Exit(1)
+	}
+}
+
+func runDeleteInterceptor(rootContext cli.RootContext, kind schema.Kind, name string, vCluster string, group string, username string) {
+	deleteHandler := cli.NewDeleteHandler(rootContext)
+
+	cmdCtx := cli.DeleteInterceptorHandlerContext{
+		Name:     name,
+		VCluster: vCluster,
+		Group:    group,
+		Username: username,
+	}
+
+	err := deleteHandler.HandleInterceptor(kind, cmdCtx)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		os.Exit(1)
+	}
+}
+
+func runDeleteKind(
+	rootContext cli.RootContext,
+	kind schema.Kind,
+	args []string,
+	parentFlagValue []*string,
+	parentQueryFlagValue []*string) {
+
+	deleteHandler := cli.NewDeleteHandler(rootContext)
+
+	cmdCtx := cli.DeleteKindHandlerContext{
+		Args:                 args,
+		ParentFlagValue:      parentFlagValue,
+		ParentQueryFlagValue: parentQueryFlagValue,
+	}
+
+	err := deleteHandler.HandleKind(kind, cmdCtx)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		os.Exit(1)
 	}
 }

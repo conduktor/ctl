@@ -62,6 +62,30 @@ func (kind *Kind) IsRootKind() bool {
 	return true
 }
 
+// Determines if the kind is a Console Kind.
+func (kind *Kind) IsConsoleKind() bool {
+	_, isConsoleKind := kind.GetLatestKindVersion().(*ConsoleKindVersion)
+	return isConsoleKind
+}
+
+// Determines if the kind is a Gateway Kind.
+func (kind *Kind) IsGatewayKind() bool {
+	_, isGatewayKind := kind.GetLatestKindVersion().(*GatewayKindVersion)
+	return isGatewayKind
+}
+
+// Determines if the kind is a Gateway Kind that need to be identified by name and vCluster.
+func (kind *Kind) IsKindIdentifiedByNameAndVCluster() bool {
+	return strings.Contains(strings.ToLower(kind.GetName()), "aliastopic") ||
+		strings.Contains(strings.ToLower(kind.GetName()), "gatewayserviceaccount") ||
+		strings.Contains(strings.ToLower(kind.GetName()), "concentrationrule")
+}
+
+// Determines if the kind is a Gateway Kind that is an Interceptor.
+func (kind *Kind) IsKindGatewayInterceptor() bool {
+	return strings.Contains(strings.ToLower(kind.GetName()), "interceptor")
+}
+
 func (kind *Kind) GetParentQueryFlag() []string {
 	kindVersion := kind.GetLatestKindVersion()
 	return kindVersion.GetParentQueryParam()

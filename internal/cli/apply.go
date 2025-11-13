@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"os"
 	"sync"
 
 	"github.com/conduktor/ctl/pkg/client"
@@ -35,13 +34,13 @@ func NewApplyHandler(rootCtx RootContext) *ApplyHandler {
 
 func (h *ApplyHandler) Handle(cmdCtx ApplyHandlerContext) ([]ApplyResult, error) {
 	// Load resources from files
-	resources, err := h.loadResourcesFromFiles(cmdCtx.FilePaths, cmdCtx.RecursiveFolder)
+	resources, err := LoadResourcesFromFiles(cmdCtx.FilePaths, h.rootCtx.strict, cmdCtx.RecursiveFolder)
 	if err != nil {
 		return nil, err
 	}
 
 	// Sort resources for proper apply order
-	schema.SortResourcesForApply(h.rootCtx.kinds, resources, *h.rootCtx.debug)
+	schema.SortResourcesForApply(h.rootCtx.catalog.Kind, resources, *h.rootCtx.debug)
 
 	// Group resources by kind
 	kindGroups := make(map[string][]resource.Resource)
@@ -63,7 +62,7 @@ func (h *ApplyHandler) Handle(cmdCtx ApplyHandlerContext) ([]ApplyResult, error)
 		}
 
 		var groupResults []ApplyResult
-		if h.isGatewayResource(kindResources[0]) {
+		if h.rootCtx.catalog.IsGatewayResource(kindResources[0]) {
 			groupResults = h.applyResources(kindResources, h.rootCtx.GatewayAPIClient().Apply, cmdCtx)
 		} else {
 			groupResults = h.applyResources(kindResources, h.rootCtx.ConsoleAPIClient().Apply, cmdCtx)
@@ -73,40 +72,6 @@ func (h *ApplyHandler) Handle(cmdCtx ApplyHandlerContext) ([]ApplyResult, error)
 	}
 
 	return allResults, nil
-}
-
-func (h *ApplyHandler) loadResourcesFromFiles(filePaths []string, recursiveFolder bool) ([]resource.Resource, error) {
-	var allResources []resource.Resource
-
-	for _, path := range filePaths {
-		resources, err := h.resourceForPath(path, h.rootCtx.strict, recursiveFolder)
-		if err != nil {
-			return nil, err
-		}
-		allResources = append(allResources, resources...)
-	}
-
-	return allResources, nil
-}
-
-func (h *ApplyHandler) resourceForPath(path string, strict, recursiveFolder bool) ([]resource.Resource, error) {
-	directory, err := h.isDirectory(path)
-	if err != nil {
-		return nil, err
-	}
-	if directory {
-		return resource.FromFolder(path, strict, recursiveFolder)
-	} else {
-		return resource.FromFile(path, strict)
-	}
-}
-
-func (h *ApplyHandler) isDirectory(path string) (bool, error) {
-	fileInfo, err := os.Stat(path)
-	if err != nil {
-		return false, err
-	}
-	return fileInfo.IsDir(), nil
 }
 
 func (h *ApplyHandler) applyResources(
@@ -149,13 +114,4 @@ func (h *ApplyHandler) applyResources(
 	}
 
 	return results
-}
-
-func (h *ApplyHandler) isGatewayResource(res resource.Resource) bool {
-	kind, exists := h.rootCtx.kinds[res.Kind]
-	if !exists {
-		return false
-	}
-	_, isGatewayKind := kind.GetLatestKindVersion().(*schema.GatewayKindVersion)
-	return isGatewayKind
 }
