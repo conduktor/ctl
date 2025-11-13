@@ -1,0 +1,36 @@
+apiVersion: v2
+kind: KafkaCluster
+metadata:
+  name: kafka-cluster
+spec:
+  displayName: local-redpanda
+  bootstrapServers: redpanda:9092
+---
+apiVersion: v2
+kind: Group
+metadata:
+    name: app-team
+spec:
+    displayName: Team App
+    description: Group for Team App members
+---
+apiVersion: self-service/v1
+kind: Application
+metadata:
+  name: "clickstream-app"
+spec:
+  title: "Clickstream App"
+  description: "FreeForm text, probably multiline markdown"
+  owner: "app-team"
+---
+apiVersion: v1
+kind: ApplicationInstance
+metadata:
+  name: clickstream-app-instance
+  application: clickstream-app
+spec:
+  cluster: kafka-cluster
+  resources:
+    - type: TOPIC
+      name: my-topic
+      patternType: LITERAL

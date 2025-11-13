@@ -2,6 +2,8 @@ package schema
 
 import (
 	"encoding/json"
+
+	"github.com/conduktor/ctl/pkg/resource"
 )
 
 type Catalog struct {
@@ -16,8 +18,18 @@ func ConsoleDefaultCatalog() *Catalog {
 	return buildCatalogFromByteSchema[*ConsoleKindVersion](consoleDefaultByteSchema, CONSOLE)
 }
 
+func (catalog *Catalog) IsConsoleResource(res resource.Resource) bool {
+	kind, exists := catalog.Kind[res.Kind]
+	return exists && kind.IsConsoleKind()
+}
+
 func GatewayDefaultCatalog() *Catalog {
 	return buildCatalogFromByteSchema[*GatewayKindVersion](gatewayDefaultByteSchema, GATEWAY)
+}
+
+func (catalog *Catalog) IsGatewayResource(res resource.Resource) bool {
+	kind, exists := catalog.Kind[res.Kind]
+	return exists && kind.IsGatewayKind()
 }
 
 // TODO: colision don't silently hide others.

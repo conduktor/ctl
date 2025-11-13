@@ -1,0 +1,7 @@
+apiVersion: v2
+kind: Group
+metadata:
+    name: team-d
+spec:
+    displayName: Team D
+    description: Group for Team D members

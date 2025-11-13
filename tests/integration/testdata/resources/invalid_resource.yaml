@@ -1,0 +1,6 @@
+apiVersion: v2
+kind: InvalidResource
+metadata:
+  name: invalid-resource
+spec:
+  invalidField: some-value

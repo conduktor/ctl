@@ -1,0 +1,15 @@
+apiVersion: kafka/v2
+kind: Topic
+metadata:
+  cluster: unkown-cluster
+  name: invalid-topic
+  description: invalid topic for testing
+  descriptionIsEditable: false
+  catalogVisibility: PUBLIC
+spec:
+  replicationFactor: 3
+  partitions: 3
+  configs:
+    min.insync.replicas: '2'
+    cleanup.policy: delete
+    retention.ms: '60000'

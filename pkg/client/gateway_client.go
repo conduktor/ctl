@@ -128,7 +128,7 @@ func (client *GatewayClient) Delete(kind *schema.Kind, parentPathValue []string,
 	} else if resp.IsError() {
 		return fmt.Errorf(extractAPIError(resp))
 	} else {
-		fmt.Printf("%s/%s deleted\n", kind.GetName(), name)
+		fmt.Printf("%s/%s: Deleted\n", kind.GetName(), name)
 	}
 
 	return err
@@ -155,7 +155,7 @@ func (client *GatewayClient) DeleteResourceByName(resource *resource.Resource) e
 	} else if resp.IsError() {
 		return fmt.Errorf(extractAPIError(resp))
 	} else {
-		fmt.Printf("%s/%s deleted\n", kind.GetName(), resource.Name)
+		fmt.Printf("%s/%s: Deleted\n", kind.GetName(), resource.Name)
 	}
 
 	return err
@@ -186,7 +186,7 @@ func (client *GatewayClient) DeleteResourceByNameAndVCluster(resource *resource.
 	} else if resp.IsError() {
 		return fmt.Errorf(extractAPIError(resp))
 	} else {
-		fmt.Printf("%s/%s deleted\n", kind.GetName(), resource.Name)
+		fmt.Printf("%s/%s: Deleted\n", kind.GetName(), resource.Name)
 	}
 
 	return err
@@ -248,7 +248,7 @@ func (client *GatewayClient) DeleteResourceInterceptors(resource *resource.Resou
 		}
 		return fmt.Errorf("%s", msg)
 	} else {
-		fmt.Printf("%s/%s deleted\n", kind.GetName(), resource.Name)
+		fmt.Printf("%s/%s: Deleted\n", kind.GetName(), resource.Name)
 	}
 
 	return err
@@ -264,7 +264,7 @@ func (client *GatewayClient) DeleteKindByNameAndVCluster(kind *schema.Kind, para
 	} else if resp.IsError() {
 		return fmt.Errorf(extractAPIError(resp))
 	} else {
-		fmt.Printf("%s/%s deleted\n", kind.GetName(), param)
+		fmt.Printf("%s/%s: Deleted\n", kind.GetName(), param)
 	}
 
 	return err
@@ -288,7 +288,7 @@ func (client *GatewayClient) DeleteInterceptor(kind *schema.Kind, name string, p
 	} else if resp.IsError() {
 		return fmt.Errorf(extractAPIError(resp))
 	} else {
-		fmt.Printf("%s/%s deleted\n", kind.GetName(), param)
+		fmt.Printf("%s/%s: Deleted\n", kind.GetName(), param)
 	}
 
 	return err

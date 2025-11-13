@@ -28,9 +28,15 @@ lint: tools ## Run Golang linters
 	@go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GO_LINT_VERSION) run
 
 .PHONY: test
-test: ## Run tests only (no setup or cleanup)
-	go test ./... -v $(TESTARGS) -timeout 10m
-	./scripts/test_final_exec.sh
+test: ## Run tests
+	@echo "==> Running unit tests..."
+	@go test ./... -v $(TESTARGS) -timeout 5m
+
+	@echo "==> Running integration tests..."
+	INTEGRATION_TESTS=true go test ./tests/integration/... -v $(TESTARGS) -timeout 10m
+
+	@echo "==> Running final execution tests..."
+	@./scripts/test_final_exec.sh
 
 .PHONY: install
 install: ## Install required tools and dependencies
