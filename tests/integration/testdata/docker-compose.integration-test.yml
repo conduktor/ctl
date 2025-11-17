@@ -1,0 +1,119 @@
+services:
+  postgresql:
+    image: postgres:14
+    hostname: postgresql
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: "conduktor-console"
+      POSTGRES_USER: "conduktor"
+      POSTGRES_PASSWORD: "change_me"
+      POSTGRES_HOST_AUTH_METHOD: "scram-sha-256"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "pg_isready",
+          "-U",
+          "conduktor",
+          "-d",
+          "conduktor-console",
+          "-h",
+          "localhost",
+          "-p",
+          "5432",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  conduktor-console:
+    image: ${CONDUKTOR_CONSOLE_IMAGE}
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      conduktor-monitoring:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    volumes:
+      - conduktor_data:/var/conduktor
+    environment:
+      - CDK_LICENSE # forward from the environment if set
+      - CDK_DEBUG # forward from the environment if set
+      - CDK_ADMIN_EMAIL=${CDK_ADMIN_EMAIL:-admin@conduktor.io}
+      - CDK_ADMIN_PASSWORD=${CDK_ADMIN_PASSWORD:-testP4ss!}
+      - CDK_DATABASE_URL=postgresql://conduktor:change_me@postgresql:5432/conduktor-console
+      - CDK_MONITORING_CORTEX-URL=http://conduktor-monitoring:9009/
+      - CDK_MONITORING_ALERT-MANAGER-URL=http://conduktor-monitoring:9010/
+      - CDK_MONITORING_CALLBACK-URL=http://conduktor-platform:8080/monitoring/api/
+      - CDK_MONITORING_NOTIFICATIONS-CALLBACK-URL=http://localhost:8080
+    healthcheck:
+      test: ["CMD", "/opt/conduktor/scripts/healthcheck.sh"]
+
+  conduktor-monitoring:
+    image: ${CONDUKTOR_CONSOLE_CORTEX_IMAGE}
+    environment:
+      CDK_CONSOLE-URL: "http://conduktor-console:8080"
+    healthcheck:
+      test: ["CMD", "/opt/conduktor/scripts/healthcheck.sh"]
+
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v24.3.18
+    hostname: redpanda
+    command:
+      - redpanda
+      - start
+      - --kafka-addr
+      - internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr
+      - internal://redpanda:9092,external://localhost:19092
+      - --pandaproxy-addr
+      - internal://0.0.0.0:8082,external://0.0.0.0:18082
+      - --advertise-pandaproxy-addr
+      - internal://redpanda:8082,external://localhost:18082
+      - --schema-registry-addr
+      - internal://0.0.0.0:8081,external://0.0.0.0:18081
+      - --rpc-addr
+      - redpanda:33145
+      - --advertise-rpc-addr
+      - redpanda:33145
+      - --smp 1
+      - --memory 1G
+      - --reserve-memory 0M
+      - --overprovisioned
+      - --default-log-level=debug
+    ports:
+      - 18081:18081
+      - 18082:18082
+      - 19092:19092
+      - 19644:9644
+
+  conduktor-gateway:
+    image: ${CONDUKTOR_GATEWAY_IMAGE}
+    hostname: gateway
+    ports:
+      - "9094:9094"
+      - "8888:8888"
+    depends_on:
+      - redpanda
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
+      GATEWAY_ADVERTISED_HOST: gateway
+      GATEWAY_HTTP_PORT: 8888
+      GATEWAY_PORT_START: 9094
+      GATEWAY_PORT_COUNT: 1
+      GATEWAY_USER_POOL_SECRET_KEY: "MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAw" # pragma: allowlist secret
+      GATEWAY_SUPER_USERS: "admin,console"
+      GATEWAY_ADMIN_API_USERS: "[{username: admin, password: conduktor, admin: true}]"
+      GATEWAY_SECURITY_PROTOCOL: SASL_PLAINTEXT
+      GATEWAY_ACL_ENABLED: false
+      GATEWAY_LICENSE_KEY: ${CDK_LICENSE:-}
+    healthcheck:
+      test: curl localhost:8888/health
+      interval: 5s
+      retries: 25
+
+volumes:
+  pg_data: {}
+  conduktor_data: {}

@@ -37,8 +37,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
       - name: run test
-        run: ./scripts/test_final_exec.sh
+        run: |
+         INTEGRATION_TESTS=true go test ./tests/integration/... -v -timeout 30m
+         echo "Integration tests completed"
+
+         echo "Running final exec script"
+         ./scripts/test_final_exec.sh
 
   docker-test:
     runs-on: ubuntu-latest

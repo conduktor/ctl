@@ -28,6 +28,7 @@ linters:
       - third_party$
       - builtin$
       - examples$ 
+      - integration/.* # ignore integration tests
   settings:
     staticcheck:
       checks: 

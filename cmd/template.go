@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/conduktor/ctl/pkg/schema"
+	"github.com/conduktor/ctl/internal/cli"
 	"github.com/spf13/cobra"
 )
 
@@ -20,7 +20,7 @@ var templateCmd = &cobra.Command{
 	},
 }
 
-func initTemplate(kinds schema.KindCatalog, strict bool) {
+func initTemplate(rootContext cli.RootContext) {
 	rootCmd.AddCommand(templateCmd)
 	var file *string
 	var edit *bool
@@ -30,7 +30,7 @@ func initTemplate(kinds schema.KindCatalog, strict bool) {
 	apply = templateCmd.PersistentFlags().BoolP("apply", "a", false, "Apply the YAML file post-editing; this works only with --edit.")
 
 	// Add all kinds to the 'template' command
-	for name, kind := range kinds {
+	for name, kind := range rootContext.Catalog.Kind {
 		kindCmd := &cobra.Command{
 			Use:     name,
 			Short:   "Get a yaml example for resource of kind " + name,
@@ -91,7 +91,7 @@ func initTemplate(kinds schema.KindCatalog, strict bool) {
 							fmt.Fprintf(os.Stderr, "Error writing to file %s: %s\n", *file, err)
 							os.Exit(5)
 						}
-						editAndApply(edit, file, apply, kinds, strict)
+						editAndApply(rootContext, edit, file, apply)
 					}
 				}
 			},
@@ -100,7 +100,7 @@ func initTemplate(kinds schema.KindCatalog, strict bool) {
 	}
 }
 
-func editAndApply(edit *bool, file *string, apply *bool, kinds schema.KindCatalog, strict bool) {
+func editAndApply(rootContext cli.RootContext, edit *bool, file *string, apply *bool) {
 	if edit != nil && *edit {
 		// Run editor on the file
 		err := runEditor(*file)
@@ -111,7 +111,7 @@ func editAndApply(edit *bool, file *string, apply *bool, kinds schema.KindCatalo
 
 		recursiveFolder := false
 		if apply != nil && *apply {
-			runApply(kinds, []string{*file}, strict, recursiveFolder)
+			runApply(rootContext, []string{*file}, recursiveFolder)
 		}
 	}
 }

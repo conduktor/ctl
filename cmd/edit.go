@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/conduktor/ctl/internal/cli"
 	"github.com/conduktor/ctl/internal/orderedjson"
 	"github.com/conduktor/ctl/internal/printutils"
 	"github.com/conduktor/ctl/pkg/resource"
@@ -24,11 +25,11 @@ var editCmd = &cobra.Command{
 	},
 }
 
-func initEdit(kinds schema.KindCatalog, strict bool) {
+func initEdit(rootContext cli.RootContext) {
 	rootCmd.AddCommand(editCmd)
 
 	// Add all kinds to the 'edit' command
-	for name, kind := range kinds {
+	for name, kind := range rootContext.Catalog.Kind {
 		gatewayKind, isGatewayKind := kind.GetLatestKindVersion().(*schema.GatewayKindVersion)
 		args := cobra.ExactArgs(1) // edit command requires a resource name
 		use := fmt.Sprintf("%s <name>", name)
@@ -137,7 +138,7 @@ func initEdit(kinds schema.KindCatalog, strict bool) {
 				}
 
 				recursiveFolder := false
-				runApply(kinds, []string{tmpFile.Name()}, strict, recursiveFolder)
+				runApply(rootContext, []string{tmpFile.Name()}, recursiveFolder)
 			},
 		}
 
