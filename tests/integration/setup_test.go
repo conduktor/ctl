@@ -165,26 +165,15 @@ func waitForGateway() error {
 
 func runConsoleCommand(args ...string) (string, string, error) {
 	setCLIConsoleEnv()
-
-	baseCmd := []string{"go", "run", "../../main.go"}
-	command := append(baseCmd, args...)
-	cmd := exec.Command(command[0], command[1:]...)
-
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	err := cmd.Run()
-
-	debugLogger.Printf("Run command : %v\n", command)
-	debugLogger.Printf("####stdout \n%s\n", stdout.String())
-	debugLogger.Printf("####stderr \n%s\n", stderr.String())
-
-	return stdout.String(), stderr.String(), err
+	return runCommand(args...)
 }
 
 func runGatewayCommand(args ...string) (string, string, error) {
 	setCLIGatewayEnv()
+	return runCommand(args...)
+}
+
+func runCommand(args ...string) (string, string, error) {
 
 	baseCmd := []string{"go", "run", "../../main.go"}
 	command := append(baseCmd, args...)
