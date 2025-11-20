@@ -1,8 +1,11 @@
 package cli
 
 import (
+	"fmt"
+	"os"
 	"strings"
 
+	"github.com/conduktor/ctl/internal/state/model"
 	"github.com/conduktor/ctl/pkg/resource"
 	"github.com/conduktor/ctl/pkg/schema"
 )
@@ -10,6 +13,8 @@ import (
 type DeleteFileHandlerContext struct {
 	FilePaths       []string
 	RecursiveFolder bool
+	StateEnabled    bool
+	StateRef        *model.State
 }
 
 type DeleteKindHandlerContext struct {
@@ -46,12 +51,19 @@ func NewDeleteHandler(rootCtx RootContext) *DeleteHandler {
 }
 
 func (h *DeleteHandler) HandleFromFiles(cmdCtx DeleteFileHandlerContext) ([]DeleteResult, error) {
+	debug := *h.rootCtx.Debug
+	stateRef := cmdCtx.StateRef
+
 	// Load resources from files
 	resources, err := LoadResourcesFromFiles(cmdCtx.FilePaths, h.rootCtx.Strict, cmdCtx.RecursiveFolder)
 	if err != nil {
 		return nil, err
 	}
 
+	return h.HandleFromList(resources, stateRef, debug)
+}
+
+func (h *DeleteHandler) HandleFromList(resources []resource.Resource, stateRef *model.State, debug bool) ([]DeleteResult, error) {
 	// Sort resources for proper delete order
 	schema.SortResourcesForDelete(h.rootCtx.Catalog.Kind, resources, *h.rootCtx.Debug)
 
@@ -70,6 +82,15 @@ func (h *DeleteHandler) HandleFromFiles(cmdCtx DeleteFileHandlerContext) ([]Dele
 			}
 		} else {
 			err = h.rootCtx.ConsoleAPIClient().DeleteResource(&res)
+		}
+
+		if err == nil {
+			if debug {
+				fmt.Fprintf(os.Stderr, "Remove resource %s/%s from state if exist\n", res.Kind, res.Name)
+			}
+			if stateRef != nil {
+				stateRef.RemoveManagedResource(res)
+			}
 		}
 
 		results = append(results, DeleteResult{

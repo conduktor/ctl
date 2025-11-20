@@ -94,7 +94,7 @@ func TestState_RemoveManagedResource(t *testing.T) {
 
 	// Remove resource1
 	metadata1 := resource1.Metadata
-	state.RemoveManagedResource(resource1.Version, resource1.Kind, &metadata1)
+	state.RemoveManagedResourceVKM(resource1.Version, resource1.Kind, &metadata1)
 	assert.Len(t, state.Resources, 1)
 
 	// Check that resource2 is still there
@@ -102,7 +102,7 @@ func TestState_RemoveManagedResource(t *testing.T) {
 
 	// Try to remove non-existent resource
 	nonExistentMetadata := map[string]any{"name": "TestState_RemoveManagedResource-non-existent"}
-	state.RemoveManagedResource("v1", "TestKind", &nonExistentMetadata)
+	state.RemoveManagedResourceVKM("v1", "TestKind", &nonExistentMetadata)
 	assert.Len(t, state.Resources, 1)
 }
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -26,28 +27,33 @@ func tmpStateLocation(t *testing.T) string {
 
 func TestNewLocalFileBackend(t *testing.T) {
 	// Test with nil path (should use default)
-	backend := NewLocalFileBackend(nil)
+	backend := NewLocalFileBackend(nil, true)
 	assert.NotNil(t, backend)
-	assert.Contains(t, backend.FilePath, ".conduktor")
-	assert.Contains(t, backend.FilePath, "ctl")
-	assert.Contains(t, backend.FilePath, StateFileName)
+	switch runtime.GOOS {
+	case "linux":
+		assert.Contains(t, backend.FilePath, ".local/share/conduktor/cli-state.json")
+	case "windows":
+		assert.Contains(t, backend.FilePath, "AppData/Roaming/conduktor/cli-state.json")
+	case "darwin":
+		assert.Contains(t, backend.FilePath, "Library/Application Support/conduktor/cli-state.json")
+	}
 
 	// Test with empty string path (should use default)
 	emptyPath := ""
-	backend2 := NewLocalFileBackend(&emptyPath)
+	backend2 := NewLocalFileBackend(&emptyPath, true)
 	assert.NotNil(t, backend2)
 	assert.Equal(t, backend.FilePath, backend2.FilePath)
 
 	// Test with custom path
 	customPath := "/tmp/custom/model.json"
-	backend3 := NewLocalFileBackend(&customPath)
+	backend3 := NewLocalFileBackend(&customPath, true)
 	assert.NotNil(t, backend3)
 	assert.Equal(t, customPath, backend3.FilePath)
 }
 
 func TestLocalFileBackend_LoadState_NewFile(t *testing.T) {
 	stateFilePath := tmpStateLocation(t)
-	backend := NewLocalFileBackend(&stateFilePath)
+	backend := NewLocalFileBackend(&stateFilePath, true)
 
 	// Load state from non-existent file
 	loadedState, err := backend.LoadState()
@@ -60,7 +66,7 @@ func TestLocalFileBackend_LoadState_NewFile(t *testing.T) {
 
 func TestLocalFileBackend_LoadState_ExistingFile(t *testing.T) {
 	stateFilePath := tmpStateLocation(t)
-	backend := NewLocalFileBackend(&stateFilePath)
+	backend := NewLocalFileBackend(&stateFilePath, true)
 
 	// Create initial state with resources
 	initialState := &model.State{
@@ -92,7 +98,7 @@ func TestLocalFileBackend_LoadState_ExistingFile(t *testing.T) {
 
 func TestLocalFileBackend_SaveState(t *testing.T) {
 	stateFilePath := tmpStateLocation(t)
-	backend := NewLocalFileBackend(&stateFilePath)
+	backend := NewLocalFileBackend(&stateFilePath, true)
 
 	// Create state with resources
 	testState := &model.State{
@@ -148,7 +154,7 @@ func TestLocalFileBackend_SaveState_NestedDirectory(t *testing.T) {
 	})
 
 	stateFilePath := filepath.Join(tempDir, "nested", "dir", StateFileName)
-	backend := NewLocalFileBackend(&stateFilePath)
+	backend := NewLocalFileBackend(&stateFilePath, true)
 
 	testState := &model.State{
 		Version:     model.StateFileVersion,
@@ -163,7 +169,7 @@ func TestLocalFileBackend_SaveState_NestedDirectory(t *testing.T) {
 
 func TestLocalFileBackend_LoadState_CorruptedFile(t *testing.T) {
 	stateFilePath := tmpStateLocation(t)
-	backend := NewLocalFileBackend(&stateFilePath)
+	backend := NewLocalFileBackend(&stateFilePath, true)
 
 	// Write corrupted JSON to file
 	corruptedJSON := `{"version": "v1", "lastUpdated": "2024-01-01", "resources": [`
@@ -193,7 +199,7 @@ func TestLocalFileBackend_SaveState_ReadOnlyDirectory(t *testing.T) {
 	assert.NoError(t, err)
 
 	stateFilePath := filepath.Join(tempDir, StateFileName)
-	backend := NewLocalFileBackend(&stateFilePath)
+	backend := NewLocalFileBackend(&stateFilePath, true)
 
 	testState := &model.State{
 		Version:     model.StateFileVersion,
@@ -210,7 +216,7 @@ func TestLocalFileBackend_SaveState_ReadOnlyDirectory(t *testing.T) {
 
 func TestLocalFileBackend_IntegrationWithState(t *testing.T) {
 	stateFilePath := tmpStateLocation(t)
-	backend := NewLocalFileBackend(&stateFilePath)
+	backend := NewLocalFileBackend(&stateFilePath, true)
 
 	// Create and populate state
 	testState := model.NewState()
@@ -254,8 +260,8 @@ func TestLocalFileBackend_ConcurrentOperations(t *testing.T) {
 	stateFilePath := tmpStateLocation(t)
 
 	// Create multiple backends pointing to same file
-	backend1 := NewLocalFileBackend(&stateFilePath)
-	backend2 := NewLocalFileBackend(&stateFilePath)
+	backend1 := NewLocalFileBackend(&stateFilePath, true)
+	backend2 := NewLocalFileBackend(&stateFilePath, true)
 
 	resource1 := resource.Resource{
 		Kind:     "TestKind",
@@ -296,7 +302,12 @@ func TestStateDefaultLocation(t *testing.T) {
 	assert.NotEmpty(t, location)
 
 	// Check that it contains expected path elements
-	assert.Contains(t, location, ".conduktor")
-	assert.Contains(t, location, "ctl")
-	assert.Contains(t, location, StateFileName)
+	switch runtime.GOOS {
+	case "linux":
+		assert.Contains(t, location, ".local/share/conduktor/cli-state.json")
+	case "windows":
+		assert.Contains(t, location, "AppData/Roaming/conduktor/cli-state.json")
+	case "darwin":
+		assert.Contains(t, location, "Library/Application Support/conduktor/cli-state.json")
+	}
 }

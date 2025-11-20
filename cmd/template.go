@@ -109,9 +109,24 @@ func editAndApply(rootContext cli.RootContext, edit *bool, file *string, apply *
 			os.Exit(7)
 		}
 
-		recursiveFolder := false
 		if apply != nil && *apply {
-			runApply(rootContext, []string{*file}, recursiveFolder)
+			filepath := []string{*file}
+			cmdCtx := cli.ApplyHandlerContext{
+				FilePaths:       filepath,
+				RecursiveFolder: false,
+				DryRun:          false,
+				PrintDiff:       false,
+				MaxParallel:     1,
+				StateEnabled:    false,
+				StateRef:        nil,
+			}
+			applyHandler := cli.NewApplyHandler(rootContext)
+
+			_, err = applyHandler.Handle(cmdCtx)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error during apply: %s\n", err)
+				os.Exit(1)
+			}
 		}
 	}
 }

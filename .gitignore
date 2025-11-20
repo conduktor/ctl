@@ -37,6 +37,7 @@ go.work
 .idea
 .envrc
 .direnv
+.vscode
 
 # AWS User-specific
 .idea/**/aws.xml

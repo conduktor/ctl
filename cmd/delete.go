@@ -5,6 +5,9 @@ import (
 	"os"
 
 	"github.com/conduktor/ctl/internal/cli"
+	"github.com/conduktor/ctl/internal/state"
+	"github.com/conduktor/ctl/internal/state/model"
+	"github.com/conduktor/ctl/internal/state/storage"
 	"github.com/conduktor/ctl/pkg/schema"
 	"github.com/spf13/cobra"
 )
@@ -12,13 +15,16 @@ import (
 func initDelete(rootContext cli.RootContext) {
 	var recursiveFolder *bool
 	var filePath *[]string
+	var stateEnabled *bool
+	var stateFile *string
+
 	var deleteCmd = &cobra.Command{
 		Use:   "delete",
 		Short: "Delete resource of a given kind and name",
 		Long:  ``,
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			runDeleteFromFiles(rootContext, *filePath, *recursiveFolder)
+			runDeleteFromFiles(rootContext, *filePath, *recursiveFolder, stateEnabled, stateFile)
 		},
 	}
 
@@ -28,6 +34,12 @@ func initDelete(rootContext cli.RootContext) {
 
 	recursiveFolder = deleteCmd.
 		Flags().BoolP("recursive", "r", false, "Delete all .yaml or .yml files in the specified folder and its subfolders. If not set, only files in the specified folder will be applied.")
+
+	stateEnabled = deleteCmd.
+		PersistentFlags().Bool("enable-state", false, "Enable state management for the resource.")
+
+	stateFile = deleteCmd.
+		PersistentFlags().String("state-file", "", "Path to the state file to use for state management. By default, use $HOME/.conduktor/ctl/state.yaml")
 
 	_ = deleteCmd.MarkFlagRequired("file")
 
@@ -64,31 +76,36 @@ func initDelete(rootContext cli.RootContext) {
 	}
 }
 
-func runDeleteFromFiles(rootContext cli.RootContext, filePaths []string, recursiveFolder bool) {
-	deleteHandler := cli.NewDeleteHandler(rootContext)
+func runDeleteFromFiles(rootContext cli.RootContext, filePaths []string, recursiveFolder bool, stateEnabled *bool, stateFile *string) {
+	dryRun := false // No support for dry-run in delete for now
 
-	cmdCtx := cli.DeleteFileHandlerContext{
-		FilePaths:       filePaths,
-		RecursiveFolder: recursiveFolder,
-	}
+	stateCfg := storage.NewStorageConfig(stateEnabled, stateFile)
+	state.RunWithState(stateCfg, dryRun, *rootContext.Debug, func(stateRef *model.State) {
+		deleteHandler := cli.NewDeleteHandler(rootContext)
 
-	results, err := deleteHandler.HandleFromFiles(cmdCtx)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error during delete: %s\n", err)
-		os.Exit(1)
-	}
-
-	allSuccess := true
-	for _, result := range results {
-		if result.Err != nil {
-			fmt.Fprintf(os.Stderr, "Could not delete resource %s/%s: %s\n", result.Resource.Kind, result.Resource.Name, result.Err)
-			allSuccess = false
+		cmdCtx := cli.DeleteFileHandlerContext{
+			FilePaths:       filePaths,
+			RecursiveFolder: recursiveFolder,
 		}
-	}
 
-	if !allSuccess {
-		os.Exit(1)
-	}
+		results, err := deleteHandler.HandleFromFiles(cmdCtx)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error during delete: %s\n", err)
+			os.Exit(1)
+		}
+
+		allSuccess := true
+		for _, result := range results {
+			if result.Err != nil {
+				fmt.Fprintf(os.Stderr, "Could not delete resource %s/%s: %s\n", result.Resource.Kind, result.Resource.Name, result.Err)
+				allSuccess = false
+			}
+		}
+
+		if !allSuccess {
+			os.Exit(1)
+		}
+	})
 }
 
 func buildDeleteByVClusterAndNameCmd(rootContext cli.RootContext, kind schema.Kind) *cobra.Command {

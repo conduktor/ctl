@@ -7,37 +7,50 @@ import (
 	"path/filepath"
 
 	"github.com/conduktor/ctl/internal/state/model"
+	"github.com/conduktor/ctl/internal/utils"
 )
 
-const StateFileName = "state.json"
+const StateFileName = "cli-state.json"
 
 type LocalFileBackend struct {
 	FilePath string
 }
 
-func NewLocalFileBackend(filePath *string) *LocalFileBackend {
+func NewLocalFileBackend(filePath *string, debug bool) *LocalFileBackend {
 	var stateLocation = stateDefaultLocation()
 
 	if filePath != nil && *filePath != "" {
 		stateLocation = *filePath
 	}
-
-	fmt.Fprintf(os.Stderr, "Using local file state storage at: %s\n", stateLocation)
+	if debug {
+		fmt.Fprintf(os.Stderr, "Using local file state storage at: %s\n", stateLocation)
+	}
 	return &LocalFileBackend{
 		FilePath: stateLocation,
 	}
 }
 
-func stateDefaultLocation() string {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return ""
-	}
-	return filepath.Join(homeDir, ".conduktor", "ctl", StateFileName)
-}
-
 func (b LocalFileBackend) Type() StorageBackendType {
 	return FileBackend
+}
+
+func (b LocalFileBackend) LoadState() (*model.State, error) {
+	_, err := os.Stat(b.FilePath)
+	if os.IsNotExist(err) {
+		fmt.Fprintf(os.Stderr, "State file does not exist, creating a new one")
+		return model.NewState(), nil
+	}
+
+	data, err := os.ReadFile(b.FilePath)
+	if err != nil {
+		return nil, NewStorageError(FileBackend, "failed to read state file", err)
+	}
+	var state *model.State
+	err = json.Unmarshal(data, &state)
+	if err != nil {
+		return nil, NewStorageError(FileBackend, "failed to unmarshal state JSON", err)
+	}
+	return state, nil
 }
 
 func (b LocalFileBackend) SaveState(state *model.State) error {
@@ -59,21 +72,14 @@ func (b LocalFileBackend) SaveState(state *model.State) error {
 	return nil
 }
 
-func (b LocalFileBackend) LoadState() (*model.State, error) {
-	_, err := os.Stat(b.FilePath)
-	if os.IsNotExist(err) {
-		fmt.Fprintf(os.Stderr, "State file does not exist, creating a new one")
-		return model.NewState(), nil
-	}
+func (b LocalFileBackend) DebugString() string {
+	return fmt.Sprintf("Local File (StateFile=%s)", b.FilePath)
+}
 
-	data, err := os.ReadFile(b.FilePath)
+func stateDefaultLocation() string {
+	dataDir, err := utils.GetDataDir()
 	if err != nil {
-		return nil, NewStorageError(FileBackend, "failed to read state file", err)
+		return filepath.Join(dataDir, ".conduktor", StateFileName)
 	}
-	var state *model.State
-	err = json.Unmarshal(data, &state)
-	if err != nil {
-		return nil, NewStorageError(FileBackend, "failed to unmarshal state JSON", err)
-	}
-	return state, nil
+	return filepath.Join(dataDir, StateFileName)
 }

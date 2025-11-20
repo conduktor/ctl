@@ -5,25 +5,42 @@ import (
 	"os"
 
 	"github.com/conduktor/ctl/internal/cli"
+	"github.com/conduktor/ctl/internal/state"
+	"github.com/conduktor/ctl/internal/state/model"
+	"github.com/conduktor/ctl/internal/state/storage"
 	"github.com/spf13/cobra"
 )
-
-var dryRun *bool
-var printDiff *bool
-var stateEnabled *bool
-var maxParallel *int
-var stateFile *string
 
 func initApply(rootContext cli.RootContext) {
 	// applyCmd represents the apply command
 	var recursiveFolder *bool
 	var filePath *[]string
+	var dryRun *bool
+	var printDiff *bool
+	var maxParallel *int
+	var stateEnabled *bool
+	var stateFile *string
+
 	var applyCmd = &cobra.Command{
 		Use:   "apply",
 		Short: "Upsert a resource on Conduktor",
 		Long:  ``,
 		Run: func(cmd *cobra.Command, args []string) {
-			runApply(rootContext, *filePath, *recursiveFolder)
+			stateCfg := storage.NewStorageConfig(stateEnabled, stateFile)
+			state.RunWithState(stateCfg, *dryRun, *rootContext.Debug, func(stateRef *model.State) {
+
+				cmdCtx := cli.ApplyHandlerContext{
+					FilePaths:       *filePath,
+					RecursiveFolder: *recursiveFolder,
+					DryRun:          *dryRun,
+					PrintDiff:       *printDiff,
+					MaxParallel:     *maxParallel,
+					StateEnabled:    stateCfg.Enabled,
+					StateRef:        stateRef,
+				}
+
+				runApply(rootContext, cmdCtx)
+			})
 		},
 	}
 
@@ -60,17 +77,8 @@ func initApply(rootContext cli.RootContext) {
 	}
 }
 
-func runApply(rootContext cli.RootContext, filePath []string, recursiveFolder bool) {
-
+func runApply(rootContext cli.RootContext, cmdCtx cli.ApplyHandlerContext) {
 	applyHandler := cli.NewApplyHandler(rootContext)
-
-	cmdCtx := cli.ApplyHandlerContext{
-		FilePaths:       filePath,
-		DryRun:          *dryRun,
-		PrintDiff:       *printDiff,
-		RecursiveFolder: recursiveFolder,
-		MaxParallel:     *maxParallel,
-	}
 
 	results, err := applyHandler.Handle(cmdCtx)
 	if err != nil {

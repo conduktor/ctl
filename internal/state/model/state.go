@@ -27,7 +27,11 @@ func (s *State) AddManagedResource(res resource.Resource) {
 	s.LastUpdated = time.Now().UTC().Format(time.RFC3339)
 }
 
-func (s *State) RemoveManagedResource(apiVersion, kind string, metadata *map[string]any) {
+func (s *State) RemoveManagedResource(res resource.Resource) {
+	s.RemoveManagedResourceVKM(res.Version, res.Kind, &res.Metadata)
+}
+
+func (s *State) RemoveManagedResourceVKM(apiVersion, kind string, metadata *map[string]any) {
 	for i, res := range s.Resources {
 		if res.Equal(&ResourceState{APIVersion: apiVersion, Kind: kind, Metadata: metadata}) {
 			// Remove the resource from the slice keeping order

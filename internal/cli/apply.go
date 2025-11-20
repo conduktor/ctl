@@ -1,8 +1,11 @@
 package cli
 
 import (
+	"fmt"
+	"os"
 	"sync"
 
+	"github.com/conduktor/ctl/internal/state/model"
 	"github.com/conduktor/ctl/pkg/client"
 	"github.com/conduktor/ctl/pkg/resource"
 	"github.com/conduktor/ctl/pkg/schema"
@@ -10,10 +13,12 @@ import (
 
 type ApplyHandlerContext struct {
 	FilePaths       []string
+	RecursiveFolder bool
 	DryRun          bool
 	PrintDiff       bool
-	RecursiveFolder bool
 	MaxParallel     int
+	StateEnabled    bool
+	StateRef        *model.State
 }
 
 type ApplyResult struct {
@@ -33,6 +38,10 @@ func NewApplyHandler(rootCtx RootContext) *ApplyHandler {
 }
 
 func (h *ApplyHandler) Handle(cmdCtx ApplyHandlerContext) ([]ApplyResult, error) {
+	debug := *h.rootCtx.Debug
+	dryRun := cmdCtx.DryRun
+	stateRef := cmdCtx.StateRef
+
 	// Load resources from files
 	resources, err := LoadResourcesFromFiles(cmdCtx.FilePaths, h.rootCtx.Strict, cmdCtx.RecursiveFolder)
 	if err != nil {
@@ -40,7 +49,38 @@ func (h *ApplyHandler) Handle(cmdCtx ApplyHandlerContext) ([]ApplyResult, error)
 	}
 
 	// Sort resources for proper apply order
-	schema.SortResourcesForApply(h.rootCtx.Catalog.Kind, resources, *h.rootCtx.Debug)
+	schema.SortResourcesForApply(h.rootCtx.Catalog.Kind, resources, debug)
+
+	if cmdCtx.StateEnabled && stateRef != nil {
+		// Delete missing managed resources
+		removedResources := stateRef.GetRemovedResources(resources)
+		schema.SortResourcesForDelete(h.rootCtx.Catalog.Kind, removedResources, debug)
+		fmt.Fprintln(os.Stderr, "Deleting resources missing from state...")
+
+		if dryRun {
+			for _, res := range removedResources {
+				fmt.Printf("Deleted resource %s/%s missing from state (dry-run)\n", res.Kind, res.Name)
+			}
+		} else {
+			deleteHandler := NewDeleteHandler(h.rootCtx)
+			deleteResult, err := deleteHandler.HandleFromList(removedResources, stateRef, debug)
+			if err != nil {
+				return nil, fmt.Errorf("error deleting resources missing from state: %s", err)
+			}
+			deleteSuccess := true
+			for _, res := range deleteResult {
+				if res.Err != nil {
+					deleteSuccess = false
+					fmt.Fprintf(os.Stderr, "Could not delete resource %s/%s missing from state: %s\n", res.Resource.Kind, res.Resource.Name, res.Err)
+				} else {
+					fmt.Printf("Deleted resource %s/%s missing from state\n", res.Resource.Kind, res.Resource.Name)
+				}
+			}
+			if !deleteSuccess {
+				return nil, fmt.Errorf("one or more errors occurred while deleting resources missing from state")
+			}
+		}
+	}
 
 	// Group resources by kind
 	kindGroups := make(map[string][]resource.Resource)
@@ -69,6 +109,15 @@ func (h *ApplyHandler) Handle(cmdCtx ApplyHandlerContext) ([]ApplyResult, error)
 		}
 
 		allResults = append(allResults, groupResults...)
+	}
+
+	// Update state and save it enabled
+	if cmdCtx.StateEnabled && stateRef != nil {
+		for _, result := range allResults {
+			if result.Err == nil {
+				stateRef.AddManagedResource(result.Resource)
+			}
+		}
 	}
 
 	return allResults, nil

@@ -1,11 +1,39 @@
 package storage
 
+import "os"
+
 type StorageConfig struct {
-	StateFilePath *string
+	Enabled  bool
+	FilePath *string
 }
 
-func NewStorageConfig(stateFilePath *string) StorageConfig {
+// NewStorageConfig creates a StorageConfig based on the provided pointers.
+// If the pointers are nil, it falls back to environment variables:
+// - CDK_STATE_ENABLED for Enabled (expects "true" or "false")
+// - CDK_STATE_FILE for FilePath.
+func NewStorageConfig(stateEnabled *bool, stateFilePath *string) StorageConfig {
+	enable := false
+	if stateEnabled == nil {
+		enabledEnv := os.Getenv("CDK_STATE_ENABLED")
+		if enabledEnv == "true" || enabledEnv == "1" || enabledEnv == "yes" {
+			enable = true
+		}
+	} else {
+		enable = *stateEnabled
+	}
+
+	var filePath *string
+	if stateFilePath == nil {
+		filePathEnv := os.Getenv("CDK_STATE_FILE")
+		if filePathEnv != "" {
+			filePath = &filePathEnv
+		}
+	} else {
+		filePath = stateFilePath
+	}
+
 	return StorageConfig{
-		StateFilePath: stateFilePath,
+		Enabled:  enable,
+		FilePath: filePath,
 	}
 }
