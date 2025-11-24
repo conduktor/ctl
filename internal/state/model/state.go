@@ -23,8 +23,10 @@ func NewState() *State {
 }
 
 func (s *State) AddManagedResource(res resource.Resource) {
-	s.Resources = append(s.Resources, NewResourceState(res))
-	s.LastUpdated = time.Now().UTC().Format(time.RFC3339)
+	if !s.IsResourceManaged(res) {
+		s.Resources = append(s.Resources, NewResourceState(res))
+		s.LastUpdated = time.Now().UTC().Format(time.RFC3339)
+	}
 }
 
 func (s *State) RemoveManagedResource(res resource.Resource) {

@@ -34,6 +34,10 @@ func TestState_AddManagedResource(t *testing.T) {
 	state.AddManagedResource(resource1)
 	assert.Len(t, state.Resources, 1)
 
+	// adding and already managed resource don't change the state
+	state.AddManagedResource(resource1)
+	assert.Len(t, state.Resources, 1)
+
 	state.AddManagedResource(resource2)
 	assert.Len(t, state.Resources, 2)
 

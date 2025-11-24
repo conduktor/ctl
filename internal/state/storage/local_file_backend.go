@@ -22,9 +22,7 @@ func NewLocalFileBackend(filePath *string, debug bool) *LocalFileBackend {
 	if filePath != nil && *filePath != "" {
 		stateLocation = *filePath
 	}
-	if debug {
-		fmt.Fprintf(os.Stderr, "Using local file state storage at: %s\n", stateLocation)
-	}
+
 	return &LocalFileBackend{
 		FilePath: stateLocation,
 	}
@@ -34,10 +32,12 @@ func (b LocalFileBackend) Type() StorageBackendType {
 	return FileBackend
 }
 
-func (b LocalFileBackend) LoadState() (*model.State, error) {
+func (b LocalFileBackend) LoadState(debug bool) (*model.State, error) {
 	_, err := os.Stat(b.FilePath)
 	if os.IsNotExist(err) {
-		fmt.Fprintf(os.Stderr, "State file does not exist, creating a new one")
+		if debug {
+			fmt.Fprintf(os.Stderr, "State file does not exist, creating a new one\n")
+		}
 		return model.NewState(), nil
 	}
 
@@ -53,7 +53,7 @@ func (b LocalFileBackend) LoadState() (*model.State, error) {
 	return state, nil
 }
 
-func (b LocalFileBackend) SaveState(state *model.State) error {
+func (b LocalFileBackend) SaveState(state *model.State, debug bool) error {
 	data, err := json.MarshalIndent(state, "", "  ")
 	if err != nil {
 		return NewStorageError(FileBackend, "failed to marshal state to JSON", err)
@@ -73,7 +73,7 @@ func (b LocalFileBackend) SaveState(state *model.State) error {
 }
 
 func (b LocalFileBackend) DebugString() string {
-	return fmt.Sprintf("Local File (StateFile=%s)", b.FilePath)
+	return fmt.Sprintf("Local File %s", b.FilePath)
 }
 
 func stateDefaultLocation() string {

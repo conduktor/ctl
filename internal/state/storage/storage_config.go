@@ -1,6 +1,8 @@
 package storage
 
-import "os"
+import (
+	"os"
+)
 
 type StorageConfig struct {
 	Enabled  bool
@@ -13,7 +15,7 @@ type StorageConfig struct {
 // - CDK_STATE_FILE for FilePath.
 func NewStorageConfig(stateEnabled *bool, stateFilePath *string) StorageConfig {
 	enable := false
-	if stateEnabled == nil {
+	if stateEnabled == nil || *stateEnabled == false {
 		enabledEnv := os.Getenv("CDK_STATE_ENABLED")
 		if enabledEnv == "true" || enabledEnv == "1" || enabledEnv == "yes" {
 			enable = true
@@ -23,7 +25,7 @@ func NewStorageConfig(stateEnabled *bool, stateFilePath *string) StorageConfig {
 	}
 
 	var filePath *string
-	if stateFilePath == nil {
+	if stateFilePath == nil || *stateFilePath == "" {
 		filePathEnv := os.Getenv("CDK_STATE_FILE")
 		if filePathEnv != "" {
 			filePath = &filePathEnv

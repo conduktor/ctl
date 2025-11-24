@@ -56,7 +56,7 @@ func TestLocalFileBackend_LoadState_NewFile(t *testing.T) {
 	backend := NewLocalFileBackend(&stateFilePath, true)
 
 	// Load state from non-existent file
-	loadedState, err := backend.LoadState()
+	loadedState, err := backend.LoadState(true)
 	assert.NoError(t, err)
 	assert.NotNil(t, loadedState)
 	assert.Equal(t, model.StateFileVersion, loadedState.Version)
@@ -82,11 +82,11 @@ func TestLocalFileBackend_LoadState_ExistingFile(t *testing.T) {
 	}
 
 	// Save the initial state to file
-	err := backend.SaveState(initialState)
+	err := backend.SaveState(initialState, true)
 	assert.NoError(t, err)
 
 	// Load state from existing file
-	loadedState, err := backend.LoadState()
+	loadedState, err := backend.LoadState(true)
 	assert.NoError(t, err)
 	assert.NotNil(t, loadedState)
 	assert.Equal(t, model.StateFileVersion, loadedState.Version)
@@ -119,7 +119,7 @@ func TestLocalFileBackend_SaveState(t *testing.T) {
 	}
 
 	beforeSave := time.Now()
-	err := backend.SaveState(testState)
+	err := backend.SaveState(testState, true)
 	assert.NoError(t, err)
 
 	// Check that file exists
@@ -162,7 +162,7 @@ func TestLocalFileBackend_SaveState_NestedDirectory(t *testing.T) {
 		Resources:   []model.ResourceState{},
 	}
 
-	err = backend.SaveState(testState)
+	err = backend.SaveState(testState, true)
 	assert.NoError(t, err)
 	assert.FileExists(t, stateFilePath)
 }
@@ -177,7 +177,7 @@ func TestLocalFileBackend_LoadState_CorruptedFile(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Try to load corrupted file
-	_, err = backend.LoadState()
+	_, err = backend.LoadState(true)
 	assert.Error(t, err)
 	assert.Equal(t, "file storage error: failed to unmarshal state JSON. Cause: unexpected end of JSON input", err.Error())
 }
@@ -208,7 +208,7 @@ func TestLocalFileBackend_SaveState_ReadOnlyDirectory(t *testing.T) {
 	}
 
 	// Should fail to save to read-only directory
-	err = backend.SaveState(testState)
+	err = backend.SaveState(testState, true)
 	assert.Error(t, err)
 	expectedError := fmt.Sprintf("file storage error: failed to write state to %s. Cause: open %s: permission denied", stateFilePath, stateFilePath)
 	assert.Equal(t, expectedError, err.Error())
@@ -228,11 +228,11 @@ func TestLocalFileBackend_IntegrationWithState(t *testing.T) {
 	}
 
 	testState.AddManagedResource(resource1)
-	err := backend.SaveState(testState)
+	err := backend.SaveState(testState, true)
 	assert.NoError(t, err)
 
 	// Load state again and verify
-	reloadedState, err := backend.LoadState()
+	reloadedState, err := backend.LoadState(true)
 	assert.NoError(t, err)
 	assert.Len(t, reloadedState.Resources, 1)
 	assert.True(t, reloadedState.IsResourceManaged(resource1))
@@ -245,11 +245,11 @@ func TestLocalFileBackend_IntegrationWithState(t *testing.T) {
 	}
 
 	reloadedState.AddManagedResource(resource2)
-	err = backend.SaveState(reloadedState)
+	err = backend.SaveState(reloadedState, true)
 	assert.NoError(t, err)
 
 	// Final reload and verification
-	finalState, err := backend.LoadState()
+	finalState, err := backend.LoadState(true)
 	assert.NoError(t, err)
 	assert.Len(t, finalState.Resources, 2)
 	assert.True(t, finalState.IsResourceManaged(resource1))
@@ -283,14 +283,14 @@ func TestLocalFileBackend_ConcurrentOperations(t *testing.T) {
 	state2.AddManagedResource(resource2)
 
 	// Save both (state2 will overwrite state1's changes)
-	err := backend1.SaveState(state1)
+	err := backend1.SaveState(state1, true)
 	assert.NoError(t, err)
 
-	err = backend2.SaveState(state2)
+	err = backend2.SaveState(state2, true)
 	assert.NoError(t, err)
 
 	// Reload and verify that only state2's changes persisted
-	finalState, err := backend1.LoadState()
+	finalState, err := backend1.LoadState(true)
 	assert.NoError(t, err)
 	assert.Len(t, finalState.Resources, 1)
 	assert.True(t, finalState.IsResourceManaged(resource2))

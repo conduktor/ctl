@@ -12,7 +12,7 @@ const (
 
 type StorageBackend interface {
 	Type() StorageBackendType
-	SaveState(state *model.State) error
-	LoadState() (*model.State, error)
+	LoadState(debug bool) (*model.State, error)
+	SaveState(state *model.State, debug bool) error
 	DebugString() string
 }
