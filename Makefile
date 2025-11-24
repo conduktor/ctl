@@ -46,4 +46,4 @@ install: ## Install required tools and dependencies
 setup-hooks: install ## Setup pre-commit hooks
 	@command -v pre-commit >/dev/null 2>&1 || { echo "pre-commit not found. Run 'make install' first."; exit 1; }
 	@echo "[*] installing pre-commit hooks..."
-	@pre-commit install
+	@pre-commit install --install-hooks
