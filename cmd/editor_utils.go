@@ -19,7 +19,7 @@ func runEditor(filePath string) error {
 	}
 
 	if !exists {
-		if *debug {
+		if debug {
 			fmt.Fprintln(os.Stderr, "No editor set. Set $EDITOR to your preferred editor")
 		}
 		editor = "nano"

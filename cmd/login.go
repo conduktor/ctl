@@ -17,7 +17,7 @@ var loginCmd = &cobra.Command{
 	Args:  cobra.RangeArgs(0, 0),
 	Run: func(cmd *cobra.Command, args []string) {
 		specificAPIClient, err := client.Make(client.APIParameter{BaseURL: os.Getenv("CDK_BASE_URL"), Debug: utils.CdkDebug()})
-		if *debug {
+		if trace {
 			specificAPIClient.ActivateDebug()
 		}
 		if err != nil {

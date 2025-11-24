@@ -11,7 +11,9 @@ import (
 )
 
 var rootContext cli.RootContext
-var debug *bool
+var verbosity int
+var debug bool
+var trace bool
 var apiClient_ *client.Client
 var consoleAPIClientError error
 var gatewayAPIClient_ *client.GatewayClient
@@ -41,7 +43,13 @@ var rootCmd = &cobra.Command{
 Additionally, you can configure client TLS authentication by providing your certificate paths in CDK_KEY and CDK_CERT.
 For server TLS authentication, you can ignore the certificate by setting CDK_INSECURE=true, or provide a certificate authority using CDK_CACERT.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		if *debug {
+		if verbosity >= 1 {
+			debug = true
+		}
+		if verbosity >= 2 {
+			trace = true
+		}
+		if trace {
 			// ActivateDebug() will enable debug mode for the resty client.
 			// Doesn't need to be set if the client was not initialised correctly.
 			if consoleAPIClientError == nil {
@@ -83,7 +91,7 @@ func init() {
 		gatewayKinds = schema.GatewayDefaultCatalog()
 	}
 	catalog := consoleKinds.Merge(gatewayKinds)
-	debug = rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Show more information for debugging")
+	rootCmd.PersistentFlags().CountVarP(&verbosity, "verbose", "v", "verbose output (can be repeated e.g: -v = debug / -vv = trace)")
 	var permissive = rootCmd.PersistentFlags().Bool("permissive", false, "Permissive mode, allow undefined environment variables")
 	strict := !*permissive
 
@@ -94,7 +102,7 @@ func init() {
 		gatewayAPIClientError,
 		catalog,
 		strict,
-		debug,
+		&debug,
 	)
 
 	initGet(rootContext)

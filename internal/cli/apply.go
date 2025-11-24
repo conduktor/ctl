@@ -55,25 +55,20 @@ func (h *ApplyHandler) Handle(cmdCtx ApplyHandlerContext) ([]ApplyResult, error)
 		// Delete missing managed resources
 		removedResources := stateRef.GetRemovedResources(resources)
 		schema.SortResourcesForDelete(h.rootCtx.Catalog.Kind, removedResources, debug)
-		fmt.Fprintln(os.Stderr, "Deleting resources missing from state...")
+		if len(removedResources) > 0 {
+			fmt.Fprintln(os.Stderr, "Deleting resources missing from state...")
 
-		if dryRun {
-			for _, res := range removedResources {
-				fmt.Printf("Deleted resource %s/%s missing from state (dry-run)\n", res.Kind, res.Name)
-			}
-		} else {
 			deleteHandler := NewDeleteHandler(h.rootCtx)
-			deleteResult, err := deleteHandler.HandleFromList(removedResources, stateRef, debug)
+			deleteResult, err := deleteHandler.HandleFromList(removedResources, stateRef, dryRun, debug)
 			if err != nil {
 				return nil, fmt.Errorf("error deleting resources missing from state: %s", err)
 			}
+
 			deleteSuccess := true
 			for _, res := range deleteResult {
 				if res.Err != nil {
 					deleteSuccess = false
 					fmt.Fprintf(os.Stderr, "Could not delete resource %s/%s missing from state: %s\n", res.Resource.Kind, res.Resource.Name, res.Err)
-				} else {
-					fmt.Printf("Deleted resource %s/%s missing from state\n", res.Resource.Kind, res.Resource.Name)
 				}
 			}
 			if !deleteSuccess {
