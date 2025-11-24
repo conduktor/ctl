@@ -57,7 +57,7 @@ func (s *StateService) LoadState(debug bool) (*model.State, error) {
 	if debug {
 		fmt.Fprintln(os.Stderr, "Loading state using backend:", s.backend.DebugString())
 	}
-	state, err := s.backend.LoadState()
+	state, err := s.backend.LoadState(debug)
 	if err != nil {
 		return nil, NewStateError("Could not load state", err)
 	}
@@ -83,7 +83,7 @@ func (s *StateService) SaveState(state *model.State, dryrun, debug bool) error {
 		fmt.Fprintln(os.Stderr, "Saving state using backend:", s.backend.DebugString())
 	}
 
-	err := s.backend.SaveState(state)
+	err := s.backend.SaveState(state, debug)
 	if err != nil {
 		return NewStateError("Could not save state", err)
 	}
