@@ -15,6 +15,7 @@ import (
 func initDelete(rootContext cli.RootContext) {
 	var recursiveFolder *bool
 	var filePath *[]string
+	var dryRun *bool
 	var stateEnabled *bool
 	var stateFile *string
 
@@ -24,7 +25,7 @@ func initDelete(rootContext cli.RootContext) {
 		Long:  ``,
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			runDeleteFromFiles(rootContext, *filePath, *recursiveFolder, stateEnabled, stateFile)
+			runDeleteFromFiles(rootContext, *filePath, *recursiveFolder, dryRun, stateEnabled, stateFile)
 		},
 	}
 
@@ -34,6 +35,9 @@ func initDelete(rootContext cli.RootContext) {
 
 	recursiveFolder = deleteCmd.
 		Flags().BoolP("recursive", "r", false, "Delete all .yaml or .yml files in the specified folder and its subfolders. If not set, only files in the specified folder will be applied.")
+
+	dryRun = deleteCmd.
+		PersistentFlags().Bool("dry-run", false, "Test potential changes without the effects being deleted")
 
 	stateEnabled = deleteCmd.
 		PersistentFlags().Bool("enable-state", false, "Enable state management for the resource.")
@@ -76,16 +80,18 @@ func initDelete(rootContext cli.RootContext) {
 	}
 }
 
-func runDeleteFromFiles(rootContext cli.RootContext, filePaths []string, recursiveFolder bool, stateEnabled *bool, stateFile *string) {
-	dryRun := false // No support for dry-run in delete for now
+func runDeleteFromFiles(rootContext cli.RootContext, filePaths []string, recursiveFolder bool, dryRun *bool, stateEnabled *bool, stateFile *string) {
 
 	stateCfg := storage.NewStorageConfig(stateEnabled, stateFile)
-	state.RunWithState(stateCfg, dryRun, *rootContext.Debug, func(stateRef *model.State) {
+	state.RunWithState(stateCfg, *dryRun, *rootContext.Debug, func(stateRef *model.State) {
 		deleteHandler := cli.NewDeleteHandler(rootContext)
 
 		cmdCtx := cli.DeleteFileHandlerContext{
 			FilePaths:       filePaths,
 			RecursiveFolder: recursiveFolder,
+			DryRun:          *dryRun,
+			StateEnabled:    *stateEnabled,
+			StateRef:        stateRef,
 		}
 
 		results, err := deleteHandler.HandleFromFiles(cmdCtx)

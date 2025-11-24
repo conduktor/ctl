@@ -13,6 +13,7 @@ import (
 type DeleteFileHandlerContext struct {
 	FilePaths       []string
 	RecursiveFolder bool
+	DryRun          bool
 	StateEnabled    bool
 	StateRef        *model.State
 }
@@ -52,6 +53,7 @@ func NewDeleteHandler(rootCtx RootContext) *DeleteHandler {
 
 func (h *DeleteHandler) HandleFromFiles(cmdCtx DeleteFileHandlerContext) ([]DeleteResult, error) {
 	debug := *h.rootCtx.Debug
+	dryRun := cmdCtx.DryRun
 	stateRef := cmdCtx.StateRef
 
 	// Load resources from files
@@ -60,10 +62,10 @@ func (h *DeleteHandler) HandleFromFiles(cmdCtx DeleteFileHandlerContext) ([]Dele
 		return nil, err
 	}
 
-	return h.HandleFromList(resources, stateRef, debug)
+	return h.HandleFromList(resources, stateRef, dryRun, debug)
 }
 
-func (h *DeleteHandler) HandleFromList(resources []resource.Resource, stateRef *model.State, debug bool) ([]DeleteResult, error) {
+func (h *DeleteHandler) HandleFromList(resources []resource.Resource, stateRef *model.State, dryRun bool, debug bool) ([]DeleteResult, error) {
 	// Sort resources for proper delete order
 	schema.SortResourcesForDelete(h.rootCtx.Catalog.Kind, resources, *h.rootCtx.Debug)
 
@@ -72,24 +74,28 @@ func (h *DeleteHandler) HandleFromList(resources []resource.Resource, stateRef *
 	// Process each resource
 	for _, res := range resources {
 		var err error
-		if h.rootCtx.Catalog.IsGatewayResource(res) {
-			if isResourceIdentifiedByName(res) {
-				err = h.rootCtx.GatewayAPIClient().DeleteResourceByName(&res)
-			} else if isResourceIdentifiedByNameAndVCluster(res) {
-				err = h.rootCtx.GatewayAPIClient().DeleteResourceByNameAndVCluster(&res)
-			} else if isResourceInterceptor(res) {
-				err = h.rootCtx.GatewayAPIClient().DeleteResourceInterceptors(&res)
-			}
+		if dryRun {
+			fmt.Printf("%s/%s: Deleted (dry-run)\n", res.Kind, res.Name)
 		} else {
-			err = h.rootCtx.ConsoleAPIClient().DeleteResource(&res)
-		}
-
-		if err == nil {
-			if debug {
-				fmt.Fprintf(os.Stderr, "Remove resource %s/%s from state if exist\n", res.Kind, res.Name)
+			if h.rootCtx.Catalog.IsGatewayResource(res) {
+				if isResourceIdentifiedByName(res) {
+					err = h.rootCtx.GatewayAPIClient().DeleteResourceByName(&res)
+				} else if isResourceIdentifiedByNameAndVCluster(res) {
+					err = h.rootCtx.GatewayAPIClient().DeleteResourceByNameAndVCluster(&res)
+				} else if isResourceInterceptor(res) {
+					err = h.rootCtx.GatewayAPIClient().DeleteResourceInterceptors(&res)
+				}
+			} else {
+				err = h.rootCtx.ConsoleAPIClient().DeleteResource(&res)
 			}
-			if stateRef != nil {
-				stateRef.RemoveManagedResource(res)
+
+			if err == nil {
+				if stateRef != nil {
+					if debug {
+						fmt.Fprintf(os.Stderr, "Remove resource %s/%s from state\n", res.Kind, res.Name)
+					}
+					stateRef.RemoveManagedResource(res)
+				}
 			}
 		}
 
