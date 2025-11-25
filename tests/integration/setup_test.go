@@ -38,9 +38,10 @@ func TestMain(m *testing.M) {
 		fmt.Fprintf(os.Stderr, "Failed to setup: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Fprintln(os.Stderr, "Wait 30s for compose to be up and running")
-	time.Sleep(30 * time.Second)
-
+	if enableComposeRun() {
+		fmt.Fprintln(os.Stderr, "Wait 30s for compose to be up and running")
+		time.Sleep(30 * time.Second)
+	}
 	// Wait for API to be ready
 	if err := waitForConsole(); err != nil {
 		teardownDocker()
@@ -63,29 +64,38 @@ func TestMain(m *testing.M) {
 }
 
 func setupDocker() error {
-	fmt.Fprintln(os.Stderr, "Start integration docker stack")
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
-	defer cancel()
+	if enableComposeRun() {
+		fmt.Fprintln(os.Stderr, "Start integration docker stack")
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
 
-	setComposeEnv()
-	cmd := exec.CommandContext(ctx, "docker", "compose",
-		"-f", composeFilePath,
-		"up", "-d", "--build")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+		setComposeEnv()
+		cmd := exec.CommandContext(ctx, "docker", "compose",
+			"-f", composeFilePath,
+			"up", "-d", "--build")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
 
-	return cmd.Run()
+		return cmd.Run()
+	}
+	return nil
 }
 
 func teardownDocker() {
-	// setComposeEnv()
-	cmd := exec.Command("docker", "compose",
-		"-f", composeFilePath,
-		"down", "-v")
-	err := cmd.Run()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to teardown docker compose: %v\n", err)
+	if enableComposeRun() {
+		setComposeEnv()
+		cmd := exec.Command("docker", "compose",
+			"-f", composeFilePath,
+			"down", "-v")
+		err := cmd.Run()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to teardown docker compose: %v\n", err)
+		}
 	}
+}
+
+func enableComposeRun() bool {
+	return !(os.Getenv("CDK_INTEGRATION_DISABLE_COMPOSE_RUN") == "true")
 }
 
 func setComposeEnv() {
@@ -94,25 +104,39 @@ func setComposeEnv() {
 	logAndSetEnv("CONDUKTOR_CONSOLE_CORTEX_IMAGE", fmt.Sprintf("conduktor/conduktor-console-cortex:%s", consoleVersion))
 	logAndSetEnv("CONDUKTOR_GATEWAY_IMAGE", fmt.Sprintf("conduktor/conduktor-gateway:%s", gatewayVersion))
 	logAndSetEnv("CDK_BASE_URL", consoleURL)
-	logAndSetEnv("CDK_ADMIN_EMAIL", consoleAdminEmail)
-	logAndSetEnv("CDK_ADMIN_PASSWORD", consoleAdminPassword)
+	logAndSetEnv("CDK_USER", consoleAdminEmail)
+	logAndSetEnv("CDK_PASSWORD", consoleAdminPassword)
 	logAndSetEnv("CDK_GATEWAY_BASE_URL", gatewayURL)
 	logAndSetEnv("CDK_GATEWAY_USER", gatewayAdmin)
 	logAndSetEnv("CDK_GATEWAY_PASSWORD", gatewayAdminPassword)
 }
 
-func setCLIConsoleEnv() {
+func SetCLIConsoleEnv() {
 	fmt.Fprintln(os.Stderr, "Setting up environment variables for CLI Console")
 	logAndSetEnv("CDK_BASE_URL", consoleURL)
 	logAndSetEnv("CDK_USER", consoleAdminEmail)
 	logAndSetEnv("CDK_PASSWORD", consoleAdminPassword)
 }
 
-func setCLIGatewayEnv() {
+func UnsetCLIConsoleEnv() {
+	fmt.Fprintln(os.Stderr, "Unsetting environment variables for CLI Console")
+	os.Unsetenv("CDK_BASE_URL")
+	os.Unsetenv("CDK_USER")
+	os.Unsetenv("CDK_PASSWORD")
+}
+
+func SetCLIGatewayEnv() {
 	fmt.Fprintln(os.Stderr, "Setting up environment variables for CLI Gateway")
 	logAndSetEnv("CDK_GATEWAY_BASE_URL", gatewayURL)
 	logAndSetEnv("CDK_GATEWAY_USER", gatewayAdmin)
 	logAndSetEnv("CDK_GATEWAY_PASSWORD", gatewayAdminPassword)
+}
+
+func UnsetCLIGatewayEnv() {
+	fmt.Fprintln(os.Stderr, "Unsetting environment variables for CLI Gateway")
+	os.Unsetenv("CDK_GATEWAY_BASE_URL")
+	os.Unsetenv("CDK_GATEWAY_USER")
+	os.Unsetenv("CDK_GATEWAY_PASSWORD")
 }
 
 func logAndSetEnv(key, value string) {
@@ -161,12 +185,12 @@ func waitForGateway() error {
 }
 
 func runConsoleCommand(args ...string) (string, string, error) {
-	setCLIConsoleEnv()
+	SetCLIConsoleEnv()
 	return runCommand(args...)
 }
 
 func runGatewayCommand(args ...string) (string, string, error) {
-	setCLIGatewayEnv()
+	SetCLIGatewayEnv()
 	return runCommand(args...)
 }
 

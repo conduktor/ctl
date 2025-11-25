@@ -1,7 +1,7 @@
 apiVersion: kafka/v2
 kind: Topic
 metadata:
-  cluster: unkown-cluster
+  cluster: unknown-cluster
   name: invalid-topic
   description: invalid topic for testing
   descriptionIsEditable: false

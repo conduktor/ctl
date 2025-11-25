@@ -41,8 +41,8 @@ services:
     environment:
       - CDK_LICENSE # forward from the environment if set
       - CDK_DEBUG # forward from the environment if set
-      - CDK_ADMIN_EMAIL=${CDK_ADMIN_EMAIL:-admin@conduktor.io}
-      - CDK_ADMIN_PASSWORD=${CDK_ADMIN_PASSWORD:-testP4ss!}
+      - CDK_ADMIN_EMAIL=${CDK_USER:-admin@conduktor.io}
+      - CDK_ADMIN_PASSWORD=${CDK_PASSWORD:-testP4ss!}
       - CDK_DATABASE_URL=postgresql://conduktor:change_me@postgresql:5432/conduktor-console
       - CDK_MONITORING_CORTEX-URL=http://conduktor-monitoring:9009/
       - CDK_MONITORING_ALERT-MANAGER-URL=http://conduktor-monitoring:9010/

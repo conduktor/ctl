@@ -1,5 +1,6 @@
 export SHELL := /bin/sh
 export SHELLOPTS:=$(if $(SHELLOPTS),$(SHELLOPTS):)pipefail:errexit
+export INTEGRATION_TESTS := true
 
 GO_LINT_VERSION ?= v2.5.0
 .ONESHELL:
@@ -33,7 +34,7 @@ test: ## Run tests
 	@go test ./... -v $(TESTARGS) -timeout 5m
 
 	@echo "==> Running integration tests..."
-	INTEGRATION_TESTS=true go test ./tests/integration/... -v $(TESTARGS) -timeout 10m
+	go test ./tests/integration/... -v $(TESTARGS) -timeout 10m
 
 	@echo "==> Running final execution tests..."
 	@./scripts/test_final_exec.sh
