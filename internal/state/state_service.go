@@ -16,24 +16,27 @@ type StateService struct {
 // RunWithState is a helper function that initializes the state service,
 // loads the state, executes the provided function with the state reference,
 // and saves the state back if not a dry run.
-func RunWithState(stateCfg storage.StorageConfig, dryrun, debug bool, f func(stateRef *model.State)) {
+// function f should accept a pointer to model.State and return an error and NEVER panic or Exit itself (except for fail fast strategy).
+func RunWithState(stateCfg storage.StorageConfig, dryrun, debug bool, f func(stateRef *model.State) error) error {
 	stateSvc := NewStateService(stateCfg, debug)
+
 	// Load the state
 	stateRef, err := stateSvc.LoadState(debug)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading state: %s\n", err)
-		os.Exit(1)
+		return fmt.Errorf("Error loading state: %s\n", err)
 	}
+
+	defer func() {
+		// Save the state
+		err = stateSvc.SaveState(stateRef, dryrun, debug)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error saving state: %s\n", err)
+		}
+	}()
 
 	// Execute the provided function with the loaded state
-	f(stateRef)
-
-	// Save the state if not a dry run
-	err = stateSvc.SaveState(stateRef, dryrun, debug)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error saving state: %s\n", err)
-		os.Exit(1)
-	}
+	// Forward the error if any
+	return f(stateRef)
 }
 
 func NewStateService(config storage.StorageConfig, debug bool) *StateService {
@@ -54,9 +57,8 @@ func (s *StateService) LoadState(debug bool) (*model.State, error) {
 		return model.NewState(), nil
 	}
 
-	if debug {
-		fmt.Fprintln(os.Stderr, "Loading state using backend:", s.backend.DebugString())
-	}
+	fmt.Fprintln(os.Stderr, "Loading state from :", s.backend.DebugString())
+
 	state, err := s.backend.LoadState(debug)
 	if err != nil {
 		return nil, NewStateError("Could not load state", err)
@@ -79,9 +81,7 @@ func (s *StateService) SaveState(state *model.State, dryrun, debug bool) error {
 		return nil
 	}
 
-	if debug {
-		fmt.Fprintln(os.Stderr, "Saving state using backend:", s.backend.DebugString())
-	}
+	fmt.Fprintln(os.Stderr, "Saving state into :", s.backend.DebugString())
 
 	err := s.backend.SaveState(state, debug)
 	if err != nil {

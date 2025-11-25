@@ -78,24 +78,34 @@ func (h *DeleteHandler) HandleFromList(resources []resource.Resource, stateRef *
 			fmt.Printf("%s/%s: Deleted (dry-run)\n", res.Kind, res.Name)
 		} else {
 			if h.rootCtx.Catalog.IsGatewayResource(res) {
+				if h.rootCtx.gatewayAPIClientError != nil && h.rootCtx.gatewayAPIClient == nil {
+					// fail early if client is not initialized
+					return results, fmt.Errorf("cannot delete Gateway API resource %s/%s: %s", res.Kind, res.Name, h.rootCtx.gatewayAPIClientError)
+				}
+				gatewayClient := h.rootCtx.gatewayAPIClient
+
 				if isResourceIdentifiedByName(res) {
-					err = h.rootCtx.GatewayAPIClient().DeleteResourceByName(&res)
+					err = gatewayClient.DeleteResourceByName(&res)
 				} else if isResourceIdentifiedByNameAndVCluster(res) {
-					err = h.rootCtx.GatewayAPIClient().DeleteResourceByNameAndVCluster(&res)
+					err = gatewayClient.DeleteResourceByNameAndVCluster(&res)
 				} else if isResourceInterceptor(res) {
-					err = h.rootCtx.GatewayAPIClient().DeleteResourceInterceptors(&res)
+					err = gatewayClient.DeleteResourceInterceptors(&res)
 				}
 			} else {
-				err = h.rootCtx.ConsoleAPIClient().DeleteResource(&res)
+				if h.rootCtx.consoleAPIClientError != nil && h.rootCtx.consoleAPIClient == nil {
+					// fail early if client is not initialized
+					return results, fmt.Errorf("cannot delete Console API resource %s/%s: %s", res.Kind, res.Name, h.rootCtx.consoleAPIClientError)
+				}
+
+				err = h.rootCtx.consoleAPIClient.DeleteResource(&res)
 			}
 
-			if err == nil {
-				if stateRef != nil {
-					if debug {
-						fmt.Fprintf(os.Stderr, "Remove resource %s/%s from state\n", res.Kind, res.Name)
-					}
-					stateRef.RemoveManagedResource(res)
+			// Remove successful deletions from state
+			if err == nil && stateRef != nil {
+				if debug {
+					fmt.Fprintf(os.Stderr, "Remove resource %s/%s from state\n", res.Kind, res.Name)
 				}
+				stateRef.RemoveManagedResource(res)
 			}
 		}
 
@@ -119,9 +129,17 @@ func (h *DeleteHandler) HandleKind(kind schema.Kind, cmdCtx DeleteKindHandlerCon
 	}
 
 	if kind.IsGatewayKind() {
-		return h.rootCtx.GatewayAPIClient().Delete(&kind, parentValue, parentQueryValue, cmdCtx.Args[0])
+		if h.rootCtx.gatewayAPIClientError != nil && h.rootCtx.gatewayAPIClient == nil {
+			// fail early if client is not initialized
+			return fmt.Errorf("cannot delete Gateway API resource of kind %s: %s", kind.GetName(), h.rootCtx.gatewayAPIClientError)
+		}
+		return h.rootCtx.gatewayAPIClient.Delete(&kind, parentValue, parentQueryValue, cmdCtx.Args[0])
 	} else {
-		return h.rootCtx.ConsoleAPIClient().Delete(&kind, parentValue, parentQueryValue, cmdCtx.Args[0])
+		if h.rootCtx.consoleAPIClientError != nil && h.rootCtx.consoleAPIClient == nil {
+			// fail early if client is not initialized
+			return fmt.Errorf("cannot delete Console API resource of kind %s: %s", kind.GetName(), h.rootCtx.consoleAPIClientError)
+		}
+		return h.rootCtx.consoleAPIClient.Delete(&kind, parentValue, parentQueryValue, cmdCtx.Args[0])
 	}
 }
 
@@ -132,7 +150,12 @@ func (h *DeleteHandler) HandleByVClusterAndName(kind schema.Kind, cmdCtx DeleteB
 	}
 	bodyParams["vCluster"] = cmdCtx.VCluster
 
-	return h.rootCtx.GatewayAPIClient().DeleteKindByNameAndVCluster(&kind, bodyParams)
+	if h.rootCtx.gatewayAPIClientError != nil && h.rootCtx.gatewayAPIClient == nil {
+		// fail early if client is not initialized
+		return fmt.Errorf("cannot delete Gateway API resource of kind %s: %s", kind.GetName(), h.rootCtx.gatewayAPIClientError)
+	}
+
+	return h.rootCtx.gatewayAPIClient.DeleteKindByNameAndVCluster(&kind, bodyParams)
 }
 
 func (h *DeleteHandler) HandleInterceptor(kind schema.Kind, cmdCtx DeleteInterceptorHandlerContext) error {
@@ -147,7 +170,12 @@ func (h *DeleteHandler) HandleInterceptor(kind schema.Kind, cmdCtx DeleteInterce
 		bodyParams["username"] = cmdCtx.Username
 	}
 
-	return h.rootCtx.GatewayAPIClient().DeleteInterceptor(&kind, cmdCtx.Name, bodyParams)
+	if h.rootCtx.gatewayAPIClientError != nil && h.rootCtx.gatewayAPIClient == nil {
+		// fail early if client is not initialized
+		return fmt.Errorf("cannot delete Gateway API resource of kind %s: %s", kind.GetName(), h.rootCtx.gatewayAPIClientError)
+	}
+
+	return h.rootCtx.gatewayAPIClient.DeleteInterceptor(&kind, cmdCtx.Name, bodyParams)
 }
 
 func IsKindIdentifiedByNameAndVCluster(res schema.Kind) bool {

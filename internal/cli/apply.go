@@ -98,9 +98,17 @@ func (h *ApplyHandler) Handle(cmdCtx ApplyHandlerContext) ([]ApplyResult, error)
 
 		var groupResults []ApplyResult
 		if h.rootCtx.Catalog.IsGatewayResource(kindResources[0]) {
-			groupResults = h.applyResources(kindResources, h.rootCtx.GatewayAPIClient().Apply, cmdCtx)
+			if h.rootCtx.gatewayAPIClientError != nil && h.rootCtx.gatewayAPIClient == nil {
+				return nil, fmt.Errorf("cannot apply GatewayAPI resources %s: %s", kind, h.rootCtx.gatewayAPIClientError)
+			}
+			gatewayClient := h.rootCtx.gatewayAPIClient
+			groupResults = h.applyResources(kindResources, gatewayClient.Apply, cmdCtx)
 		} else {
-			groupResults = h.applyResources(kindResources, h.rootCtx.ConsoleAPIClient().Apply, cmdCtx)
+			if h.rootCtx.consoleAPIClientError != nil && h.rootCtx.consoleAPIClient == nil {
+				return nil, fmt.Errorf("cannot apply ConsoleAPI resources %s: %s", kind, h.rootCtx.consoleAPIClientError)
+			}
+			consoleClient := h.rootCtx.consoleAPIClient
+			groupResults = h.applyResources(kindResources, consoleClient.Apply, cmdCtx)
 		}
 
 		allResults = append(allResults, groupResults...)

@@ -22,12 +22,13 @@ func initApply(rootContext cli.RootContext) {
 	var stateFile *string
 
 	var applyCmd = &cobra.Command{
-		Use:   "apply",
-		Short: "Upsert a resource on Conduktor",
-		Long:  ``,
-		Run: func(cmd *cobra.Command, args []string) {
+		Use:          "apply",
+		Short:        "Upsert a resource on Conduktor",
+		Long:         ``,
+		SilenceUsage: true, // do not print usage on run error
+		RunE: func(cmd *cobra.Command, args []string) error {
 			stateCfg := storage.NewStorageConfig(stateEnabled, stateFile)
-			state.RunWithState(stateCfg, *dryRun, *rootContext.Debug, func(stateRef *model.State) {
+			return state.RunWithState(stateCfg, *dryRun, *rootContext.Debug, func(stateRef *model.State) error {
 
 				cmdCtx := cli.ApplyHandlerContext{
 					FilePaths:       *filePath,
@@ -39,7 +40,7 @@ func initApply(rootContext cli.RootContext) {
 					StateRef:        stateRef,
 				}
 
-				runApply(rootContext, cmdCtx)
+				return runApply(rootContext, cmdCtx)
 			})
 		},
 	}
@@ -69,21 +70,20 @@ func initApply(rootContext cli.RootContext) {
 
 	_ = applyCmd.MarkPersistentFlagRequired("file")
 
-	applyCmd.PreRun = func(cmd *cobra.Command, args []string) {
+	applyCmd.PreRunE = func(cmd *cobra.Command, args []string) error {
 		if *maxParallel > 100 || *maxParallel < 1 {
-			fmt.Fprintf(os.Stderr, "Error: --parallelism must be between 1 and 100 (got %d)\n", *maxParallel)
-			os.Exit(1)
+			return fmt.Errorf("argument --parallelism must be between 1 and 100 (got %d)\n", *maxParallel)
 		}
+		return nil
 	}
 }
 
-func runApply(rootContext cli.RootContext, cmdCtx cli.ApplyHandlerContext) {
+func runApply(rootContext cli.RootContext, cmdCtx cli.ApplyHandlerContext) error {
 	applyHandler := cli.NewApplyHandler(rootContext)
 
 	results, err := applyHandler.Handle(cmdCtx)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error during apply: %s\n", err)
-		os.Exit(1)
+		return fmt.Errorf("failed to run apply: %s\n", err)
 	}
 
 	allSuccess := true
@@ -98,6 +98,7 @@ func runApply(rootContext cli.RootContext, cmdCtx cli.ApplyHandlerContext) {
 	}
 
 	if !allSuccess {
-		os.Exit(1)
+		return fmt.Errorf("one or more resources could not be applied")
 	}
+	return nil
 }
