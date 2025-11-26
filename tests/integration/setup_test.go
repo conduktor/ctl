@@ -17,8 +17,8 @@ import (
 )
 
 var composeFilePath = "./testdata/docker-compose.integration-test.yml"
-var consoleVersion = "1.38.0"
-var gatewayVersion = "3.14.0"
+var consoleVersion = "1.40.0"
+var gatewayVersion = "3.15.0"
 
 var consoleURL = "http://localhost:8080"
 var consoleAdminEmail = "admin@conduktor.io"
@@ -186,15 +186,15 @@ func waitForGateway() error {
 
 func runConsoleCommand(args ...string) (string, string, error) {
 	SetCLIConsoleEnv()
-	return runCommand(args...)
+	return RunCommand(args...)
 }
 
 func runGatewayCommand(args ...string) (string, string, error) {
 	SetCLIGatewayEnv()
-	return runCommand(args...)
+	return RunCommand(args...)
 }
 
-func runCommand(args ...string) (string, string, error) {
+func RunCommand(args ...string) (string, string, error) {
 
 	baseCmd := []string{"go", "run", "../../main.go"}
 	command := append(baseCmd, args...)

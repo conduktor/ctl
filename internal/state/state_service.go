@@ -1,6 +1,7 @@
 package state
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -23,20 +24,17 @@ func RunWithState(stateCfg storage.StorageConfig, dryrun, debug bool, f func(sta
 	// Load the state
 	stateRef, err := stateSvc.LoadState(debug)
 	if err != nil {
-		return fmt.Errorf("Error loading state: %s\n", err)
+		// fail fast if state cannot be loaded
+		return err
 	}
 
-	defer func() {
-		// Save the state
-		err = stateSvc.SaveState(stateRef, dryrun, debug)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error saving state: %s\n", err)
-		}
-	}()
-
 	// Execute the provided function with the loaded state
-	// Forward the error if any
-	return f(stateRef)
+	runErr := f(stateRef)
+
+	// Save the state
+	saveErr := stateSvc.SaveState(stateRef, dryrun, debug)
+	// Combine run and save errors if both occurred
+	return errors.Join(runErr, saveErr)
 }
 
 func NewStateService(config storage.StorageConfig, debug bool) *StateService {
@@ -58,10 +56,9 @@ func (s *StateService) LoadState(debug bool) (*model.State, error) {
 	}
 
 	fmt.Fprintln(os.Stderr, "Loading state from :", s.backend.DebugString())
-
 	state, err := s.backend.LoadState(debug)
 	if err != nil {
-		return nil, NewStateError("Could not load state", err)
+		return nil, NewStateError("could not load state", err)
 	}
 	return state, nil
 }
@@ -82,10 +79,9 @@ func (s *StateService) SaveState(state *model.State, dryrun, debug bool) error {
 	}
 
 	fmt.Fprintln(os.Stderr, "Saving state into :", s.backend.DebugString())
-
 	err := s.backend.SaveState(state, debug)
 	if err != nil {
-		return NewStateError("Could not save state", err)
+		return NewStateError("could not save state", err)
 	}
 	return nil
 }

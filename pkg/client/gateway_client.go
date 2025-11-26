@@ -91,7 +91,7 @@ func (client *GatewayClient) Get(kind *schema.Kind, parentPathValue []string, pa
 	if err != nil {
 		return result, err
 	} else if resp.IsError() {
-		return result, fmt.Errorf(extractAPIError(resp))
+		return result, fmt.Errorf("%s", extractAPIError(resp))
 	}
 	err = json.Unmarshal(resp.Body(), &result)
 	return result, err
@@ -126,7 +126,7 @@ func (client *GatewayClient) Delete(kind *schema.Kind, parentPathValue []string,
 	if err != nil {
 		return err
 	} else if resp.IsError() {
-		return fmt.Errorf(extractAPIError(resp))
+		return fmt.Errorf("%s", extractAPIError(resp))
 	} else {
 		fmt.Printf("%s/%s: Deleted\n", kind.GetName(), name)
 	}
@@ -153,7 +153,7 @@ func (client *GatewayClient) DeleteResourceByName(resource *resource.Resource) e
 	if err != nil {
 		return err
 	} else if resp.IsError() {
-		return fmt.Errorf(extractAPIError(resp))
+		return fmt.Errorf("%s", extractAPIError(resp))
 	} else {
 		fmt.Printf("%s/%s: Deleted\n", kind.GetName(), resource.Name)
 	}
@@ -184,7 +184,7 @@ func (client *GatewayClient) DeleteResourceByNameAndVCluster(resource *resource.
 	if err != nil {
 		return err
 	} else if resp.IsError() {
-		return fmt.Errorf(extractAPIError(resp))
+		return fmt.Errorf("%s", extractAPIError(resp))
 	} else {
 		fmt.Printf("%s/%s: Deleted\n", kind.GetName(), resource.Name)
 	}
@@ -262,7 +262,7 @@ func (client *GatewayClient) DeleteKindByNameAndVCluster(kind *schema.Kind, para
 	if err != nil {
 		return err
 	} else if resp.IsError() {
-		return fmt.Errorf(extractAPIError(resp))
+		return fmt.Errorf("%s", extractAPIError(resp))
 	} else {
 		fmt.Printf("%s/%s: Deleted\n", kind.GetName(), param)
 	}
@@ -286,7 +286,7 @@ func (client *GatewayClient) DeleteInterceptor(kind *schema.Kind, name string, p
 	if err != nil {
 		return err
 	} else if resp.IsError() {
-		return fmt.Errorf(extractAPIError(resp))
+		return fmt.Errorf("%s", extractAPIError(resp))
 	} else {
 		fmt.Printf("%s/%s: Deleted\n", kind.GetName(), param)
 	}
@@ -315,7 +315,7 @@ func (client *GatewayClient) Run(run schema.Run, pathValue []string, queryParams
 	if err != nil {
 		return nil, err
 	} else if resp.IsError() {
-		return nil, fmt.Errorf(extractAPIError(resp))
+		return nil, fmt.Errorf("%s", extractAPIError(resp))
 	}
 	return resp.Body(), nil
 }
@@ -355,7 +355,7 @@ func (client *GatewayClient) Apply(resource *resource.Resource, dryMode bool, di
 	if err != nil {
 		return result, err
 	} else if resp.IsError() {
-		return result, fmt.Errorf(extractAPIError(resp))
+		return result, fmt.Errorf("%s", extractAPIError(resp))
 	}
 	bodyBytes := resp.Body()
 	err = json.Unmarshal(bodyBytes, &result)
@@ -374,7 +374,7 @@ func (client *GatewayClient) GetOpenAPI() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	} else if resp.IsError() {
-		return nil, fmt.Errorf(resp.String())
+		return nil, fmt.Errorf("%s", resp.String())
 	}
 	return resp.Body(), nil
 }
@@ -428,7 +428,7 @@ func (client *GatewayClient) GetFromResource(res *resource.Resource) (resource.R
 	}
 
 	if resp.IsError() {
-		return resource.Resource{}, fmt.Errorf(extractAPIError(resp))
+		return resource.Resource{}, fmt.Errorf("%s", extractAPIError(resp))
 	}
 
 	err = json.Unmarshal(resp.Body(), &results)

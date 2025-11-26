@@ -21,7 +21,7 @@ func NewStorageError(backendType StorageBackendType, msg string, cause error) *S
 
 func (e *StorageError) Error() string {
 	if e.Cause != nil {
-		return fmt.Sprintf("%s storage error: %s. Cause: %v", e.BackendType, e.Message, e.Cause)
+		return fmt.Sprintf("%s storage error: %s.\n  Cause: %v", e.BackendType, e.Message, e.Cause)
 	}
 	return fmt.Sprintf("%s storage error: %s.", e.BackendType, e.Message)
 }

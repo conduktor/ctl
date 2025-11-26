@@ -1,9 +1,9 @@
 package client
 
 type APIError struct {
-	Title string "json:title"
-	Msg   string "json:msg"
-	Cause string "json:cause"
+	Title string `json:"title"`
+	Msg   string `json:"msg"`
+	Cause string `json:"cause"`
 }
 
 func (e *APIError) String() string {

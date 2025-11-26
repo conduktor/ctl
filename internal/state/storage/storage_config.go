@@ -15,7 +15,7 @@ type StorageConfig struct {
 // - CDK_STATE_FILE for FilePath.
 func NewStorageConfig(stateEnabled *bool, stateFilePath *string) StorageConfig {
 	enable := false
-	if stateEnabled == nil || *stateEnabled == false {
+	if stateEnabled == nil || !*stateEnabled {
 		enabledEnv := os.Getenv("CDK_STATE_ENABLED")
 		if enabledEnv == "true" || enabledEnv == "1" || enabledEnv == "yes" {
 			enable = true

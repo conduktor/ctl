@@ -66,7 +66,7 @@ func (b LocalFileBackend) SaveState(state *model.State, debug bool) error {
 
 	err = os.WriteFile(b.FilePath, data, 0644)
 	if err != nil {
-		return NewStorageError(FileBackend, fmt.Sprintf("failed to write state to %s", b.FilePath), err)
+		return NewStorageError(FileBackend, "failed to write state", err)
 	}
 
 	return nil

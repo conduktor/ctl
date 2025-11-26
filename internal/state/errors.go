@@ -19,7 +19,7 @@ func NewStateError(message string, cause error) *StateError {
 
 func (e *StateError) Error() string {
 	if e.Cause != nil {
-		return fmt.Sprintf("%s: %v", e.Message, e.Cause)
+		return fmt.Sprintf("%s, %v", e.Message, e.Cause)
 	}
 	return e.Message
 }

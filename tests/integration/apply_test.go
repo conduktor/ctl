@@ -174,6 +174,100 @@ Group/team-a: Updated
 // State Management Tests
 // ======================================
 
+func Test_Apply_With_State_Fail_Write_Permissions(t *testing.T) {
+	fmt.Println("Test CLI Apply with state management - fail due to write permissions")
+	filePath := testDataFilePath(t, "valid_group.yaml")
+	tmpDir := t.TempDir()
+	// remove write permissions
+	err := os.Chmod(tmpDir, 0555)
+	stateFile := fmt.Sprintf("%s/state.json", tmpDir)
+
+	// Apply with state enabled should fail due to write permission error
+	stdout, stderr, err := runConsoleCommand("apply", "-f", filePath, "--enable-state", "--state-file", stateFile)
+	assert.Error(t, err, "Expected command to fail due to write permission error")
+	expectedOutput := "Group/team-a: Created\n"
+	assert.Equalf(t, expectedOutput, stdout, "Expected stdout to be '%s', got: %s", expectedOutput, stdout)
+
+	expectedError := fmt.Sprintf("Error: could not save state, file storage error: failed to write state.\n  Cause: open %s: permission denied", stateFile)
+	assert.NotEmptyf(t, stderr, "Expected stderr to contain '%s', got empty stderr", expectedError)
+	assert.Containsf(t, stderr, expectedError, "Expected stderr to contain '%s', got: %s", expectedError, stderr)
+
+	// Cleanup after test
+	stdout, stderr, err = runConsoleCommand("delete", "-f", filePath)
+	assert.NoErrorf(t, err, "Cleanup command failed: %v\nStderr: %s", err, stderr)
+	assert.Emptyf(t, stderr, "Expected no stderr output during cleanup, got: %s", stderr)
+}
+
+func Test_Apply_With_State_Fail_Read_Permissions(t *testing.T) {
+	fmt.Println("Test CLI Apply with state management - fail due to read permissions")
+	filePath := testDataFilePath(t, "valid_group.yaml")
+	stateFile := tmpStateFilePath(t, "state.json")
+
+	// First apply with state enabled
+	stdout, stderr, err := runConsoleCommand("apply", "-v", "-f", filePath, "--enable-state", "--state-file", stateFile)
+	assert.NoErrorf(t, err, "Unexpected command failed: %v\nStderr: %s", err, stderr)
+	expectedOutput := "Group/team-a: Created\n"
+	assert.Equalf(t, expectedOutput, stdout, "Expected stdout to be '%s', got: %s", expectedOutput, stdout)
+
+	// remove read permissions
+	err = os.Chmod(stateFile, 0222)
+	assert.NoError(t, err, "Failed to change state file permissions")
+
+	// Second apply should fail due to read permission error
+	_, stderr, err = runConsoleCommand("apply", "-v", "-f", filePath, "--enable-state", "--state-file", stateFile)
+	assert.Error(t, err, "Expected command to fail due to read permission error")
+	expectedError := fmt.Sprintf("Error: could not load state, file storage error: failed to read state file.\n  Cause: open %s: permission denied", stateFile)
+	assert.NotEmptyf(t, stderr, "Expected stderr to contain '%s', got empty stderr", expectedError)
+	assert.Containsf(t, stderr, expectedError, "Expected stderr to contain '%s', got: %s", expectedError, stderr)
+
+	// Cleanup after test
+	stdout, stderr, err = runConsoleCommand("delete", "-f", filePath)
+	assert.NoErrorf(t, err, "Cleanup command failed: %v\nStderr: %s", err, stderr)
+	assert.Emptyf(t, stderr, "Expected no stderr output during cleanup, got: %s", stderr)
+}
+
+func Test_Apply_With_State_Fail_Corrupted_State(t *testing.T) {
+	fmt.Println("Test CLI Apply with state management - fail due to corrupted state file")
+	filePath := testDataFilePath(t, "valid_group.yaml")
+	stateFile := tmpStateFilePath(t, "state.json")
+
+	// write corrupted content to state file
+	err := os.WriteFile(stateFile, []byte("{invalid_json: true,"), 0644)
+	assert.NoError(t, err, "Failed to write corrupted state file")
+
+	// Apply with state enabled should fail due to corrupted state file
+	_, stderr, err := runConsoleCommand("apply", "-v", "-f", filePath, "--enable-state", "--state-file", stateFile)
+	assert.Error(t, err, "Expected command to fail due to corrupted state file")
+	expectedError := fmt.Sprintf("Error: failed to run apply: cannot load state from %s: failed to unmarshal state JSON", stateFile)
+	assert.NotEmptyf(t, stderr, "Expected stderr to contain '%s', got empty stderr", expectedError)
+}
+
+func Test_Apply_With_State_Fail_API_Unreachable(t *testing.T) {
+	fmt.Println("Test CLI Apply with state management - fail due to unreachable API")
+	filePath := testDataFilePath(t, "valid_group.yaml")
+	stateFile := tmpStateFilePath(t, "state.json")
+
+	// First apply with state enabled
+	stdout, stderr, err := runConsoleCommand("apply", "-v", "-f", filePath, "--enable-state", "--state-file", stateFile)
+	assert.NoErrorf(t, err, "Unexpected command failed: %v\nStderr: %s", err, stderr)
+	expectedOutput := "Group/team-a: Created\n"
+	assert.Equalf(t, expectedOutput, stdout, "Expected stdout to be '%s', got: %s", expectedOutput, stdout)
+
+	// Simulate unreachable API by setting wrong api URL
+	os.Setenv("CDK_BASE_URL", "http://localhost:9999")
+
+	// Second apply should fail due to unreachable API
+	_, stderr, err = RunCommand("apply", "-v", "-f", filePath, "--enable-state", "--state-file", stateFile)
+	assert.Error(t, err, "Expected command to fail due to unreachable API")
+	expectedError := "Error: failed to run apply: cannot apply ConsoleAPI resources Group: Cannot create client: dial tcp [::1]:9999: connect: connection refused"
+	assert.NotEmptyf(t, stderr, "Expected stderr to contain '%s', got empty stderr", expectedError)
+
+	// Cleanup after test
+	stdout, stderr, err = runConsoleCommand("delete", "-f", filePath)
+	assert.NoErrorf(t, err, "Cleanup command failed: %v\nStderr: %s", err, stderr)
+	assert.Emptyf(t, stderr, "Expected no stderr output during cleanup, got: %s", stderr)
+}
+
 func Test_Apply_With_State_First_Run(t *testing.T) {
 	fmt.Println("Test CLI Apply with state management - first run")
 	filePath := testDataFilePath(t, "valid_group.yaml")
