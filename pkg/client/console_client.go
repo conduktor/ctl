@@ -429,7 +429,7 @@ func (client *Client) Describe(kind *schema.Kind, parentPathValue []string, pare
 	return result, err
 }
 
-func (client *Client) Delete(kind *schema.Kind, parentPathValue []string, parentQueryValue []string, name string) error {
+func (client *Client) Delete(kind *schema.Kind, parentPathValue []string, parentQueryValue []string, name string, ignoreMissing bool) error {
 	client.setAuthMethodFromEnvIfNeeded()
 	queryInfo := kind.DescribePath(parentPathValue, parentQueryValue, name)
 	url := client.baseURL + queryInfo.Path
@@ -441,6 +441,10 @@ func (client *Client) Delete(kind *schema.Kind, parentPathValue []string, parent
 	if err != nil {
 		return err
 	} else if resp.IsError() {
+		if resp.StatusCode() == 404 && ignoreMissing {
+			fmt.Printf("%s/%s: Not Found (ignored)\n", kind.GetName(), name)
+			return nil
+		}
 		return fmt.Errorf("%s", extractAPIError(resp))
 	} else {
 		fmt.Printf("%s/%s: Deleted\n", kind.GetName(), name)
@@ -449,7 +453,7 @@ func (client *Client) Delete(kind *schema.Kind, parentPathValue []string, parent
 	return err
 }
 
-func (client *Client) DeleteResource(resource *resource.Resource) error {
+func (client *Client) DeleteResource(resource *resource.Resource, ignoreMissing bool) error {
 	client.setAuthMethodFromEnvIfNeeded()
 	kinds := client.GetKinds()
 	requestBuilder := client.client.R()
@@ -469,6 +473,10 @@ func (client *Client) DeleteResource(resource *resource.Resource) error {
 	if err != nil {
 		return err
 	} else if resp.IsError() {
+		if resp.StatusCode() == 404 && ignoreMissing {
+			fmt.Printf("%s/%s: Not Found (ignored)\n", kind.GetName(), resource.Name)
+			return nil
+		}
 		return fmt.Errorf("%s", extractAPIError(resp))
 	} else {
 		fmt.Printf("%s/%s: Deleted\n", kind.GetName(), resource.Name)

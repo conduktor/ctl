@@ -48,6 +48,11 @@ func (h *ApplyHandler) Handle(cmdCtx ApplyHandlerContext) ([]ApplyResult, error)
 		return nil, err
 	}
 
+	if len(resources) == 0 {
+		fmt.Fprintln(os.Stderr, "No resources found to apply")
+		return []ApplyResult{}, nil
+	}
+
 	// Sort resources for proper apply order
 	schema.SortResourcesForApply(h.rootCtx.Catalog.Kind, resources, debug)
 
@@ -56,10 +61,11 @@ func (h *ApplyHandler) Handle(cmdCtx ApplyHandlerContext) ([]ApplyResult, error)
 		removedResources := stateRef.GetRemovedResources(resources)
 		schema.SortResourcesForDelete(h.rootCtx.Catalog.Kind, removedResources, debug)
 		if len(removedResources) > 0 {
-			fmt.Fprintln(os.Stderr, "Deleting resources missing from state...")
+			fmt.Fprintln(os.Stderr, "Deleting resources missing from state")
 
 			deleteHandler := NewDeleteHandler(h.rootCtx)
-			deleteResult, err := deleteHandler.HandleFromList(removedResources, stateRef, dryRun, debug)
+			ignoreMissing := true
+			deleteResult, err := deleteHandler.HandleFromList(removedResources, stateRef, ignoreMissing, dryRun, debug)
 			if err != nil {
 				return nil, fmt.Errorf("error deleting resources missing from state: %s", err)
 			}
@@ -77,6 +83,7 @@ func (h *ApplyHandler) Handle(cmdCtx ApplyHandlerContext) ([]ApplyResult, error)
 		}
 	}
 
+	fmt.Fprintln(os.Stderr, "Applying resources")
 	// Group resources by kind
 	kindGroups := make(map[string][]resource.Resource)
 	var kindOrder []string

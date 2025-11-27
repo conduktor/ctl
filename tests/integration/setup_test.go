@@ -8,9 +8,13 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"testing"
+	"text/template"
 	"time"
+
+	"golang.org/x/exp/rand"
 
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
@@ -34,11 +38,11 @@ func TestMain(m *testing.M) {
 	}
 
 	// Start Docker Compose
-	if err := setupDocker(); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to setup: %v\n", err)
-		os.Exit(1)
-	}
-	if enableComposeRun() {
+	if shouldManageComposeStack() {
+		if err := setupDocker(); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to setup: %v\n", err)
+			os.Exit(1)
+		}
 		fmt.Fprintln(os.Stderr, "Wait 30s for compose to be up and running")
 		time.Sleep(30 * time.Second)
 	}
@@ -63,26 +67,30 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+// By default, management of the tests compose stack is part of tests lifecycle.
+// For quicker feedback loop, tests compose stack can be run outside of tests.
+// In this case set INTEGRATION_MANAGE_COMPOSE=false.
+func shouldManageComposeStack() bool {
+	return os.Getenv("INTEGRATION_MANAGE_COMPOSE") != "false"
+}
+
 func setupDocker() error {
-	if enableComposeRun() {
-		fmt.Fprintln(os.Stderr, "Start integration docker stack")
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
-		defer cancel()
+	fmt.Fprintln(os.Stderr, "Start integration docker stack")
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
 
-		setComposeEnv()
-		cmd := exec.CommandContext(ctx, "docker", "compose",
-			"-f", composeFilePath,
-			"up", "-d", "--build")
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
+	setComposeEnv()
+	cmd := exec.CommandContext(ctx, "docker", "compose",
+		"-f", composeFilePath,
+		"up", "-d", "--build")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
-		return cmd.Run()
-	}
-	return nil
+	return cmd.Run()
 }
 
 func teardownDocker() {
-	if enableComposeRun() {
+	if shouldManageComposeStack() {
 		setComposeEnv()
 		cmd := exec.Command("docker", "compose",
 			"-f", composeFilePath,
@@ -92,10 +100,6 @@ func teardownDocker() {
 			fmt.Fprintf(os.Stderr, "Failed to teardown docker compose: %v\n", err)
 		}
 	}
-}
-
-func enableComposeRun() bool {
-	return !(os.Getenv("CDK_INTEGRATION_DISABLE_COMPOSE_RUN") == "true")
 }
 
 func setComposeEnv() {
@@ -113,9 +117,9 @@ func setComposeEnv() {
 
 func SetCLIConsoleEnv() {
 	fmt.Fprintln(os.Stderr, "Setting up environment variables for CLI Console")
-	logAndSetEnv("CDK_BASE_URL", consoleURL)
-	logAndSetEnv("CDK_USER", consoleAdminEmail)
-	logAndSetEnv("CDK_PASSWORD", consoleAdminPassword)
+	os.Setenv("CDK_BASE_URL", consoleURL)
+	os.Setenv("CDK_USER", consoleAdminEmail)
+	os.Setenv("CDK_PASSWORD", consoleAdminPassword)
 }
 
 func UnsetCLIConsoleEnv() {
@@ -127,9 +131,9 @@ func UnsetCLIConsoleEnv() {
 
 func SetCLIGatewayEnv() {
 	fmt.Fprintln(os.Stderr, "Setting up environment variables for CLI Gateway")
-	logAndSetEnv("CDK_GATEWAY_BASE_URL", gatewayURL)
-	logAndSetEnv("CDK_GATEWAY_USER", gatewayAdmin)
-	logAndSetEnv("CDK_GATEWAY_PASSWORD", gatewayAdminPassword)
+	os.Setenv("CDK_GATEWAY_BASE_URL", gatewayURL)
+	os.Setenv("CDK_GATEWAY_USER", gatewayAdmin)
+	os.Setenv("CDK_GATEWAY_PASSWORD", gatewayAdminPassword)
 }
 
 func UnsetCLIGatewayEnv() {
@@ -206,9 +210,10 @@ func RunCommand(args ...string) (string, string, error) {
 
 	err := cmd.Run()
 
-	fmt.Fprintf(os.Stderr, "Run command : %v\n", command)
-	fmt.Fprintf(os.Stderr, "####stdout\n%s\n####", stdout.String())
-	fmt.Fprintf(os.Stderr, "####stderr\n%s\n####", stderr.String())
+	fmt.Fprintf(os.Stderr, "## Run command : %v\n", command)
+	fmt.Fprintf(os.Stderr, "#### stdout\n%s", stdout.String())
+	fmt.Fprintf(os.Stderr, "#### stderr\n%s", stderr.String())
+	fmt.Fprintln(os.Stderr, "##")
 
 	return stdout.String(), stderr.String(), err
 }
@@ -252,4 +257,68 @@ func testDataFilePath(t *testing.T, fileName string) string {
 func tmpStateFilePath(t *testing.T, fileName string) string {
 	tmpDir := t.TempDir()
 	return fmt.Sprintf("%s/%s", tmpDir, fileName)
+}
+
+func FixtureRandomConsoleUser(t *testing.T) (string, any) {
+	workDir, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get working directory")
+	templatePath := fmt.Sprintf("%s/testdata/fixtures/console_user.yaml.tmpl", workDir)
+
+	randomSuffix := strconv.FormatInt(time.Now().UnixNano(), 10)
+	name := fmt.Sprintf("user-%s@company.io", randomSuffix)
+	data := map[string]string{
+		"name":      name,
+		"lastname":  "Doe",
+		"firstname": "John",
+	}
+	return name, TemplateFixtureYAML(t, templatePath, data)
+}
+
+func FixtureRandomConsoleGroup(t *testing.T) (string, any) {
+	workDir, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get working directory")
+	templatePath := fmt.Sprintf("%s/testdata/fixtures/console_group.yaml.tmpl", workDir)
+
+	randomSuffix := strconv.FormatInt(time.Now().UnixNano(), 10)
+	name := fmt.Sprintf("group-%s", randomSuffix)
+	data := map[string]string{
+		"name":         name,
+		"display_name": fmt.Sprintf("Group %s", randomSuffix),
+	}
+	return name, TemplateFixtureYAML(t, templatePath, data)
+}
+
+func FixtureRandomGatewayInterceptor(t *testing.T) (string, any) {
+	workDir, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get working directory")
+	templatePath := fmt.Sprintf("%s/testdata/fixtures/gateway_interceptor.yaml.tmpl", workDir)
+
+	randomSuffix := strconv.FormatInt(time.Now().UnixNano(), 10)
+	name := fmt.Sprintf("interceptor-%s", randomSuffix)
+	min := 1 + rand.Intn(5)
+	max := min + rand.Intn(5)
+	data := map[string]string{
+		"name":              name,
+		"priority":          strconv.Itoa(rand.Intn(100)),
+		"topic":             fmt.Sprintf("topic-%s", randomSuffix),
+		"min_num_partition": strconv.Itoa(min),
+		"max_num_partition": strconv.Itoa(max),
+	}
+	return name, TemplateFixtureYAML(t, templatePath, data)
+}
+
+func TemplateFixtureYAML(t *testing.T, templateFilePath string, data map[string]string) any {
+	tpl, err := template.ParseFiles(templateFilePath)
+	assert.NoError(t, err, "Failed to parse template file")
+
+	// write the template output to a buffer
+	var buf bytes.Buffer
+	err = tpl.Execute(&buf, data)
+	assert.NoError(t, err, "Failed to execute template")
+
+	var result any
+	err = yaml.Unmarshal(buf.Bytes(), &result)
+	assert.NoError(t, err, "Failed to unmarshal YAML")
+
+	return result
 }

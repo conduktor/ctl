@@ -1,0 +1,13 @@
+apiVersion: gateway/v2
+kind: Interceptor
+metadata:
+  name: {{ .name }}
+spec:
+  pluginClass: "io.conduktor.gateway.interceptor.safeguard.CreateTopicPolicyPlugin"
+  priority: {{ .priority }}
+  config:
+    topic: "{{ .topic }}"
+    numPartition:
+      min: {{ .min_num_partition }}
+      max: {{ .max_num_partition }}
+      action: "INFO"

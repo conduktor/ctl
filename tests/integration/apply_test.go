@@ -2,7 +2,10 @@ package integration
 
 import (
 	"fmt"
+	"gopkg.in/yaml.v3"
+	"maps"
 	"os"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,8 +17,9 @@ func Test_Apply_Empty_File(t *testing.T) {
 	stdout, stderr, err := runConsoleCommand("apply", "-f", filePath)
 
 	assert.NoErrorf(t, err, "Command failed: %v\nStderr: %s", err, stderr)
-	assert.Emptyf(t, stderr, "Expected no stderr output, got: %s", stderr)
 	assert.Emptyf(t, stdout, "Expected no stdout output, got: %s", stdout)
+	expectedError := "No resources found to apply"
+	assert.Containsf(t, stderr, expectedError, "Expected stderr to contain '%s', got: %s", expectedError, stderr)
 }
 
 func Test_Apply_Nonexistent_File(t *testing.T) {
@@ -70,7 +74,8 @@ func Test_Apply_Dry_Run(t *testing.T) {
 	stdout, stderr, err := runConsoleCommand("apply", "-f", filePath, "--dry-run")
 
 	assert.NoErrorf(t, err, "Command failed: %v\nStderr: %s", err, stderr)
-	assert.Emptyf(t, stderr, "Expected no stderr output, got: %s", stderr)
+	expectedDebug := "Applying resources\n"
+	assert.Equalf(t, expectedDebug, stderr, "Expected stderr to be '%s', got: %s", expectedDebug, stderr)
 
 	expectedOutput := "Group/team-a: Created\n"
 	assert.Equalf(t, expectedOutput, stdout, "Expected stdout to be '%s', got: %s", expectedOutput, stdout)
@@ -82,7 +87,8 @@ func Test_Apply_Valid_Resource(t *testing.T) {
 	stdout, stderr, err := runConsoleCommand("apply", "-f", filePath)
 
 	assert.NoErrorf(t, err, "Command failed: %v\nStderr: %s", err, stderr)
-	assert.Emptyf(t, stderr, "Expected no stderr output, got: %s", stderr)
+	expectedDebug := "Applying resources\n"
+	assert.Equalf(t, expectedDebug, stderr, "Expected stderr to be '%s', got: %s", expectedDebug, stderr)
 
 	expectedOutput := "Group/team-a: Created\n"
 	assert.Equalf(t, expectedOutput, stdout, "Expected stdout to be '%s', got: %s", expectedOutput, stdout)
@@ -99,7 +105,8 @@ func Test_Apply_Folder_Non_Recursive(t *testing.T) {
 	stdout, stderr, err := runConsoleCommand("apply", "-f", folderPath)
 
 	assert.NoErrorf(t, err, "Command failed: %v\nStderr: %s", err, stderr)
-	assert.Emptyf(t, stderr, "Expected no stderr output, got: %s", stderr)
+	expectedDebug := "Applying resources\n"
+	assert.Equalf(t, expectedDebug, stderr, "Expected stderr to be '%s', got: %s", expectedDebug, stderr)
 
 	expectedOutput := "Group/team-b: Created\nGroup/team-c: Created\n"
 	assert.Equalf(t, expectedOutput, stdout, "Expected stdout to be '%s', got: %s", expectedOutput, stdout)
@@ -116,7 +123,8 @@ func Test_Apply_Folder_Recursive(t *testing.T) {
 	stdout, stderr, err := runConsoleCommand("apply", "-f", folderPath, "-r")
 
 	assert.NoErrorf(t, err, "Command failed: %v\nStderr: %s", err, stderr)
-	assert.Emptyf(t, stderr, "Expected no stderr output, got: %s", stderr)
+	expectedDebug := "Applying resources\n"
+	assert.Equalf(t, expectedDebug, stderr, "Expected stderr to be '%s', got: %s", expectedDebug, stderr)
 
 	expectedOutput := "Group/team-b: Created\nGroup/team-c: Created\nGroup/team-d: Created\n"
 	assert.Equalf(t, expectedOutput, stdout, "Expected stdout to be '%s', got: %s", expectedOutput, stdout)
@@ -143,14 +151,15 @@ func Test_Apply_Diff_Output(t *testing.T) {
 	// First apply to create the resource
 	stdout, stderr, err := runConsoleCommand("apply", "-f", filePath)
 	assert.NoErrorf(t, err, "Initial apply command failed: %v\nStderr: %s", err, stderr)
-	assert.Emptyf(t, stderr, "Expected no stderr output during initial apply, got: %s", stderr)
+	expectedDebug := "Applying resources\n"
+	assert.Equalf(t, expectedDebug, stderr, "Expected stderr to be '%s', got: %s", expectedDebug, stderr)
 
 	// Modify the resource file to trigger a diff
 	modifiedFilePath := testDataFilePath(t, "valid_group_updated.yaml")
 	stdout, stderr, err = runConsoleCommand("apply", "-f", modifiedFilePath, "--print-diff")
 
 	assert.NoErrorf(t, err, "Command failed: %v\nStderr: %s", err, stderr)
-	assert.Emptyf(t, stderr, "Expected no stderr output, got: %s", stderr)
+	assert.Equalf(t, expectedDebug, stderr, "Expected stderr to be '%s', got: %s", expectedDebug, stderr)
 
 	expectedDiffOutput := `
 apiVersion: v2
@@ -357,6 +366,7 @@ func Test_Apply_With_State_Resource_Deletion(t *testing.T) {
 	// Should delete team-b and team-c, and create team-a
 	assert.Contains(t, stderr, "Deleting resources missing from state", "Expected deletion message in stderr")
 	assert.Contains(t, stdout, "Group/team-d: Deleted", "Expected team-d deletion in stdout")
+	assert.Contains(t, stderr, "Applying resources", "Expected applying resources message in stderr")
 	assert.Contains(t, stdout, "Group/team-b: NotChanged", "Expected team-b creation in stdout")
 	assert.Contains(t, stdout, "Group/team-c: NotChanged", "Expected team-c creation in stdout")
 
@@ -457,11 +467,7 @@ func Test_Apply_With_State_Partial_Failure(t *testing.T) {
 
 	// Command should fail due to invalid resource
 	assert.Error(t, err, "Expected command to fail due to invalid resource")
-
-	// Valid resource should have been created
 	assert.Contains(t, stdout, "Group/team-a: Created", "Valid resource should be created")
-
-	// Invalid resource should have error
 	assert.Contains(t, stderr, "Could not apply resource Topic/invalid-topic", "Expected error for invalid topic")
 
 	// Verify state file only contains successful resource
@@ -499,5 +505,55 @@ func Test_Apply_Without_State_Does_Not_Delete(t *testing.T) {
 	stdout, stderr, err = runConsoleCommand("delete", "-f", filePath1)
 	assert.NoErrorf(t, err, "Cleanup command failed: %v\nStderr: %s", err, stderr)
 	stdout, stderr, err = runConsoleCommand("delete", "-f", folderPath)
+	assert.NoErrorf(t, err, "Cleanup command failed: %v\nStderr: %s", err, stderr)
+}
+
+func Test_Apply_With_State_Ignore_Missing_Resource_To_Delete(t *testing.T) {
+	fmt.Println("Test CLI Apply with state management - ignore missing resource to delete")
+	stateFile := tmpStateFilePath(t, "state.json")
+	workDir := t.TempDir()
+	users := make(map[string]any)
+	for i := 1; i <= 5; i++ {
+		name, user := FixtureRandomConsoleUser(t)
+		users[name] = user
+
+		filePath := fmt.Sprintf("%s/%s.yaml", workDir, name)
+		userYAML, err := yaml.Marshal(user)
+		assert.NoErrorf(t, err, "Failed to marshal user to YAML: %v", err)
+		err = os.WriteFile(filePath, userYAML, 0644)
+		assert.NoError(t, err, "Failed to marshal user to YAML: %v", err)
+	}
+
+	// First apply create users
+	stdout, stderr, err := runConsoleCommand("apply", "-f", workDir, "-r", "--enable-state", "--state-file", stateFile)
+	assert.NoErrorf(t, err, "Initial apply command failed: %v\nStderr: %s", err, stderr)
+	for name := range users {
+		expectedOutput := fmt.Sprintf("User/%s: Created\n", name)
+		assert.Containsf(t, stdout, expectedOutput, "Expected stdout to contain '%s', got: %s", expectedOutput, stdout)
+	}
+
+	// Simulate resource removed from tracked folder and manually from API/UI
+	// Delete first user from API directly to simulate manual deletion outside of state management
+	deletedUser := slices.Collect(maps.Keys(users))[0] // get first user
+	stdout, stderr, err = runConsoleCommand("delete", "User", deletedUser)
+	assert.NoErrorf(t, err, "Direct delete command failed: %v\nStderr: %s", err, stderr)
+	// Delete from resources in workDir to simulate a resource removal
+	err = os.Remove(fmt.Sprintf("%s/%s.yaml", workDir, deletedUser))
+	assert.NoErrorf(t, err, "Failed to remove resource file: %v", err)
+
+	// Second apply without team-d in folder (should NOT error about missing resource)
+	stdout, stderr, err = runConsoleCommand("apply", "-f", workDir, "-r", "--enable-state", "--state-file", stateFile)
+	assert.NoErrorf(t, err, "Second apply command failed: %v\nStderr: %s", err, stderr)
+
+	// Should delete team-d, and keep team-b and team-c
+	assert.Contains(t, stderr, "Deleting resources missing from state", "Expected deletion message in stderr")
+	expectedOutput := fmt.Sprintf("User/%s: Not Found (ignored)\n", deletedUser)
+	assert.Contains(t, stdout, expectedOutput, "Expected ignored not found message in stdout")
+
+	// No error about non-existent-group
+	assert.NotContains(t, stderr, "non-existent-group", "Should not report error for non-existent-group")
+
+	// Cleanup after test - delete all resources
+	stdout, stderr, err = runConsoleCommand("delete", "-f", workDir, "-r")
 	assert.NoErrorf(t, err, "Cleanup command failed: %v\nStderr: %s", err, stderr)
 }

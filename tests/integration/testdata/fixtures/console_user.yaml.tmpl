@@ -1,0 +1,7 @@
+apiVersion: iam/v2
+kind: User
+metadata:
+  name: {{ .name }}
+spec:
+  firstName: "{{ .firstName }}"
+  lastName: "{{ .lastName }}"

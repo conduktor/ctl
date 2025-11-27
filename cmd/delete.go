@@ -91,6 +91,7 @@ func runDeleteFromFiles(rootContext cli.RootContext, filePaths []string, recursi
 		cmdCtx := cli.DeleteFileHandlerContext{
 			FilePaths:       filePaths,
 			RecursiveFolder: recursiveFolder,
+			IgnoreMissing:   false, // fail even if resource is missing (keep current behavior)
 			DryRun:          *dryRun,
 			StateEnabled:    *stateEnabled,
 			StateRef:        stateRef,
@@ -166,8 +167,9 @@ func runDeleteByVClusterAndName(rootContext cli.RootContext, kind schema.Kind, n
 	deleteHandler := cli.NewDeleteHandler(rootContext)
 
 	cmdCtx := cli.DeleteByVClusterAndNameHandlerContext{
-		Name:     name,
-		VCluster: vCluster,
+		Name:          name,
+		VCluster:      vCluster,
+		IgnoreMissing: false, // fail even if resource is missing (keep current behavior)
 	}
 
 	err := deleteHandler.HandleByVClusterAndName(kind, cmdCtx)
@@ -181,10 +183,11 @@ func runDeleteInterceptor(rootContext cli.RootContext, kind schema.Kind, name st
 	deleteHandler := cli.NewDeleteHandler(rootContext)
 
 	cmdCtx := cli.DeleteInterceptorHandlerContext{
-		Name:     name,
-		VCluster: vCluster,
-		Group:    group,
-		Username: username,
+		Name:          name,
+		VCluster:      vCluster,
+		Group:         group,
+		Username:      username,
+		IgnoreMissing: false, // fail even if resource is missing (keep current behavior)
 	}
 
 	err := deleteHandler.HandleInterceptor(kind, cmdCtx)
@@ -207,6 +210,7 @@ func runDeleteKind(
 		Args:                 args,
 		ParentFlagValue:      parentFlagValue,
 		ParentQueryFlagValue: parentQueryFlagValue,
+		IgnoreMissing:        false, // fail even if resource is missing (keep current behavior)
 	}
 
 	err := deleteHandler.HandleKind(kind, cmdCtx)

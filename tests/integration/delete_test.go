@@ -61,7 +61,6 @@ func Test_Delete_Failure(t *testing.T) {
 	//init the resource to delete (create cluster and topic)
 	stdout, stderr, err := runConsoleCommand("apply", "-f", filePath)
 	assert.NoErrorf(t, err, "Command failed: %v\nStderr: %s", err, stderr)
-	assert.Emptyf(t, stderr, "Expected no stderr output, got: %s", stderr)
 
 	// Try to delete the application which is used as a dependency by the application instance
 	stdout, stderr, err = runConsoleCommand("delete", "Application", "clickstream-app")
@@ -85,7 +84,6 @@ func Test_Delete_Valid_Resource(t *testing.T) {
 	filePath := testDataFilePath(t, "valid_group.yaml")
 	stdout, stderr, err := runConsoleCommand("apply", "-f", filePath)
 	assert.NoErrorf(t, err, "Command failed: %v\nStderr: %s", err, stderr)
-	assert.Emptyf(t, stderr, "Expected no stderr output, got: %s", stderr)
 
 	// Delete
 	stdout, stderr, err = runConsoleCommand("delete", "-f", filePath)
@@ -102,7 +100,6 @@ func Test_Delete_Folder_Non_Recursive(t *testing.T) {
 	//Init the resources to delete
 	stdout, stderr, err := runConsoleCommand("apply", "-f", folderPath)
 	assert.NoErrorf(t, err, "Command failed: %v\nStderr: %s", err, stderr)
-	assert.Emptyf(t, stderr, "Expected no stderr output, got: %s", stderr)
 
 	// Test delete non-recursive
 	stdout, stderr, err = runConsoleCommand("delete", "-f", folderPath)
@@ -120,7 +117,6 @@ func Test_Delete_Folder_Recursive(t *testing.T) {
 	//Init the resources to delete
 	stdout, stderr, err := runConsoleCommand("apply", "-f", folderPath, "-r")
 	assert.NoErrorf(t, err, "Command failed: %v\nStderr: %s", err, stderr)
-	assert.Emptyf(t, stderr, "Expected no stderr output, got: %s", stderr)
 
 	// Test delete recursive
 	stdout, stderr, err = runConsoleCommand("delete", "-f", folderPath, "-r")

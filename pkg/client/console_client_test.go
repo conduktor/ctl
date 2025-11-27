@@ -483,7 +483,7 @@ func TestDeleteShouldWork(t *testing.T) {
 	)
 
 	app := client.GetKinds()["Application"]
-	err = client.Delete(&app, []string{}, []string{}, "yo")
+	err = client.Delete(&app, []string{}, []string{}, "yo", false)
 	if err != nil {
 		t.Error(err)
 	}
@@ -521,7 +521,7 @@ func TestDeleteResourceShouldWork(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	err = client.DeleteResource(&resource[0])
+	err = client.DeleteResource(&resource[0], false)
 	if err != nil {
 		t.Error(err)
 	}
@@ -559,7 +559,7 @@ func TestDeleteResourceWhenMetadataContainsQueryParameter(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	err = client.DeleteResource(&resource[0])
+	err = client.DeleteResource(&resource[0], false)
 	if err != nil {
 		t.Error(err)
 	}
@@ -592,7 +592,7 @@ func TestDeleteShouldFailOnNot2XX(t *testing.T) {
 	)
 
 	app := client.GetKinds()["Application"]
-	err = client.Delete(&app, []string{}, []string{}, "yo")
+	err = client.Delete(&app, []string{}, []string{}, "yo", false)
 	if err == nil {
 		t.Fail()
 	}
