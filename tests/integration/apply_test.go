@@ -200,6 +200,7 @@ func Test_Apply_With_State_Fail_Write_Permissions(t *testing.T) {
 	expectedError := fmt.Sprintf("Error: could not save state, file storage error: failed to write state.\n  Cause: open %s: permission denied", stateFile)
 	assert.NotEmptyf(t, stderr, "Expected stderr to contain '%s', got empty stderr", expectedError)
 	assert.Containsf(t, stderr, expectedError, "Expected stderr to contain '%s', got: %s", expectedError, stderr)
+	assert.Contains(t, stderr, fmt.Sprintf("Ensure that the file path %s is correct and that you have the necessary permissions to write to it.", stateFile), "Expected tip message in stderr")
 
 	// Cleanup after test
 	stdout, stderr, err = runConsoleCommand("delete", "-f", filePath)
@@ -228,6 +229,7 @@ func Test_Apply_With_State_Fail_Read_Permissions(t *testing.T) {
 	expectedError := fmt.Sprintf("Error: could not load state, file storage error: failed to read state file.\n  Cause: open %s: permission denied", stateFile)
 	assert.NotEmptyf(t, stderr, "Expected stderr to contain '%s', got empty stderr", expectedError)
 	assert.Containsf(t, stderr, expectedError, "Expected stderr to contain '%s', got: %s", expectedError, stderr)
+	assert.Containsf(t, stderr, "Ensure that the file exists and is accessible by the CLI.", "Expected tip message in stderr")
 
 	// Cleanup after test
 	stdout, stderr, err = runConsoleCommand("delete", "-f", filePath)
@@ -247,8 +249,10 @@ func Test_Apply_With_State_Fail_Corrupted_State(t *testing.T) {
 	// Apply with state enabled should fail due to corrupted state file
 	_, stderr, err := runConsoleCommand("apply", "-v", "-f", filePath, "--enable-state", "--state-file", stateFile)
 	assert.Error(t, err, "Expected command to fail due to corrupted state file")
-	expectedError := fmt.Sprintf("Error: failed to run apply: cannot load state from %s: failed to unmarshal state JSON", stateFile)
-	assert.NotEmptyf(t, stderr, "Expected stderr to contain '%s', got empty stderr", expectedError)
+	expectedError := "Error: could not load state, file storage error: failed to unmarshal state JSON."
+	assert.Containsf(t, stderr, expectedError, "Expected stderr to contain '%s', got: %s", expectedError, stderr)
+	assert.Contains(t, stderr, "The state file may be corrupted or not in the expected format", "Expected tip message in stderr")
+	assert.Contains(t, stderr, fmt.Sprintf("You can try deleting or backing up the state file located at %s and rerun the command to generate a new state file.", stateFile), "Expected tip message in stderr")
 }
 
 func Test_Apply_With_State_Fail_API_Unreachable(t *testing.T) {

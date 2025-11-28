@@ -179,7 +179,10 @@ func TestLocalFileBackend_LoadState_CorruptedFile(t *testing.T) {
 	// Try to load corrupted file
 	_, err = backend.LoadState(true)
 	assert.Error(t, err)
-	assert.Equal(t, "file storage error: failed to unmarshal state JSON.\n  Cause: unexpected end of JSON input", err.Error())
+	expectedError := "file storage error: failed to unmarshal state JSON."
+	expectedError += "\n  Cause: unexpected end of JSON input"
+	expectedError += fmt.Sprintf("\nThe state file may be corrupted or not in the expected format. You can try deleting or backing up the state file located at %s and rerun the command to generate a new state file.", stateFilePath)
+	assert.Equal(t, expectedError, err.Error())
 }
 
 func TestLocalFileBackend_SaveState_ReadOnlyDirectory(t *testing.T) {
@@ -210,7 +213,9 @@ func TestLocalFileBackend_SaveState_ReadOnlyDirectory(t *testing.T) {
 	// Should fail to save to read-only directory
 	err = backend.SaveState(testState, true)
 	assert.Error(t, err)
-	expectedError := fmt.Sprintf("file storage error: failed to write state.\n  Cause: open %s: permission denied", stateFilePath)
+	expectedError := "file storage error: failed to write state."
+	expectedError += fmt.Sprintf("\n  Cause: open %s: permission denied", stateFilePath)
+	expectedError += fmt.Sprintf("\nEnsure that the file path %s is correct and that you have the necessary permissions to write to it.", stateFilePath)
 	assert.Equal(t, expectedError, err.Error())
 }
 
