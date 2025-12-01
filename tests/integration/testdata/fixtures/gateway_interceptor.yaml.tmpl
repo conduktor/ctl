@@ -2,6 +2,13 @@ apiVersion: gateway/v2
 kind: Interceptor
 metadata:
   name: {{ .name }}
+  scope:
+  {{- if .vcluster }}
+    vCluster: "{{ .vcluster }}"
+  {{- end }}
+  {{- if .username }}
+    username: "{{ .username }}"
+  {{- end }}
 spec:
   pluginClass: "io.conduktor.gateway.interceptor.safeguard.CreateTopicPolicyPlugin"
   priority: {{ .priority }}

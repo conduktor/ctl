@@ -50,10 +50,10 @@ func initDelete(rootContext cli.RootContext) {
 
 	for name, kind := range rootContext.Catalog.Kind {
 		if cli.IsKindIdentifiedByNameAndVCluster(kind) {
-			byVClusterAndNameDeleteCmd := buildDeleteByVClusterAndNameCmd(rootContext, kind)
+			byVClusterAndNameDeleteCmd := buildDeleteByVClusterAndNameCmd(rootContext, kind, dryRun, stateEnabled, stateFile)
 			deleteCmd.AddCommand(byVClusterAndNameDeleteCmd)
 		} else if cli.IsKindInterceptor(kind) {
-			interceptorsDeleteCmd := buildDeleteInterceptorsCmd(rootContext, kind)
+			interceptorsDeleteCmd := buildDeleteInterceptorsCmd(rootContext, kind, dryRun, stateEnabled, stateFile)
 			deleteCmd.AddCommand(interceptorsDeleteCmd)
 		} else {
 			flags := kind.GetParentFlag()
@@ -67,7 +67,7 @@ func initDelete(rootContext cli.RootContext) {
 				Aliases:      buildAlias(name),
 				SilenceUsage: true, // do not print usage on run error
 				RunE: func(cmd *cobra.Command, args []string) error {
-					return runDeleteKind(rootContext, kind, args, parentFlagValue, parentQueryFlagValue)
+					return runDeleteKind(rootContext, kind, args, parentFlagValue, parentQueryFlagValue, dryRun, stateEnabled, stateFile)
 				},
 			}
 			for i, flag := range kind.GetParentFlag() {
@@ -117,7 +117,7 @@ func runDeleteFromFiles(rootContext cli.RootContext, filePaths []string, recursi
 	})
 }
 
-func buildDeleteByVClusterAndNameCmd(rootContext cli.RootContext, kind schema.Kind) *cobra.Command {
+func buildDeleteByVClusterAndNameCmd(rootContext cli.RootContext, kind schema.Kind, dryRun *bool, stateEnabled *bool, stateFile *string) *cobra.Command {
 	const vClusterFlag = "vcluster"
 	name := kind.GetName()
 	var vClusterValue string
@@ -128,7 +128,7 @@ func buildDeleteByVClusterAndNameCmd(rootContext cli.RootContext, kind schema.Ki
 		Aliases:      buildAlias(name),
 		SilenceUsage: true, // do not print usage on run error
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runDeleteByVClusterAndName(rootContext, kind, args[0], vClusterValue)
+			return runDeleteByVClusterAndName(rootContext, kind, args[0], vClusterValue, dryRun, stateEnabled, stateFile)
 		},
 	}
 
@@ -137,7 +137,7 @@ func buildDeleteByVClusterAndNameCmd(rootContext cli.RootContext, kind schema.Ki
 	return deleteCmd
 }
 
-func buildDeleteInterceptorsCmd(rootContext cli.RootContext, kind schema.Kind) *cobra.Command {
+func buildDeleteInterceptorsCmd(rootContext cli.RootContext, kind schema.Kind, dryRun *bool, stateEnabled *bool, stateFile *string) *cobra.Command {
 	const vClusterFlag = "vcluster"
 	const groupFlag = "group"
 	const usernameFlag = "username"
@@ -152,7 +152,7 @@ func buildDeleteInterceptorsCmd(rootContext cli.RootContext, kind schema.Kind) *
 		Aliases:      buildAlias(name),
 		SilenceUsage: true, // do not print usage on run error
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runDeleteInterceptor(rootContext, kind, args[0], vClusterValue, groupValue, usernameValue)
+			return runDeleteInterceptor(rootContext, kind, args[0], vClusterValue, groupValue, usernameValue, dryRun, stateEnabled, stateFile)
 		},
 	}
 
@@ -163,38 +163,52 @@ func buildDeleteInterceptorsCmd(rootContext cli.RootContext, kind schema.Kind) *
 	return interceptorDeleteCmd
 }
 
-func runDeleteByVClusterAndName(rootContext cli.RootContext, kind schema.Kind, name string, vCluster string) error {
-	deleteHandler := cli.NewDeleteHandler(rootContext)
+func runDeleteByVClusterAndName(rootContext cli.RootContext, kind schema.Kind, name string, vCluster string, dryRun *bool, stateEnabled *bool, stateFile *string) error {
 
-	cmdCtx := cli.DeleteByVClusterAndNameHandlerContext{
-		Name:          name,
-		VCluster:      vCluster,
-		IgnoreMissing: false, // fail even if resource is missing (keep current behavior)
-	}
+	stateCfg := storage.NewStorageConfig(stateEnabled, stateFile)
+	return state.RunWithState(stateCfg, *dryRun, *rootContext.Debug, func(stateRef *model.State) error {
+		deleteHandler := cli.NewDeleteHandler(rootContext)
 
-	err := deleteHandler.HandleByVClusterAndName(kind, cmdCtx)
-	if err != nil {
-		return fmt.Errorf("%s\n", err)
-	}
-	return nil
+		cmdCtx := cli.DeleteByVClusterAndNameHandlerContext{
+			Name:          name,
+			VCluster:      vCluster,
+			IgnoreMissing: false, // fail even if resource is missing (keep current behavior)
+			DryRun:        *dryRun,
+			StateEnabled:  *stateEnabled,
+			StateRef:      stateRef,
+		}
+
+		err := deleteHandler.HandleByVClusterAndName(kind, cmdCtx)
+		if err != nil {
+			return fmt.Errorf("%s\n", err)
+		}
+		return nil
+	})
 }
 
-func runDeleteInterceptor(rootContext cli.RootContext, kind schema.Kind, name string, vCluster string, group string, username string) error {
-	deleteHandler := cli.NewDeleteHandler(rootContext)
+func runDeleteInterceptor(rootContext cli.RootContext, kind schema.Kind, name string, vCluster string, group string, username string, dryRun *bool, stateEnabled *bool, stateFile *string) error {
 
-	cmdCtx := cli.DeleteInterceptorHandlerContext{
-		Name:          name,
-		VCluster:      vCluster,
-		Group:         group,
-		Username:      username,
-		IgnoreMissing: false, // fail even if resource is missing (keep current behavior)
-	}
+	stateCfg := storage.NewStorageConfig(stateEnabled, stateFile)
+	return state.RunWithState(stateCfg, *dryRun, *rootContext.Debug, func(stateRef *model.State) error {
+		deleteHandler := cli.NewDeleteHandler(rootContext)
 
-	err := deleteHandler.HandleInterceptor(kind, cmdCtx)
-	if err != nil {
-		return fmt.Errorf("%s\n", err)
-	}
-	return nil
+		cmdCtx := cli.DeleteInterceptorHandlerContext{
+			Name:          name,
+			VCluster:      vCluster,
+			Group:         group,
+			Username:      username,
+			IgnoreMissing: false, // fail even if resource is missing (keep current behavior)
+			DryRun:        *dryRun,
+			StateEnabled:  *stateEnabled,
+			StateRef:      stateRef,
+		}
+
+		err := deleteHandler.HandleInterceptor(kind, cmdCtx)
+		if err != nil {
+			return fmt.Errorf("%s\n", err)
+		}
+		return nil
+	})
 }
 
 func runDeleteKind(
@@ -202,20 +216,26 @@ func runDeleteKind(
 	kind schema.Kind,
 	args []string,
 	parentFlagValue []*string,
-	parentQueryFlagValue []*string) error {
+	parentQueryFlagValue []*string, dryRun *bool, stateEnabled *bool, stateFile *string) error {
 
-	deleteHandler := cli.NewDeleteHandler(rootContext)
+	stateCfg := storage.NewStorageConfig(stateEnabled, stateFile)
+	return state.RunWithState(stateCfg, *dryRun, *rootContext.Debug, func(stateRef *model.State) error {
+		deleteHandler := cli.NewDeleteHandler(rootContext)
 
-	cmdCtx := cli.DeleteKindHandlerContext{
-		Args:                 args,
-		ParentFlagValue:      parentFlagValue,
-		ParentQueryFlagValue: parentQueryFlagValue,
-		IgnoreMissing:        false, // fail even if resource is missing (keep current behavior)
-	}
+		cmdCtx := cli.DeleteKindHandlerContext{
+			Args:                 args,
+			ParentFlagValue:      parentFlagValue,
+			ParentQueryFlagValue: parentQueryFlagValue,
+			IgnoreMissing:        false, // fail even if resource is missing (keep current behavior)
+			DryRun:               *dryRun,
+			StateEnabled:         *stateEnabled,
+			StateRef:             stateRef,
+		}
 
-	err := deleteHandler.HandleKind(kind, cmdCtx)
-	if err != nil {
-		return fmt.Errorf("%s\n", err)
-	}
-	return nil
+		err := deleteHandler.HandleKind(kind, cmdCtx)
+		if err != nil {
+			return fmt.Errorf("%s\n", err)
+		}
+		return nil
+	})
 }

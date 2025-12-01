@@ -179,6 +179,32 @@ Group/team-a: Updated
 	assert.Emptyf(t, stderr, "Expected no stderr output during cleanup, got: %s", stderr)
 }
 
+func Test_Apply_Gateway_Resources(t *testing.T) {
+	fmt.Println("Test CLI Apply with Gateway resources")
+
+	// Create random interceptor fixture
+	workDir := t.TempDir()
+	name, interceptor := FixtureRandomGatewayInterceptor(t)
+	filePath := fmt.Sprintf("%s/interceptor_%s.yaml", workDir, name)
+	interceptorYAML, err := yaml.Marshal(interceptor)
+	assert.NoErrorf(t, err, "Failed to marshal interceptor to YAML: %v", err)
+	err = os.WriteFile(filePath, interceptorYAML, 0644)
+	assert.NoErrorf(t, err, "Failed to write interceptor YAML to file: %v", err)
+
+	// Apply the interceptor
+	stdout, stderr, err := runGatewayCommand("apply", "-f", filePath)
+	assert.NoErrorf(t, err, "Command failed: %v\nStderr: %s", err, stderr)
+	expectedDebug := "Applying resources\n"
+	assert.Equalf(t, expectedDebug, stderr, "Expected stderr to be '%s', got: %s", expectedDebug, stderr)
+	expectedOutput := fmt.Sprintf("Interceptor/%s: Created\n", name)
+	assert.Equalf(t, expectedOutput, stdout, "Expected stdout to be '%s', got: %s", expectedOutput, stdout)
+
+	// Cleanup after test
+	stdout, stderr, err = runGatewayCommand("delete", "-f", filePath)
+	assert.NoErrorf(t, err, "Cleanup command failed: %v\nStderr: %s", err, stderr)
+	assert.Emptyf(t, stderr, "Expected no stderr output during cleanup, got: %s", stderr)
+}
+
 // ======================================
 // State Management Tests
 // ======================================

@@ -299,10 +299,39 @@ func FixtureRandomGatewayInterceptor(t *testing.T) (string, any) {
 	max := min + rand.Intn(5)
 	data := map[string]string{
 		"name":              name,
+		"vCluster":          "passthrough",
+		"username":          "user",
 		"priority":          strconv.Itoa(rand.Intn(100)),
 		"topic":             fmt.Sprintf("topic-%s", randomSuffix),
 		"min_num_partition": strconv.Itoa(min),
 		"max_num_partition": strconv.Itoa(max),
+	}
+	return name, TemplateFixtureYAML(t, templatePath, data)
+}
+
+func FixtureRandomGatewaySA(t *testing.T) (string, any) {
+	workDir, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get working directory")
+	templatePath := fmt.Sprintf("%s/testdata/fixtures/gateway_service_account.yaml.tmpl", workDir)
+
+	randomSuffix := strconv.FormatInt(time.Now().UnixNano(), 10)
+	name := fmt.Sprintf("sa-%s", randomSuffix)
+	data := map[string]string{
+		"name":     name,
+		"vCluster": "passthrough",
+	}
+	return name, TemplateFixtureYAML(t, templatePath, data)
+}
+
+func FixtureRandomGatewayVCluster(t *testing.T) (string, any) {
+	workDir, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get working directory")
+	templatePath := fmt.Sprintf("%s/testdata/fixtures/gateway_vcluster.yaml.tmpl", workDir)
+
+	randomSuffix := strconv.FormatInt(time.Now().UnixNano(), 10)
+	name := fmt.Sprintf("vcluster-%s", randomSuffix)
+	data := map[string]string{
+		"name": name,
 	}
 	return name, TemplateFixtureYAML(t, templatePath, data)
 }

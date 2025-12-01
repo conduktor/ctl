@@ -2,6 +2,7 @@ package integration
 
 import (
 	"fmt"
+	"gopkg.in/yaml.v3"
 	"os"
 	"testing"
 
@@ -125,6 +126,95 @@ func Test_Delete_Folder_Recursive(t *testing.T) {
 
 	expectedOutput := "Group/team-b: Deleted\nGroup/team-c: Deleted\nGroup/team-d: Deleted\n"
 	assert.Equalf(t, expectedOutput, stdout, "Expected stdout to be '%s', got: %s", expectedOutput, stdout)
+}
+
+func Test_Delete_With_Dry_Run(t *testing.T) {
+	fmt.Println("Test CLI Delete with dry-run")
+	filePath := testDataFilePath(t, "valid_group.yaml")
+
+	//Init the resource to delete
+	stdout, stderr, err := runConsoleCommand("apply", "-f", filePath)
+	assert.NoErrorf(t, err, "Command failed: %v\nStderr: %s", err, stderr)
+
+	// Delete with dry-run
+	stdout, stderr, err = runConsoleCommand("delete", "-f", filePath, "--dry-run")
+	assert.NoErrorf(t, err, "Dry-run delete command failed: %v\nStderr: %s", err, stderr)
+	assert.Emptyf(t, stderr, "Expected no stderr output during dry-run delete, got: %s", stderr)
+
+	expectedOutput := "Group/team-a: Deleted (dry-run)\n"
+	assert.Equalf(t, expectedOutput, stdout, "Expected stdout to be '%s', got: %s", expectedOutput, stdout)
+
+	// Delete with dry-run using filter
+	stdout, stderr, err = runConsoleCommand("delete", "Group", "team-a", "--dry-run")
+	assert.NoErrorf(t, err, "Dry-run delete command with filter failed: %v\nStderr: %s", err, stderr)
+	assert.Emptyf(t, stderr, "Expected no stderr output during dry-run delete with filter, got: %s", stderr)
+	assert.Equalf(t, expectedOutput, stdout, "Expected stdout to be '%s', got: %s", expectedOutput, stdout)
+
+	// Verify resource still exists after dry-run delete
+	stdout, stderr, err = runConsoleCommand("get", "Group", "team-a")
+	assert.NoErrorf(t, err, "Get command failed: %v\nStderr: %s", err, stderr)
+	assert.Emptyf(t, stderr, "Expected no stderr output during get, got: %s", stderr)
+
+	parsedResource := parseStdoutAsYAMLDocuments(t, stdout)
+	assert.Lenf(t, parsedResource, 1, "Expected one resource in get output, got: %d", len(parsedResource))
+	assert.Equal(t, "Group", parsedResource[0]["kind"], "Expected resource kind to be 'Group'")
+	assert.Equal(t, "team-a", parsedResource[0]["metadata"].(map[string]any)["name"], "Expected resource name to be 'team-a'")
+
+	// Cleanup: actually delete the resource
+	stdout, stderr, err = runConsoleCommand("delete", "-f", filePath)
+	assert.NoErrorf(t, err, "Cleanup delete command failed: %v\nStderr: %s", err, stderr)
+}
+
+func Test_Delete_Gateway_Resources(t *testing.T) {
+	fmt.Println("Test CLI Delete Gateway resources by name")
+	workDir := t.TempDir()
+
+	interceptorName, interceptor := FixtureRandomGatewayInterceptor(t)
+	vClusterName, vcluster := FixtureRandomGatewayVCluster(t)
+	saName, sa := FixtureRandomGatewaySA(t)
+	filePath := fmt.Sprintf("%s/gw-resources.yaml", workDir)
+	interceptorYAML, err := yaml.Marshal(interceptor)
+	assert.NoErrorf(t, err, "Failed to marshal interceptor to YAML: %v", err)
+	vclusterYAML, err := yaml.Marshal(vcluster)
+	assert.NoErrorf(t, err, "Failed to marshal vcluster to YAML: %v", err)
+	saYAML, err := yaml.Marshal(sa)
+	assert.NoErrorf(t, err, "Failed to marshal service account to YAML: %v", err)
+	combinedYAML := "---\n" + string(interceptorYAML) + "---\n" + string(vclusterYAML) + "---\n" + string(saYAML)
+	fmt.Println(combinedYAML)
+	err = os.WriteFile(filePath, []byte(combinedYAML), 0644)
+	assert.NoError(t, err, "Failed to marshal gateway resources to YAML: %v", err)
+
+	// Init the resources to delete
+	stdout, stderr, err := runGatewayCommand("apply", "-f", filePath)
+	assert.NoErrorf(t, err, "Apply command failed: %v\nStderr: %s", err, stderr)
+	expectedOutputLines := []string{
+		fmt.Sprintf("Interceptor/%s: Created", interceptorName),
+		fmt.Sprintf("VirtualCluster/%s: Created", vClusterName),
+		fmt.Sprintf("GatewayServiceAccount/%s: Created", saName),
+	}
+	for _, line := range expectedOutputLines {
+		assert.Containsf(t, stdout, line, "Expected stdout to contain '%s', got: %s", line, stdout)
+	}
+
+	// Test deleteResourceByName for gateway resources
+	stdout, stderr, err = runGatewayCommand("delete", "VirtualCluster", vClusterName)
+	assert.NoErrorf(t, err, "Delete command failed: %v\nStderr: %s", err, stderr)
+	expectedOutput := fmt.Sprintf("VirtualCluster/%s: Deleted\n", vClusterName)
+	assert.Equalf(t, expectedOutput, stdout, "Expected stdout to be '%s', got: %s", expectedOutput, stdout)
+
+	// Test delete via name and vcluster
+	stdout, stderr, err = runGatewayCommand("delete", "GatewayServiceAccount", saName, "--vcluster", "passthrough")
+	assert.NoErrorf(t, err, "Delete command by vcluster failed: %v\nStderr: %s", err, stderr)
+	expectedOutput = fmt.Sprintf("GatewayServiceAccount/map[name:%s vCluster:passthrough]: Deleted\n", saName)
+	assert.Equalf(t, expectedOutput, stdout, "Expected stdout to be '%s', got: %s", expectedOutput, stdout)
+
+	// Test delete interceptors
+	stdout, stderr, err = runGatewayCommand("delete", "Interceptor", interceptorName,
+		"--vcluster", "passthrough", "--username", "user")
+	assert.NoErrorf(t, err, "Delete interceptor command failed: %v\nStderr: %s", err, stderr)
+	expectedOutput = fmt.Sprintf("Interceptor/%smap[username:user vCluster:passthrough]: Deleted\n", interceptorName)
+	assert.Equalf(t, expectedOutput, stdout, "Expected stdout to be '%s', got: %s", expectedOutput, stdout)
+
 }
 
 // ======================================
@@ -297,6 +387,27 @@ func Test_Delete_With_State_Recursive(t *testing.T) {
 	assert.NotContains(t, string(stateContent), "team-b", "State file should not contain team-b")
 	assert.NotContains(t, string(stateContent), "team-c", "State file should not contain team-c")
 	assert.NotContains(t, string(stateContent), "team-d", "State file should not contain team-d")
+}
+
+func Test_Delete_With_State_Filter(t *testing.T) {
+	fmt.Println("Test CLI Delete with state management - filter by kind and name")
+	filePath := testDataFilePath(t, "valid_group.yaml")
+	stateFile := tmpStateFilePath(t, "state.json")
+
+	// Apply with state
+	stdout, stderr, err := runConsoleCommand("apply", "-f", filePath, "--enable-state", "--state-file", stateFile)
+	assert.NoErrorf(t, err, "Apply command failed: %v\nStderr: %s", err, stderr)
+
+	// Delete using kind and name filter with state enabled
+	stdout, stderr, err = runConsoleCommand("delete", "Group", "team-a", "--enable-state", "--state-file", stateFile)
+	assert.NoErrorf(t, err, "Delete command failed: %v\nStderr: %s", err, stderr)
+	expectedOutput := "Group/team-a: Deleted\n"
+	assert.Equalf(t, expectedOutput, stdout, "Expected stdout to be '%s', got: %s", expectedOutput, stdout)
+
+	// Verify state file no longer contains the resource
+	stateContent, err := os.ReadFile(stateFile)
+	assert.NoError(t, err, "Failed to read state file")
+	assert.NotContains(t, string(stateContent), "team-a", "State file should not contain team-a after deletion")
 }
 
 func Test_Delete_With_State_Custom_Location(t *testing.T) {

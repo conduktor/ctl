@@ -308,7 +308,7 @@ func (client *GatewayClient) DeleteInterceptor(kind *schema.Kind, name string, p
 		}
 		return fmt.Errorf("%s", extractAPIError(resp))
 	} else {
-		fmt.Printf("%s/%s: Deleted\n", kind.GetName(), param)
+		fmt.Printf("%s/%s%s: Deleted\n", kind.GetName(), name, param)
 	}
 
 	return err
