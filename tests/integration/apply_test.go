@@ -223,7 +223,7 @@ func Test_Apply_With_State_Fail_Write_Permissions(t *testing.T) {
 	expectedOutput := "Group/team-a: Created\n"
 	assert.Equalf(t, expectedOutput, stdout, "Expected stdout to be '%s', got: %s", expectedOutput, stdout)
 
-	expectedError := fmt.Sprintf("Error: could not save state, file storage error: failed to write state.\n  Cause: open %s: permission denied", stateFile)
+	expectedError := fmt.Sprintf("Error: could not save state, file storage error: failed to write state to temporary file.\n  Cause: open %s: permission denied", stateFile+".tmp")
 	assert.NotEmptyf(t, stderr, "Expected stderr to contain '%s', got empty stderr", expectedError)
 	assert.Containsf(t, stderr, expectedError, "Expected stderr to contain '%s', got: %s", expectedError, stderr)
 	assert.Contains(t, stderr, fmt.Sprintf("Ensure that the file path %s is correct and that you have the necessary permissions to write to it.", stateFile), "Expected tip message in stderr")

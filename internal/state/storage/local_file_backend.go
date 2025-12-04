@@ -67,10 +67,20 @@ func (b LocalFileBackend) SaveState(state *model.State, debug bool) error {
 		return NewStorageError(FileBackend, fmt.Sprintf("failed to create directories for %s", b.FilePath), err, tip)
 	}
 
-	err = os.WriteFile(b.FilePath, data, 0644)
+	// Write to temporary file first for atomic operation
+	tempFile := b.FilePath + ".tmp"
+	err = os.WriteFile(tempFile, data, 0644)
 	if err != nil {
 		tip := fmt.Sprintf("Ensure that the file path %s is correct and that you have the necessary permissions to write to it.", b.FilePath)
-		return NewStorageError(FileBackend, "failed to write state", err, tip)
+		return NewStorageError(FileBackend, "failed to write state to temporary file", err, tip)
+	}
+
+	// Atomically replace the original file
+	err = os.Rename(tempFile, b.FilePath)
+	if err != nil {
+		os.Remove(tempFile) // Clean up temp file on failure
+		tip := fmt.Sprintf("Ensure that the file path %s is correct and that you have the necessary permissions to write to it.", b.FilePath)
+		return NewStorageError(FileBackend, "failed to replace state file", err, tip)
 	}
 
 	return nil
