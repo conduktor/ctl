@@ -213,8 +213,8 @@ func TestLocalFileBackend_SaveState_ReadOnlyDirectory(t *testing.T) {
 	// Should fail to save to read-only directory
 	err = backend.SaveState(testState, true)
 	assert.Error(t, err)
-	expectedError := "file storage error: failed to write state."
-	expectedError += fmt.Sprintf("\n  Cause: open %s: permission denied", stateFilePath)
+	expectedError := "file storage error: failed to write state to temporary file."
+	expectedError += fmt.Sprintf("\n  Cause: open %s: permission denied", stateFilePath+".tmp")
 	expectedError += fmt.Sprintf("\nEnsure that the file path %s is correct and that you have the necessary permissions to write to it.", stateFilePath)
 	assert.Equal(t, expectedError, err.Error())
 }
