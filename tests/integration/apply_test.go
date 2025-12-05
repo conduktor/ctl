@@ -511,6 +511,35 @@ func Test_Apply_With_State_Partial_Failure(t *testing.T) {
 	assert.NoErrorf(t, err, "Cleanup command failed: %v\nStderr: %s", err, stderr)
 }
 
+func Test_Apply_With_State_Partial_Failure_On_Delete(t *testing.T) {
+	fmt.Println("Test CLI Apply with state management - partial failure on delete")
+	validFilePath := testDataFilePath(t, "self-serve.yaml")
+	deletedAppFilePath := testDataFilePath(t, "self-serve-without-app.yaml")
+	stateFile := tmpStateFilePath(t, "state.json")
+
+	// First apply to create valid resource
+	stdout, stderr, err := runConsoleCommand("apply", "-f", validFilePath, "--enable-state", "--state-file", stateFile)
+	assert.NoErrorf(t, err, "Initial apply command failed: %v\nStderr: %s", err, stderr)
+
+	// Second apply with resource that will cause deletion failure
+	stdout, stderr, err = runConsoleCommand("apply", "-f", deletedAppFilePath, "--enable-state", "--state-file", stateFile)
+	assert.Empty(t, stdout, "Expected no stdout output on failed delete")
+
+	// Command should fail due to invalid resource deletion
+	assert.Error(t, err, "Expected command to fail due to invalid resource deletion")
+	assert.Contains(t, stderr, "Deleting resources missing from state", "Expected deletion message in stderr")
+	assert.Contains(t, stderr, "Could not delete resource Application/clickstream-app missing from state: Cannot delete clickstream-app because it has instances", "Expected deletion error message")
+
+	// Verify state file still contains resource to delete
+	stateContent, err := os.ReadFile(stateFile)
+	assert.NoError(t, err, "Failed to read state file")
+	assert.Contains(t, string(stateContent), "clickstream-app", "State file should still contain resource that failed to delete")
+
+	// Cleanup after test
+	stdout, stderr, err = runConsoleCommand("delete", "-f", validFilePath)
+	assert.NoErrorf(t, err, "Cleanup command failed: %v\nStderr: %s", err, stderr)
+}
+
 func Test_Apply_Without_State_Does_Not_Delete(t *testing.T) {
 	fmt.Println("Test CLI Apply without state management - no automatic deletion")
 	filePath1 := testDataFilePath(t, "valid_group.yaml")
