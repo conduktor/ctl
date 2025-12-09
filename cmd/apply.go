@@ -66,7 +66,7 @@ func initApply(rootContext cli.RootContext) {
 		PersistentFlags().Bool("enable-state", false, "Enable state management for the resource.")
 
 	stateFile = applyCmd.
-		PersistentFlags().String("state-file", "", "Path to the state file to use for state management. By default, use $HOME/.conduktor/ctl/state.yaml")
+		PersistentFlags().String("state-file", "", "Path to the state file to use for state management. By default, use $XDG_DATA_HOME/.local/share/conduktor/cli-state.json or $HOME/.config/conduktor/cli-state.json")
 
 	_ = applyCmd.MarkPersistentFlagRequired("file")
 
