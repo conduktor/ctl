@@ -227,3 +227,74 @@ func testDataFilePath(t *testing.T, fileName string) string {
 	debugLogger.Printf("Current working directory: %s\n", workDir)
 	return fmt.Sprintf("%s/testdata/resources/%s", workDir, fileName)
 }
+
+func createAdminToken(t *testing.T, name string) (token string, tokenName string) {
+	stdout, stderr, err := runConsoleCommand("token", "create", "admin", name)
+	assert.NoErrorf(t, err, "Failed to create admin token: %s", stderr)
+
+	token = strings.TrimSpace(stdout)
+	assert.NotEmpty(t, token, "Expected token in response")
+
+	debugLogger.Printf("Created admin token: %s\n", name)
+	return token, name
+}
+
+func deleteTokenByName(tokenName string) {
+	// First, list admin tokens to find the ID
+	stdout, stderr, err := runConsoleCommand("token", "list", "admin")
+	if err != nil {
+		debugLogger.Printf("Failed to list admin tokens: %s\n", stderr)
+		return
+	}
+
+	// Parse output format: "name:\tUUID"
+	lines := strings.Split(stdout, "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" || line == "No tokens found" {
+			continue
+		}
+		parts := strings.Split(line, ":\t")
+		if len(parts) == 2 && parts[0] == tokenName {
+			tokenId := parts[1]
+			_, stderr, err := runConsoleCommand("token", "delete", tokenId)
+			if err != nil {
+				debugLogger.Printf("Failed to delete token %s (id: %s): %s\n", tokenName, tokenId, stderr)
+			} else {
+				debugLogger.Printf("Deleted token: %s (id: %s)\n", tokenName, tokenId)
+			}
+			return
+		}
+	}
+	debugLogger.Printf("Token not found for deletion: %s\n", tokenName)
+}
+
+func runCommandWithToken(token string, args ...string) (string, string, error) {
+	// Save original env
+	originalApiKey := os.Getenv("CDK_API_KEY")
+	originalUser := os.Getenv("CDK_USER")
+	originalPassword := os.Getenv("CDK_PASSWORD")
+
+	// Set token auth
+	logAndSetEnv("CDK_BASE_URL", consoleURL)
+	logAndSetEnv("CDK_API_KEY", token)
+	os.Unsetenv("CDK_USER")
+	os.Unsetenv("CDK_PASSWORD")
+
+	defer func() {
+		// Restore original env
+		if originalApiKey != "" {
+			os.Setenv("CDK_API_KEY", originalApiKey)
+		} else {
+			os.Unsetenv("CDK_API_KEY")
+		}
+		if originalUser != "" {
+			os.Setenv("CDK_USER", originalUser)
+		}
+		if originalPassword != "" {
+			os.Setenv("CDK_PASSWORD", originalPassword)
+		}
+	}()
+
+	return runCommand(args...)
+}
