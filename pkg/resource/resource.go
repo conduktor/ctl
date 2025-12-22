@@ -25,6 +25,7 @@ type Resource struct {
 	Version  string
 	Metadata map[string]interface{}
 	Spec     map[string]interface{}
+	FilePath string
 }
 
 func (r Resource) MarshalJSON() ([]byte, error) {
@@ -74,7 +75,14 @@ func FromFile(path string, strict bool) ([]Resource, error) {
 		return nil, err
 	}
 
-	return FromYamlByte(data, strict)
+	resources, err := FromYamlByte(data, strict)
+	if err != nil {
+		return nil, err
+	}
+	for i := range resources {
+		resources[i].FilePath = path
+	}
+	return resources, nil
 }
 
 func FromFolder(path string, strict, recursive bool) ([]Resource, error) {
@@ -239,8 +247,8 @@ func expendIncludeFiles(r *Resource) error {
 }
 
 func (r *Resource) PrintPreservingOriginalFieldOrder() error {
-	var data orderedjson.OrderedData //using this instead of interface{} keep json order
-	var finalData interface{}        // in case it does not work we will failback to deserializing directly to interface{}
+	var data orderedjson.OrderedData // using this instead of interface{} keep json order
+	var finalData interface{}        // fallback if ordered parse fails
 	err := json.Unmarshal(r.Json, &data)
 	if err != nil {
 		err = json.Unmarshal(r.Json, &finalData)

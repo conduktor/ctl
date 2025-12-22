@@ -184,6 +184,33 @@ vim definition.yml # (or any other text editor you like)
 conduktor apply -f
 ```
 
+#### Live Templates
+
+Fetch up-to-date templates directly from the Conduktor Console server using the `--live` flag. This ensures templates match the server's current schema:
+
+```bash
+conduktor template --live                       # List available kinds from server
+conduktor template Topic --live                 # Get Topic template from server
+conduktor template Topic --live --cluster gw1  # Get template for specific gateway cluster
+```
+
+When using `--cluster`, you can get templates for gateway-specific resource kinds (e.g., VirtualCluster, Interceptor, GatewayServiceAccount).
+
+### Server-Side Apply
+
+For applying many resources efficiently, use `--server-side` to let the server handle ordering, parallelism, and retries in a single request:
+
+```bash
+conduktor apply -f resources/ --server-side
+conduktor apply -f resources/ --server-side --strategy fail-fast        # Stop on first error (default)
+conduktor apply -f resources/ --server-side --strategy continue-on-error # Continue after errors
+conduktor apply -f resources/ --server-side --dry-run                   # Preview changes
+```
+
+Additional flags for server-side apply:
+- `--yes`: Skip confirmation for large operations
+- `--no-progress`: Disable live progress display (useful for CI)
+
 ### Development
 
 #### How to run:
