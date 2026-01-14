@@ -286,7 +286,7 @@ func (client *Client) Apply(resource *resource.Resource, dryMode bool, diffMode 
 	if err != nil {
 		return result, err
 	} else if resp.IsError() {
-		return result, fmt.Errorf(extractAPIError(resp))
+		return result, fmt.Errorf("%s", extractAPIError(resp))
 	}
 	bodyBytes := resp.Body()
 
@@ -316,7 +316,7 @@ func (client *Client) Get(kind *schema.Kind, parentPathValue []string, parentQue
 	if err != nil {
 		return result, err
 	} else if resp.IsError() {
-		return result, fmt.Errorf(extractAPIError(resp))
+		return result, fmt.Errorf("%s", extractAPIError(resp))
 	}
 	err = json.Unmarshal(resp.Body(), &result)
 	return result, err
@@ -349,7 +349,7 @@ func (client *Client) GetFromResource(res *resource.Resource) (resource.Resource
 	}
 
 	if resp.IsError() {
-		return resource.Resource{}, fmt.Errorf(extractAPIError(resp))
+		return resource.Resource{}, fmt.Errorf("%s", extractAPIError(resp))
 	}
 
 	err = json.Unmarshal(resp.Body(), &results)
@@ -384,7 +384,7 @@ func (client *Client) Run(run schema.Run, pathValue []string, queryParams map[st
 	if err != nil {
 		return nil, err
 	} else if resp.IsError() {
-		return nil, fmt.Errorf(extractAPIError(resp))
+		return nil, fmt.Errorf("%s", extractAPIError(resp))
 	}
 	return resp.Body(), nil
 }
@@ -399,7 +399,7 @@ func (client *Client) Login(username, password string) (LoginResult, error) {
 			return LoginResult{}, fmt.Errorf("Invalid username or password")
 		} else {
 
-			return LoginResult{}, fmt.Errorf(extractAPIError(resp))
+			return LoginResult{}, fmt.Errorf("%s", extractAPIError(resp))
 		}
 	}
 	result := LoginResult{}
@@ -429,7 +429,7 @@ func (client *Client) Describe(kind *schema.Kind, parentPathValue []string, pare
 	return result, err
 }
 
-func (client *Client) Delete(kind *schema.Kind, parentPathValue []string, parentQueryValue []string, name string) error {
+func (client *Client) Delete(kind *schema.Kind, parentPathValue []string, parentQueryValue []string, name string, ignoreMissing bool) error {
 	client.setAuthMethodFromEnvIfNeeded()
 	queryInfo := kind.DescribePath(parentPathValue, parentQueryValue, name)
 	url := client.baseURL + queryInfo.Path
@@ -441,7 +441,11 @@ func (client *Client) Delete(kind *schema.Kind, parentPathValue []string, parent
 	if err != nil {
 		return err
 	} else if resp.IsError() {
-		return fmt.Errorf(extractAPIError(resp))
+		if resp.StatusCode() == 404 && ignoreMissing {
+			fmt.Printf("%s/%s: Not Found (ignored)\n", kind.GetName(), name)
+			return nil
+		}
+		return fmt.Errorf("%s", extractAPIError(resp))
 	} else {
 		fmt.Printf("%s/%s: Deleted\n", kind.GetName(), name)
 	}
@@ -449,7 +453,7 @@ func (client *Client) Delete(kind *schema.Kind, parentPathValue []string, parent
 	return err
 }
 
-func (client *Client) DeleteResource(resource *resource.Resource) error {
+func (client *Client) DeleteResource(resource *resource.Resource, ignoreMissing bool) error {
 	client.setAuthMethodFromEnvIfNeeded()
 	kinds := client.GetKinds()
 	requestBuilder := client.client.R()
@@ -469,7 +473,11 @@ func (client *Client) DeleteResource(resource *resource.Resource) error {
 	if err != nil {
 		return err
 	} else if resp.IsError() {
-		return fmt.Errorf(extractAPIError(resp))
+		if resp.StatusCode() == 404 && ignoreMissing {
+			fmt.Printf("%s/%s: Not Found (ignored)\n", kind.GetName(), resource.Name)
+			return nil
+		}
+		return fmt.Errorf("%s", extractAPIError(resp))
 	} else {
 		fmt.Printf("%s/%s: Deleted\n", kind.GetName(), resource.Name)
 	}
@@ -483,7 +491,7 @@ func (client *Client) GetOpenAPI() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	} else if resp.IsError() {
-		return nil, fmt.Errorf(resp.String())
+		return nil, fmt.Errorf("%s", resp.String())
 	}
 	return resp.Body(), nil
 }
@@ -513,7 +521,7 @@ func (client *Client) ListAdminToken() ([]Token, error) {
 	if err != nil {
 		return result, err
 	} else if resp.IsError() {
-		return result, fmt.Errorf(extractAPIError(resp))
+		return result, fmt.Errorf("%s", extractAPIError(resp))
 	} else {
 		err = json.Unmarshal(resp.Body(), &result)
 		return result, err
@@ -528,7 +536,7 @@ func (client *Client) ListApplicationInstanceToken(applicationInstanceName strin
 	if err != nil {
 		return result, err
 	} else if resp.IsError() {
-		return result, fmt.Errorf(extractAPIError(resp))
+		return result, fmt.Errorf("%s", extractAPIError(resp))
 	} else {
 		err = json.Unmarshal(resp.Body(), &result)
 		return result, err
@@ -543,7 +551,7 @@ func (client *Client) CreateAdminToken(name string) (CreatedToken, error) {
 	if err != nil {
 		return result, err
 	} else if resp.IsError() {
-		return result, fmt.Errorf(extractAPIError(resp))
+		return result, fmt.Errorf("%s", extractAPIError(resp))
 	} else {
 		err = json.Unmarshal(resp.Body(), &result)
 		return result, err
@@ -558,7 +566,7 @@ func (client *Client) CreateApplicationInstanceToken(applicationInstanceName, na
 	if err != nil {
 		return result, err
 	} else if resp.IsError() {
-		return result, fmt.Errorf(extractAPIError(resp))
+		return result, fmt.Errorf("%s", extractAPIError(resp))
 	} else {
 		err = json.Unmarshal(resp.Body(), &result)
 		return result, err
@@ -578,7 +586,7 @@ func (client *Client) ExecuteSQL(maxLine int, sql string) (SQLResult, error) {
 	if err != nil {
 		return result, err
 	} else if resp.IsError() {
-		return result, fmt.Errorf(extractAPIError(resp))
+		return result, fmt.Errorf("%s", extractAPIError(resp))
 	} else {
 		err = json.Unmarshal(resp.Body(), &result)
 		return result, err
@@ -592,7 +600,7 @@ func (client *Client) DeleteToken(uuid string) error {
 	if err != nil {
 		return err
 	} else if resp.IsError() {
-		return fmt.Errorf(extractAPIError(resp))
+		return fmt.Errorf("%s", extractAPIError(resp))
 	}
 	return nil
 }

@@ -40,7 +40,9 @@ jobs:
       - uses: actions/setup-go@v4
         with:
           go-version: ${{ env.GO_VERSION }}
-      - name: run test
+      - name: go mod download
+        run: go mod download # Download dependencies
+      - name: run tests
         run: |
          INTEGRATION_TESTS=true go test ./tests/integration/... -v -timeout 30m
          echo "Integration tests completed"

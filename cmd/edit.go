@@ -137,8 +137,23 @@ func initEdit(rootContext cli.RootContext) {
 					return
 				}
 
-				recursiveFolder := false
-				runApply(rootContext, []string{tmpFile.Name()}, recursiveFolder)
+				filepath := []string{tmpFile.Name()}
+				cmdCtx := cli.ApplyHandlerContext{
+					FilePaths:       filepath,
+					RecursiveFolder: false,
+					DryRun:          false,
+					PrintDiff:       false,
+					MaxParallel:     1,
+					StateEnabled:    false,
+					StateRef:        nil,
+				}
+				applyHandler := cli.NewApplyHandler(rootContext)
+
+				_, err = applyHandler.Handle(cmdCtx)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Error during apply: %s\n", err)
+					os.Exit(1)
+				}
 			},
 		}
 

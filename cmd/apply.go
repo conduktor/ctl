@@ -5,23 +5,43 @@ import (
 	"os"
 
 	"github.com/conduktor/ctl/internal/cli"
+	"github.com/conduktor/ctl/internal/state"
+	"github.com/conduktor/ctl/internal/state/model"
+	"github.com/conduktor/ctl/internal/state/storage"
 	"github.com/spf13/cobra"
 )
-
-var dryRun *bool
-var printDiff *bool
-var maxParallel *int
 
 func initApply(rootContext cli.RootContext) {
 	// applyCmd represents the apply command
 	var recursiveFolder *bool
 	var filePath *[]string
+	var dryRun *bool
+	var printDiff *bool
+	var maxParallel *int
+	var stateEnabled *bool
+	var stateFile *string
+
 	var applyCmd = &cobra.Command{
-		Use:   "apply",
-		Short: "Upsert a resource on Conduktor",
-		Long:  ``,
-		Run: func(cmd *cobra.Command, args []string) {
-			runApply(rootContext, *filePath, *recursiveFolder)
+		Use:          "apply",
+		Short:        "Upsert a resource on Conduktor",
+		Long:         ``,
+		SilenceUsage: true, // do not print usage on run error
+		RunE: func(cmd *cobra.Command, args []string) error {
+			stateCfg := storage.NewStorageConfig(stateEnabled, stateFile)
+			return state.RunWithState(stateCfg, *dryRun, *rootContext.Debug, func(stateRef *model.State) error {
+
+				cmdCtx := cli.ApplyHandlerContext{
+					FilePaths:       *filePath,
+					RecursiveFolder: *recursiveFolder,
+					DryRun:          *dryRun,
+					PrintDiff:       *printDiff,
+					MaxParallel:     *maxParallel,
+					StateEnabled:    stateCfg.Enabled,
+					StateRef:        stateRef,
+				}
+
+				return runApply(rootContext, cmdCtx)
+			})
 		},
 	}
 
@@ -42,32 +62,28 @@ func initApply(rootContext cli.RootContext) {
 	maxParallel = applyCmd.
 		PersistentFlags().Int("parallelism", 1, "Run each apply in parallel, useful when applying a large number of resources. Must be less than 100.")
 
+	stateEnabled = applyCmd.
+		PersistentFlags().Bool("enable-state", false, "Enable state management for the resource.")
+
+	stateFile = applyCmd.
+		PersistentFlags().String("state-file", "", "Path to the state file to use for state management. By default, use $XDG_DATA_HOME/.local/share/conduktor/cli-state.json or $HOME/.config/conduktor/cli-state.json")
+
 	_ = applyCmd.MarkPersistentFlagRequired("file")
 
-	applyCmd.PreRun = func(cmd *cobra.Command, args []string) {
+	applyCmd.PreRunE = func(cmd *cobra.Command, args []string) error {
 		if *maxParallel > 100 || *maxParallel < 1 {
-			fmt.Fprintf(os.Stderr, "Error: --parallelism must be between 1 and 100 (got %d)\n", *maxParallel)
-			os.Exit(1)
+			return fmt.Errorf("argument --parallelism must be between 1 and 100 (got %d)\n", *maxParallel)
 		}
+		return nil
 	}
 }
 
-func runApply(rootContext cli.RootContext, filePath []string, recursiveFolder bool) {
-
+func runApply(rootContext cli.RootContext, cmdCtx cli.ApplyHandlerContext) error {
 	applyHandler := cli.NewApplyHandler(rootContext)
-
-	cmdCtx := cli.ApplyHandlerContext{
-		FilePaths:       filePath,
-		DryRun:          *dryRun,
-		PrintDiff:       *printDiff,
-		RecursiveFolder: recursiveFolder,
-		MaxParallel:     *maxParallel,
-	}
 
 	results, err := applyHandler.Handle(cmdCtx)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error during apply: %s\n", err)
-		os.Exit(1)
+		return fmt.Errorf("failed to run apply: %s\n", err)
 	}
 
 	allSuccess := true
@@ -82,6 +98,7 @@ func runApply(rootContext cli.RootContext, filePath []string, recursiveFolder bo
 	}
 
 	if !allSuccess {
-		os.Exit(1)
+		return fmt.Errorf("one or more resources could not be applied")
 	}
+	return nil
 }

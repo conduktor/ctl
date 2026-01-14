@@ -91,7 +91,7 @@ func (client *GatewayClient) Get(kind *schema.Kind, parentPathValue []string, pa
 	if err != nil {
 		return result, err
 	} else if resp.IsError() {
-		return result, fmt.Errorf(extractAPIError(resp))
+		return result, fmt.Errorf("%s", extractAPIError(resp))
 	}
 	err = json.Unmarshal(resp.Body(), &result)
 	return result, err
@@ -126,7 +126,7 @@ func (client *GatewayClient) Delete(kind *schema.Kind, parentPathValue []string,
 	if err != nil {
 		return err
 	} else if resp.IsError() {
-		return fmt.Errorf(extractAPIError(resp))
+		return fmt.Errorf("%s", extractAPIError(resp))
 	} else {
 		fmt.Printf("%s/%s: Deleted\n", kind.GetName(), name)
 	}
@@ -134,7 +134,7 @@ func (client *GatewayClient) Delete(kind *schema.Kind, parentPathValue []string,
 	return err
 }
 
-func (client *GatewayClient) DeleteResourceByName(resource *resource.Resource) error {
+func (client *GatewayClient) DeleteResourceByName(resource *resource.Resource, ignoreMissing bool) error {
 	kinds := client.GetKinds()
 	requestBuilder := client.client.R()
 	kind, ok := kinds[resource.Kind]
@@ -153,7 +153,11 @@ func (client *GatewayClient) DeleteResourceByName(resource *resource.Resource) e
 	if err != nil {
 		return err
 	} else if resp.IsError() {
-		return fmt.Errorf(extractAPIError(resp))
+		if resp.StatusCode() == 404 && ignoreMissing {
+			fmt.Printf("%s/%s: Not Found (ignored)\n", kind.GetName(), resource.Name)
+			return nil
+		}
+		return fmt.Errorf("%s", extractAPIError(resp))
 	} else {
 		fmt.Printf("%s/%s: Deleted\n", kind.GetName(), resource.Name)
 	}
@@ -161,7 +165,7 @@ func (client *GatewayClient) DeleteResourceByName(resource *resource.Resource) e
 	return err
 }
 
-func (client *GatewayClient) DeleteResourceByNameAndVCluster(resource *resource.Resource) error {
+func (client *GatewayClient) DeleteResourceByNameAndVCluster(resource *resource.Resource, ignoreMissing bool) error {
 	kinds := client.GetKinds()
 	kind, ok := kinds[resource.Kind]
 	if !ok {
@@ -184,7 +188,11 @@ func (client *GatewayClient) DeleteResourceByNameAndVCluster(resource *resource.
 	if err != nil {
 		return err
 	} else if resp.IsError() {
-		return fmt.Errorf(extractAPIError(resp))
+		if resp.StatusCode() == 404 && ignoreMissing {
+			fmt.Printf("%s/%s: Not Found (ignored)\n", kind.GetName(), resource.Name)
+			return nil
+		}
+		return fmt.Errorf("%s", extractAPIError(resp))
 	} else {
 		fmt.Printf("%s/%s: Deleted\n", kind.GetName(), resource.Name)
 	}
@@ -198,7 +206,7 @@ type DeleteInterceptorPayload struct {
 	Username *string `json:"username"`
 }
 
-func (client *GatewayClient) DeleteResourceInterceptors(resource *resource.Resource) error {
+func (client *GatewayClient) DeleteResourceInterceptors(resource *resource.Resource, ignoreMissing bool) error {
 	kinds := client.GetKinds()
 	kind, ok := kinds[resource.Kind]
 	scope := resource.Metadata["scope"]
@@ -242,6 +250,10 @@ func (client *GatewayClient) DeleteResourceInterceptors(resource *resource.Resou
 	if err != nil {
 		return err
 	} else if resp.IsError() {
+		if resp.StatusCode() == 404 && ignoreMissing {
+			fmt.Printf("%s/%s: Not Found (ignored)\n", kind.GetName(), resource.Name)
+			return nil
+		}
 		msg := extractAPIError(resp)
 		if deleteInterceptorPayload == nil {
 			msg += "\nThis error may be caused by a bug in Conduktor Gateway REST api defaults fixed in version 3.11.0.\nAs a quick fix, you can fetch your interceptor to see the exact scope and use this when deleting."
@@ -254,7 +266,7 @@ func (client *GatewayClient) DeleteResourceInterceptors(resource *resource.Resou
 	return err
 }
 
-func (client *GatewayClient) DeleteKindByNameAndVCluster(kind *schema.Kind, param map[string]string) error {
+func (client *GatewayClient) DeleteKindByNameAndVCluster(kind *schema.Kind, param map[string]string, ignoreMissing bool) error {
 	url := client.baseURL + kind.ListPath(nil, nil).Path
 	req := client.client.R()
 	req.SetBody(param)
@@ -262,7 +274,11 @@ func (client *GatewayClient) DeleteKindByNameAndVCluster(kind *schema.Kind, para
 	if err != nil {
 		return err
 	} else if resp.IsError() {
-		return fmt.Errorf(extractAPIError(resp))
+		if resp.StatusCode() == 404 && ignoreMissing {
+			fmt.Printf("%s/%s: Not Found (ignored)\n", kind.GetName(), param)
+			return nil
+		}
+		return fmt.Errorf("%s", extractAPIError(resp))
 	} else {
 		fmt.Printf("%s/%s: Deleted\n", kind.GetName(), param)
 	}
@@ -270,7 +286,7 @@ func (client *GatewayClient) DeleteKindByNameAndVCluster(kind *schema.Kind, para
 	return err
 }
 
-func (client *GatewayClient) DeleteInterceptor(kind *schema.Kind, name string, param map[string]string) error {
+func (client *GatewayClient) DeleteInterceptor(kind *schema.Kind, name string, param map[string]string, ignoreMissing bool) error {
 	url := client.baseURL + kind.ListPath(nil, nil).Path + "/" + name
 	req := client.client.R()
 	var bodyParams = make(map[string]interface{})
@@ -286,9 +302,13 @@ func (client *GatewayClient) DeleteInterceptor(kind *schema.Kind, name string, p
 	if err != nil {
 		return err
 	} else if resp.IsError() {
-		return fmt.Errorf(extractAPIError(resp))
+		if resp.StatusCode() == 404 && ignoreMissing {
+			fmt.Printf("%s/%s: Not Found (ignored)\n", kind.GetName(), param)
+			return nil
+		}
+		return fmt.Errorf("%s", extractAPIError(resp))
 	} else {
-		fmt.Printf("%s/%s: Deleted\n", kind.GetName(), param)
+		fmt.Printf("%s/%s%s: Deleted\n", kind.GetName(), name, param)
 	}
 
 	return err
@@ -315,7 +335,7 @@ func (client *GatewayClient) Run(run schema.Run, pathValue []string, queryParams
 	if err != nil {
 		return nil, err
 	} else if resp.IsError() {
-		return nil, fmt.Errorf(extractAPIError(resp))
+		return nil, fmt.Errorf("%s", extractAPIError(resp))
 	}
 	return resp.Body(), nil
 }
@@ -355,7 +375,7 @@ func (client *GatewayClient) Apply(resource *resource.Resource, dryMode bool, di
 	if err != nil {
 		return result, err
 	} else if resp.IsError() {
-		return result, fmt.Errorf(extractAPIError(resp))
+		return result, fmt.Errorf("%s", extractAPIError(resp))
 	}
 	bodyBytes := resp.Body()
 	err = json.Unmarshal(bodyBytes, &result)
@@ -374,7 +394,7 @@ func (client *GatewayClient) GetOpenAPI() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	} else if resp.IsError() {
-		return nil, fmt.Errorf(resp.String())
+		return nil, fmt.Errorf("%s", resp.String())
 	}
 	return resp.Body(), nil
 }
@@ -428,7 +448,7 @@ func (client *GatewayClient) GetFromResource(res *resource.Resource) (resource.R
 	}
 
 	if resp.IsError() {
-		return resource.Resource{}, fmt.Errorf(extractAPIError(resp))
+		return resource.Resource{}, fmt.Errorf("%s", extractAPIError(resp))
 	}
 
 	err = json.Unmarshal(resp.Body(), &results)

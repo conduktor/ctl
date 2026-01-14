@@ -5,21 +5,24 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"testing"
+	"text/template"
 	"time"
+
+	"golang.org/x/exp/rand"
 
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
 )
 
 var composeFilePath = "./testdata/docker-compose.integration-test.yml"
-var consoleVersion = "1.38.0"
-var gatewayVersion = "3.14.0"
+var consoleVersion = "1.40.0"
+var gatewayVersion = "3.15.0"
 
 var consoleURL = "http://localhost:8080"
 var consoleAdminEmail = "admin@conduktor.io"
@@ -28,8 +31,6 @@ var gatewayURL = "http://localhost:8888"
 var gatewayAdmin = "admin"
 var gatewayAdminPassword = "conduktor"
 
-var debugLogger = log.New(os.Stderr, "", 1)
-
 func TestMain(m *testing.M) {
 	if !strings.EqualFold(os.Getenv("INTEGRATION_TESTS"), "true") {
 		fmt.Println("Skipping integration tests. Set INTEGRATION_TESTS=true to enable.")
@@ -37,23 +38,24 @@ func TestMain(m *testing.M) {
 	}
 
 	// Start Docker Compose
-	if err := setupDocker(); err != nil {
-		debugLogger.Printf("Failed to setup: %v\n", err)
-		os.Exit(1)
+	if shouldManageComposeStack() {
+		if err := setupDocker(); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to setup: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Fprintln(os.Stderr, "Wait 30s for compose to be up and running")
+		time.Sleep(30 * time.Second)
 	}
-	debugLogger.Println("Wait 30s for compose to be up and running")
-	time.Sleep(30 * time.Second)
-
 	// Wait for API to be ready
 	if err := waitForConsole(); err != nil {
 		teardownDocker()
-		debugLogger.Printf("API not ready: %v\n", err)
+		fmt.Fprintf(os.Stderr, "API not ready: %v\n", err)
 		os.Exit(1)
 	}
 
 	if err := waitForGateway(); err != nil {
 		teardownDocker()
-		debugLogger.Printf("API not ready: %v\n", err)
+		fmt.Fprintf(os.Stderr, "API not ready: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -65,8 +67,15 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+// By default, management of the tests compose stack is part of tests lifecycle.
+// For quicker feedback loop, tests compose stack can be run outside of tests.
+// In this case set INTEGRATION_MANAGE_COMPOSE=false.
+func shouldManageComposeStack() bool {
+	return os.Getenv("INTEGRATION_MANAGE_COMPOSE") != "false"
+}
+
 func setupDocker() error {
-	debugLogger.Println("Start integration docker stack")
+	fmt.Fprintln(os.Stderr, "Start integration docker stack")
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
@@ -81,57 +90,73 @@ func setupDocker() error {
 }
 
 func teardownDocker() {
-	// setComposeEnv()
-	cmd := exec.Command("docker", "compose",
-		"-f", composeFilePath,
-		"down", "-v")
-	err := cmd.Run()
-	if err != nil {
-		debugLogger.Printf("Failed to teardown docker compose: %v\n", err)
+	if shouldManageComposeStack() {
+		setComposeEnv()
+		cmd := exec.Command("docker", "compose",
+			"-f", composeFilePath,
+			"down", "-v")
+		err := cmd.Run()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to teardown docker compose: %v\n", err)
+		}
 	}
 }
 
 func setComposeEnv() {
-	debugLogger.Println("Setting up environment variables for Docker Compose")
+	fmt.Fprintln(os.Stderr, "Setting up environment variables for Docker Compose")
 	logAndSetEnv("CONDUKTOR_CONSOLE_IMAGE", fmt.Sprintf("conduktor/conduktor-console:%s", consoleVersion))
 	logAndSetEnv("CONDUKTOR_CONSOLE_CORTEX_IMAGE", fmt.Sprintf("conduktor/conduktor-console-cortex:%s", consoleVersion))
 	logAndSetEnv("CONDUKTOR_GATEWAY_IMAGE", fmt.Sprintf("conduktor/conduktor-gateway:%s", gatewayVersion))
 	logAndSetEnv("CDK_BASE_URL", consoleURL)
-	logAndSetEnv("CDK_ADMIN_EMAIL", consoleAdminEmail)
-	logAndSetEnv("CDK_ADMIN_PASSWORD", consoleAdminPassword)
-	logAndSetEnv("CDK_GATEWAY_BASE_URL", gatewayURL)
-	logAndSetEnv("CDK_GATEWAY_USER", gatewayAdmin)
-	logAndSetEnv("CDK_GATEWAY_PASSWORD", gatewayAdminPassword)
-}
-
-func setCLIConsoleEnv() {
-	debugLogger.Println("Setting up environment variables for CLI Console")
-	logAndSetEnv("CDK_BASE_URL", consoleURL)
 	logAndSetEnv("CDK_USER", consoleAdminEmail)
 	logAndSetEnv("CDK_PASSWORD", consoleAdminPassword)
-}
-
-func setCLIGatewayEnv() {
-	debugLogger.Println("Setting up environment variables for CLI Gateway")
 	logAndSetEnv("CDK_GATEWAY_BASE_URL", gatewayURL)
 	logAndSetEnv("CDK_GATEWAY_USER", gatewayAdmin)
 	logAndSetEnv("CDK_GATEWAY_PASSWORD", gatewayAdminPassword)
+}
+
+func SetCLIConsoleEnv() {
+	fmt.Fprintln(os.Stderr, "Setting up environment variables for CLI Console")
+	os.Setenv("CDK_BASE_URL", consoleURL)
+	os.Setenv("CDK_USER", consoleAdminEmail)
+	os.Setenv("CDK_PASSWORD", consoleAdminPassword)
+}
+
+func UnsetCLIConsoleEnv() {
+	fmt.Fprintln(os.Stderr, "Unsetting environment variables for CLI Console")
+	os.Unsetenv("CDK_BASE_URL")
+	os.Unsetenv("CDK_USER")
+	os.Unsetenv("CDK_PASSWORD")
+}
+
+func SetCLIGatewayEnv() {
+	fmt.Fprintln(os.Stderr, "Setting up environment variables for CLI Gateway")
+	os.Setenv("CDK_GATEWAY_BASE_URL", gatewayURL)
+	os.Setenv("CDK_GATEWAY_USER", gatewayAdmin)
+	os.Setenv("CDK_GATEWAY_PASSWORD", gatewayAdminPassword)
+}
+
+func UnsetCLIGatewayEnv() {
+	fmt.Fprintln(os.Stderr, "Unsetting environment variables for CLI Gateway")
+	os.Unsetenv("CDK_GATEWAY_BASE_URL")
+	os.Unsetenv("CDK_GATEWAY_USER")
+	os.Unsetenv("CDK_GATEWAY_PASSWORD")
 }
 
 func logAndSetEnv(key, value string) {
-	debugLogger.Printf("Set env %s=%s\n", key, value)
+	fmt.Fprintf(os.Stderr, "Set env %s=%s\n", key, value)
 	os.Setenv(key, value)
 }
 
 func waitForConsole() error {
-	debugLogger.Printf("Wait for Console API to be ready on %s\n", consoleURL)
+	fmt.Fprintf(os.Stderr, "Wait for Console API to be ready on %s\n", consoleURL)
 	client := &http.Client{Timeout: 2 * time.Second}
 
 	for i := 0; i < 60; i++ {
 		resp, err := client.Get(consoleURL + "/api/health/ready")
 		if err == nil && resp.StatusCode == 200 {
 			resp.Body.Close()
-			debugLogger.Println("Console API ready !")
+			fmt.Fprintln(os.Stderr, "Console API ready !")
 			return nil
 		}
 		if resp != nil {
@@ -144,14 +169,14 @@ func waitForConsole() error {
 }
 
 func waitForGateway() error {
-	debugLogger.Printf("Wait for Gateway API to be ready on %s\n", gatewayURL)
+	fmt.Fprintf(os.Stderr, "Wait for Gateway API to be ready on %s\n", gatewayURL)
 	client := &http.Client{Timeout: 2 * time.Second}
 
 	for i := 0; i < 60; i++ {
 		resp, err := client.Get(gatewayURL + "/health/ready")
 		if err == nil && resp.StatusCode == 200 {
 			resp.Body.Close()
-			debugLogger.Println("Gateway API ready !")
+			fmt.Fprintln(os.Stderr, "Gateway API ready !")
 			return nil
 		}
 		if resp != nil {
@@ -164,16 +189,16 @@ func waitForGateway() error {
 }
 
 func runConsoleCommand(args ...string) (string, string, error) {
-	setCLIConsoleEnv()
-	return runCommand(args...)
+	SetCLIConsoleEnv()
+	return RunCommand(args...)
 }
 
 func runGatewayCommand(args ...string) (string, string, error) {
-	setCLIGatewayEnv()
-	return runCommand(args...)
+	SetCLIGatewayEnv()
+	return RunCommand(args...)
 }
 
-func runCommand(args ...string) (string, string, error) {
+func RunCommand(args ...string) (string, string, error) {
 
 	baseCmd := []string{"go", "run", "../../main.go"}
 	command := append(baseCmd, args...)
@@ -185,9 +210,10 @@ func runCommand(args ...string) (string, string, error) {
 
 	err := cmd.Run()
 
-	debugLogger.Printf("Run command : %v\n", command)
-	debugLogger.Printf("####stdout %s", stdout.String())
-	debugLogger.Printf("####stderr %s", stderr.String())
+	fmt.Fprintf(os.Stderr, "## Run command : %v\n", command)
+	fmt.Fprintf(os.Stderr, "#### stdout\n%s", stdout.String())
+	fmt.Fprintf(os.Stderr, "#### stderr\n%s", stderr.String())
+	fmt.Fprintln(os.Stderr, "##")
 
 	return stdout.String(), stderr.String(), err
 }
@@ -224,6 +250,104 @@ func parseStdoutAsJsonObject(t *testing.T, stdout string) map[string]any {
 func testDataFilePath(t *testing.T, fileName string) string {
 	workDir, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get working directory")
-	debugLogger.Printf("Current working directory: %s\n", workDir)
+	fmt.Fprintf(os.Stderr, "Current working directory: %s\n", workDir)
 	return fmt.Sprintf("%s/testdata/resources/%s", workDir, fileName)
+}
+
+func tmpStateFilePath(t *testing.T, fileName string) string {
+	tmpDir := t.TempDir()
+	return fmt.Sprintf("%s/%s", tmpDir, fileName)
+}
+
+func FixtureRandomConsoleUser(t *testing.T) (string, any) {
+	workDir, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get working directory")
+	templatePath := fmt.Sprintf("%s/testdata/fixtures/console_user.yaml.tmpl", workDir)
+
+	randomSuffix := strconv.FormatInt(time.Now().UnixNano(), 10)
+	name := fmt.Sprintf("user-%s@company.io", randomSuffix)
+	data := map[string]string{
+		"name":      name,
+		"lastname":  "Doe",
+		"firstname": "John",
+	}
+	return name, TemplateFixtureYAML(t, templatePath, data)
+}
+
+func FixtureRandomConsoleGroup(t *testing.T) (string, any) {
+	workDir, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get working directory")
+	templatePath := fmt.Sprintf("%s/testdata/fixtures/console_group.yaml.tmpl", workDir)
+
+	randomSuffix := strconv.FormatInt(time.Now().UnixNano(), 10)
+	name := fmt.Sprintf("group-%s", randomSuffix)
+	data := map[string]string{
+		"name":         name,
+		"display_name": fmt.Sprintf("Group %s", randomSuffix),
+	}
+	return name, TemplateFixtureYAML(t, templatePath, data)
+}
+
+func FixtureRandomGatewayInterceptor(t *testing.T) (string, any) {
+	workDir, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get working directory")
+	templatePath := fmt.Sprintf("%s/testdata/fixtures/gateway_interceptor.yaml.tmpl", workDir)
+
+	randomSuffix := strconv.FormatInt(time.Now().UnixNano(), 10)
+	name := fmt.Sprintf("interceptor-%s", randomSuffix)
+	min := 1 + rand.Intn(5)
+	max := min + rand.Intn(5)
+	data := map[string]string{
+		"name":              name,
+		"vCluster":          "passthrough",
+		"username":          "user",
+		"priority":          strconv.Itoa(rand.Intn(100)),
+		"topic":             fmt.Sprintf("topic-%s", randomSuffix),
+		"min_num_partition": strconv.Itoa(min),
+		"max_num_partition": strconv.Itoa(max),
+	}
+	return name, TemplateFixtureYAML(t, templatePath, data)
+}
+
+func FixtureRandomGatewaySA(t *testing.T) (string, any) {
+	workDir, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get working directory")
+	templatePath := fmt.Sprintf("%s/testdata/fixtures/gateway_service_account.yaml.tmpl", workDir)
+
+	randomSuffix := strconv.FormatInt(time.Now().UnixNano(), 10)
+	name := fmt.Sprintf("sa-%s", randomSuffix)
+	data := map[string]string{
+		"name":     name,
+		"vCluster": "passthrough",
+	}
+	return name, TemplateFixtureYAML(t, templatePath, data)
+}
+
+func FixtureRandomGatewayVCluster(t *testing.T) (string, any) {
+	workDir, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get working directory")
+	templatePath := fmt.Sprintf("%s/testdata/fixtures/gateway_vcluster.yaml.tmpl", workDir)
+
+	randomSuffix := strconv.FormatInt(time.Now().UnixNano(), 10)
+	name := fmt.Sprintf("vcluster-%s", randomSuffix)
+	data := map[string]string{
+		"name": name,
+	}
+	return name, TemplateFixtureYAML(t, templatePath, data)
+}
+
+func TemplateFixtureYAML(t *testing.T, templateFilePath string, data map[string]string) any {
+	tpl, err := template.ParseFiles(templateFilePath)
+	assert.NoError(t, err, "Failed to parse template file")
+
+	// write the template output to a buffer
+	var buf bytes.Buffer
+	err = tpl.Execute(&buf, data)
+	assert.NoError(t, err, "Failed to execute template")
+
+	var result any
+	err = yaml.Unmarshal(buf.Bytes(), &result)
+	assert.NoError(t, err, "Failed to unmarshal YAML")
+
+	return result
 }
