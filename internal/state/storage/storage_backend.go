@@ -7,7 +7,8 @@ import (
 type StorageBackendType string
 
 const (
-	FileBackend StorageBackendType = "file"
+	FileBackend   StorageBackendType = "file"
+	RemoteBackend StorageBackendType = "remote"
 )
 
 type StorageBackend interface {

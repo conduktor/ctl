@@ -1,0 +1,13 @@
+# Example Azure Blob Storage configuration for remote state backend
+# Usage: conduktor apply -f resources.yaml --enable-state --state-backend-config examples/state-backend-azure.yaml
+
+type: AZURE
+config:
+  storage_account_name: "myaccount"
+  storage_account_key: "${AZURE_STORAGE_KEY}"
+  container_name: "conduktor-state"
+  # Optional: Use managed identity instead of storage key
+  # msi_resource: "https://storage.azure.com/"
+  # Optional: Use Azure AD authentication
+  # user_assigned_id: "client-id"
+prefix: "conduktor/state/"
