@@ -16,4 +16,5 @@ type StorageBackend interface {
 	LoadState(debug bool) (*model.State, error)
 	SaveState(state *model.State, debug bool) error
 	DebugString() string
+	Close() error
 }

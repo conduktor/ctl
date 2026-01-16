@@ -90,6 +90,10 @@ func (b LocalFileBackend) DebugString() string {
 	return fmt.Sprintf("Local File %s", b.FilePath)
 }
 
+func (b LocalFileBackend) Close() error {
+	return nil // No resources to clean up for local backend
+}
+
 func stateDefaultLocation() string {
 	dataDir, err := utils.GetDataDir()
 	if err != nil {

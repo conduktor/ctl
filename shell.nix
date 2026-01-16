@@ -10,6 +10,7 @@ let
   shell = pkgs.mkShell {
     buildInputs = [
       pkgs.go
+      pkgs.gopls
       unstable.golangci-lint
       pkgs.pre-commit
       pkgs.python313Packages.detect-secrets

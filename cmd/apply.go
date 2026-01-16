@@ -20,6 +20,7 @@ func initApply(rootContext cli.RootContext) {
 	var maxParallel *int
 	var stateEnabled *bool
 	var stateFile *string
+	var stateRemoteURI *string
 
 	var applyCmd = &cobra.Command{
 		Use:          "apply",
@@ -27,7 +28,7 @@ func initApply(rootContext cli.RootContext) {
 		Long:         ``,
 		SilenceUsage: true, // do not print usage on run error
 		RunE: func(cmd *cobra.Command, args []string) error {
-			stateCfg := storage.NewStorageConfig(stateEnabled, stateFile)
+			stateCfg := storage.NewStorageConfig(stateEnabled, stateFile, stateRemoteURI)
 			return state.RunWithState(stateCfg, *dryRun, *rootContext.Debug, func(stateRef *model.State) error {
 
 				cmdCtx := cli.ApplyHandlerContext{
@@ -67,6 +68,9 @@ func initApply(rootContext cli.RootContext) {
 
 	stateFile = applyCmd.
 		PersistentFlags().String("state-file", "", "Path to the state file to use for state management. By default, use $XDG_DATA_HOME/.local/share/conduktor/cli-state.json or $HOME/.config/conduktor/cli-state.json")
+
+	stateRemoteURI = applyCmd.
+		PersistentFlags().String("state-remote-uri", "", "Remote storage URI for state management (e.g., s3://bucket/path/, gs://bucket/path/, azblob://container/path/). If provided, remote backend will be used instead of local file.")
 
 	_ = applyCmd.MarkPersistentFlagRequired("file")
 

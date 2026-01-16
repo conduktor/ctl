@@ -18,6 +18,7 @@ func initDelete(rootContext cli.RootContext) {
 	var dryRun *bool
 	var stateEnabled *bool
 	var stateFile *string
+	var stateRemoteURI *string
 
 	var deleteCmd = &cobra.Command{
 		Use:          "delete",
@@ -26,7 +27,7 @@ func initDelete(rootContext cli.RootContext) {
 		Args:         cobra.NoArgs,
 		SilenceUsage: true, // do not print usage on run error
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runDeleteFromFiles(rootContext, *filePath, *recursiveFolder, dryRun, stateEnabled, stateFile)
+			return runDeleteFromFiles(rootContext, *filePath, *recursiveFolder, dryRun, stateEnabled, stateFile, stateRemoteURI)
 		},
 	}
 
@@ -46,14 +47,17 @@ func initDelete(rootContext cli.RootContext) {
 	stateFile = deleteCmd.
 		PersistentFlags().String("state-file", "", "Path to the state file to use for state management. By default, use $XDG_DATA_HOME/.local/share/conduktor/cli-state.json or $HOME/.config/conduktor/cli-state.json")
 
+	stateRemoteURI = deleteCmd.
+		PersistentFlags().String("state-remote-uri", "", "Remote storage URI for state management (e.g., s3://bucket/path/, gs://bucket/path/, azblob://container/path/). If provided, remote backend will be used instead of local file.")
+
 	_ = deleteCmd.MarkFlagRequired("file")
 
 	for name, kind := range rootContext.Catalog.Kind {
 		if cli.IsKindIdentifiedByNameAndVCluster(kind) {
-			byVClusterAndNameDeleteCmd := buildDeleteByVClusterAndNameCmd(rootContext, kind, dryRun, stateEnabled, stateFile)
+			byVClusterAndNameDeleteCmd := buildDeleteByVClusterAndNameCmd(rootContext, kind, dryRun, stateEnabled, stateFile, stateRemoteURI)
 			deleteCmd.AddCommand(byVClusterAndNameDeleteCmd)
 		} else if cli.IsKindInterceptor(kind) {
-			interceptorsDeleteCmd := buildDeleteInterceptorsCmd(rootContext, kind, dryRun, stateEnabled, stateFile)
+			interceptorsDeleteCmd := buildDeleteInterceptorsCmd(rootContext, kind, dryRun, stateEnabled, stateFile, stateRemoteURI)
 			deleteCmd.AddCommand(interceptorsDeleteCmd)
 		} else {
 			flags := kind.GetParentFlag()
@@ -67,7 +71,7 @@ func initDelete(rootContext cli.RootContext) {
 				Aliases:      buildAlias(name),
 				SilenceUsage: true, // do not print usage on run error
 				RunE: func(cmd *cobra.Command, args []string) error {
-					return runDeleteKind(rootContext, kind, args, parentFlagValue, parentQueryFlagValue, dryRun, stateEnabled, stateFile)
+					return runDeleteKind(rootContext, kind, args, parentFlagValue, parentQueryFlagValue, dryRun, stateEnabled, stateFile, stateRemoteURI)
 				},
 			}
 			for i, flag := range kind.GetParentFlag() {
@@ -82,9 +86,9 @@ func initDelete(rootContext cli.RootContext) {
 	}
 }
 
-func runDeleteFromFiles(rootContext cli.RootContext, filePaths []string, recursiveFolder bool, dryRun *bool, stateEnabled *bool, stateFile *string) error {
+func runDeleteFromFiles(rootContext cli.RootContext, filePaths []string, recursiveFolder bool, dryRun *bool, stateEnabled *bool, stateFile *string, stateRemoteURI *string) error {
 
-	stateCfg := storage.NewStorageConfig(stateEnabled, stateFile)
+	stateCfg := storage.NewStorageConfig(stateEnabled, stateFile, stateRemoteURI)
 	return state.RunWithState(stateCfg, *dryRun, *rootContext.Debug, func(stateRef *model.State) error {
 		deleteHandler := cli.NewDeleteHandler(rootContext)
 
@@ -117,7 +121,7 @@ func runDeleteFromFiles(rootContext cli.RootContext, filePaths []string, recursi
 	})
 }
 
-func buildDeleteByVClusterAndNameCmd(rootContext cli.RootContext, kind schema.Kind, dryRun *bool, stateEnabled *bool, stateFile *string) *cobra.Command {
+func buildDeleteByVClusterAndNameCmd(rootContext cli.RootContext, kind schema.Kind, dryRun *bool, stateEnabled *bool, stateFile *string, stateRemoteURI *string) *cobra.Command {
 	const vClusterFlag = "vcluster"
 	name := kind.GetName()
 	var vClusterValue string
@@ -128,7 +132,7 @@ func buildDeleteByVClusterAndNameCmd(rootContext cli.RootContext, kind schema.Ki
 		Aliases:      buildAlias(name),
 		SilenceUsage: true, // do not print usage on run error
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runDeleteByVClusterAndName(rootContext, kind, args[0], vClusterValue, dryRun, stateEnabled, stateFile)
+			return runDeleteByVClusterAndName(rootContext, kind, args[0], vClusterValue, dryRun, stateEnabled, stateFile, stateRemoteURI)
 		},
 	}
 
@@ -137,7 +141,7 @@ func buildDeleteByVClusterAndNameCmd(rootContext cli.RootContext, kind schema.Ki
 	return deleteCmd
 }
 
-func buildDeleteInterceptorsCmd(rootContext cli.RootContext, kind schema.Kind, dryRun *bool, stateEnabled *bool, stateFile *string) *cobra.Command {
+func buildDeleteInterceptorsCmd(rootContext cli.RootContext, kind schema.Kind, dryRun *bool, stateEnabled *bool, stateFile *string, stateRemoteURI *string) *cobra.Command {
 	const vClusterFlag = "vcluster"
 	const groupFlag = "group"
 	const usernameFlag = "username"
@@ -152,7 +156,7 @@ func buildDeleteInterceptorsCmd(rootContext cli.RootContext, kind schema.Kind, d
 		Aliases:      buildAlias(name),
 		SilenceUsage: true, // do not print usage on run error
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runDeleteInterceptor(rootContext, kind, args[0], vClusterValue, groupValue, usernameValue, dryRun, stateEnabled, stateFile)
+			return runDeleteInterceptor(rootContext, kind, args[0], vClusterValue, groupValue, usernameValue, dryRun, stateEnabled, stateFile, stateRemoteURI)
 		},
 	}
 
@@ -163,9 +167,9 @@ func buildDeleteInterceptorsCmd(rootContext cli.RootContext, kind schema.Kind, d
 	return interceptorDeleteCmd
 }
 
-func runDeleteByVClusterAndName(rootContext cli.RootContext, kind schema.Kind, name string, vCluster string, dryRun *bool, stateEnabled *bool, stateFile *string) error {
+func runDeleteByVClusterAndName(rootContext cli.RootContext, kind schema.Kind, name string, vCluster string, dryRun *bool, stateEnabled *bool, stateFile *string, stateRemoteURI *string) error {
 
-	stateCfg := storage.NewStorageConfig(stateEnabled, stateFile)
+	stateCfg := storage.NewStorageConfig(stateEnabled, stateFile, stateRemoteURI)
 	return state.RunWithState(stateCfg, *dryRun, *rootContext.Debug, func(stateRef *model.State) error {
 		deleteHandler := cli.NewDeleteHandler(rootContext)
 
@@ -186,9 +190,9 @@ func runDeleteByVClusterAndName(rootContext cli.RootContext, kind schema.Kind, n
 	})
 }
 
-func runDeleteInterceptor(rootContext cli.RootContext, kind schema.Kind, name string, vCluster string, group string, username string, dryRun *bool, stateEnabled *bool, stateFile *string) error {
+func runDeleteInterceptor(rootContext cli.RootContext, kind schema.Kind, name string, vCluster string, group string, username string, dryRun *bool, stateEnabled *bool, stateFile *string, stateRemoteURI *string) error {
 
-	stateCfg := storage.NewStorageConfig(stateEnabled, stateFile)
+	stateCfg := storage.NewStorageConfig(stateEnabled, stateFile, stateRemoteURI)
 	return state.RunWithState(stateCfg, *dryRun, *rootContext.Debug, func(stateRef *model.State) error {
 		deleteHandler := cli.NewDeleteHandler(rootContext)
 
@@ -216,9 +220,9 @@ func runDeleteKind(
 	kind schema.Kind,
 	args []string,
 	parentFlagValue []*string,
-	parentQueryFlagValue []*string, dryRun *bool, stateEnabled *bool, stateFile *string) error {
+	parentQueryFlagValue []*string, dryRun *bool, stateEnabled *bool, stateFile *string, stateRemoteURI *string) error {
 
-	stateCfg := storage.NewStorageConfig(stateEnabled, stateFile)
+	stateCfg := storage.NewStorageConfig(stateEnabled, stateFile, stateRemoteURI)
 	return state.RunWithState(stateCfg, *dryRun, *rootContext.Debug, func(stateRef *model.State) error {
 		deleteHandler := cli.NewDeleteHandler(rootContext)
 
