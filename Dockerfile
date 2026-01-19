@@ -1,13 +1,16 @@
-FROM golang:1.25.1 AS build
+# Use native platform for build stage
+FROM --platform=$BUILDPLATFORM golang:1.25.1 AS build
 ARG version=unknown
 ARG hash=unknown
 ARG ldflags=
+ARG TARGETOS
+ARG TARGETARCH
 
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . ./
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="$ldflags -X 'github.com/conduktor/ctl/utils.version=$version' -X 'github.com/conduktor/ctl/utils.hash=$hash'" -o /conduktor . 
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="$ldflags -X 'github.com/conduktor/ctl/utils.version=$version' -X 'github.com/conduktor/ctl/utils.hash=$hash'" -o /conduktor . 
 RUN rm -rf /app
 CMD ["/bin/conduktor"]
 

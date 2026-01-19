@@ -183,4 +183,6 @@ jobs:
             ldflags=-s -w
             hash=${{ github.sha }}
             version=${{ github.event.release.tag_name }}
+          cache-to: type=gha,mode=max
+          cache-from: type=gha
 
