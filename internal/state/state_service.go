@@ -33,13 +33,32 @@ func RunWithState(stateCfg storage.StorageConfig, dryrun, debug bool, f func(sta
 
 	// Save the state
 	saveErr := stateSvc.SaveState(stateRef, dryrun, debug)
+
+	// Close the backend if needed
+	closeErr := stateSvc.backend.Close()
+
 	// Combine run and save errors if both occurred
-	return errors.Join(runErr, saveErr)
+	return errors.Join(runErr, saveErr, closeErr)
 }
 
 func NewStateService(config storage.StorageConfig, debug bool) *StateService {
-	// future backends can be added here
-	var backend storage.StorageBackend = storage.NewLocalFileBackend(config.FilePath, debug)
+	var backend storage.StorageBackend
+
+	// Determine which backend to use based on configuration
+	if config.RemoteURI != nil && *config.RemoteURI != "" {
+		// Use remote backend if RemoteURI is provided
+		remoteBackend, err := storage.NewRemoteFileBackend(*config.RemoteURI, debug)
+		if err != nil {
+			// If remote backend initialization fails, log error and fallback to local
+			fmt.Fprintf(os.Stderr, "Failed to initialize remote backend: %v\nFalling back to local file backend.\n", err)
+			backend = storage.NewLocalFileBackend(config.FilePath, debug)
+		} else {
+			backend = remoteBackend
+		}
+	} else {
+		// Use local file backend by default
+		backend = storage.NewLocalFileBackend(config.FilePath, debug)
+	}
 
 	return &StateService{
 		config:  config,
@@ -55,7 +74,7 @@ func (s *StateService) LoadState(debug bool) (*model.State, error) {
 		return model.NewState(), nil
 	}
 
-	fmt.Fprintln(os.Stderr, "Loading state from :", s.backend.DebugString())
+	fmt.Fprintln(os.Stderr, "Loading state from", s.backend.DebugString())
 	state, err := s.backend.LoadState(debug)
 	if err != nil {
 		return nil, NewStateError("could not load state", err)
@@ -78,7 +97,7 @@ func (s *StateService) SaveState(state *model.State, dryrun, debug bool) error {
 		return nil
 	}
 
-	fmt.Fprintln(os.Stderr, "Saving state into :", s.backend.DebugString())
+	fmt.Fprintln(os.Stderr, "Saving state into", s.backend.DebugString())
 	err := s.backend.SaveState(state, debug)
 	if err != nil {
 		return NewStateError("could not save state", err)

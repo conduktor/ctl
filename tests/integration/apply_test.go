@@ -2,11 +2,12 @@ package integration
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"maps"
 	"os"
 	"slices"
 	"testing"
+
+	"gopkg.in/yaml.v3"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -316,9 +317,9 @@ func Test_Apply_With_State_First_Run(t *testing.T) {
 	stdout, stderr, err := runConsoleCommand("apply", "-v", "-f", filePath, "--enable-state", "--state-file", stateFile)
 
 	assert.NoErrorf(t, err, "Unexpected command failed: %v\nStderr: %s", err, stderr)
-	assert.Contains(t, stderr, fmt.Sprintf("Loading state from : Local File %s", stateFile), "Expected loading log")
+	assert.Contains(t, stderr, fmt.Sprintf("Loading state from local File %s", stateFile), "Expected loading log")
 	assert.Contains(t, stderr, "State file does not exist, creating a new one", "Expected new empty state log")
-	assert.Contains(t, stderr, fmt.Sprintf("Saving state into : Local File %s", stateFile), "Expected saving log")
+	assert.Contains(t, stderr, fmt.Sprintf("Saving state into local File %s", stateFile), "Expected saving log")
 
 	expectedOutput := "Group/team-a: Created\n"
 	assert.Equalf(t, expectedOutput, stdout, "Expected stdout to be '%s', got: %s", expectedOutput, stdout)
@@ -343,9 +344,9 @@ func Test_Apply_With_State_Subsequent_Run_No_Changes(t *testing.T) {
 	// First apply to create the resource and state
 	stdout, stderr, err := runConsoleCommand("apply", "-v", "-f", filePath, "--enable-state", "--state-file", stateFile)
 	assert.NoErrorf(t, err, "Initial apply command failed: %v\nStderr: %s", err, stderr)
-	assert.Contains(t, stderr, fmt.Sprintf("Loading state from : Local File %s", stateFile), "Expected loading log")
+	assert.Contains(t, stderr, fmt.Sprintf("Loading state from local File %s", stateFile), "Expected loading log")
 	assert.Contains(t, stderr, "State file does not exist, creating a new one", "Expected new empty state log")
-	assert.Contains(t, stderr, fmt.Sprintf("Saving state into : Local File %s", stateFile), "Expected saving log")
+	assert.Contains(t, stderr, fmt.Sprintf("Saving state into local File %s", stateFile), "Expected saving log")
 
 	stateContent, err := os.ReadFile(stateFile)
 	assert.NoError(t, err, "Failed to read state file")
@@ -353,9 +354,9 @@ func Test_Apply_With_State_Subsequent_Run_No_Changes(t *testing.T) {
 	// Second apply with the same file (should update, not create)
 	stdout, stderr, err = runConsoleCommand("apply", "-v", "-f", filePath, "--enable-state", "--state-file", stateFile)
 	assert.NoErrorf(t, err, "Second apply command failed: %v\nStderr: %s", err, stderr)
-	assert.Contains(t, stderr, fmt.Sprintf("Loading state from : Local File %s", stateFile), "Expected loading log")
+	assert.Contains(t, stderr, fmt.Sprintf("Loading state from local File %s", stateFile), "Expected loading log")
 	// no creating new state log
-	assert.Contains(t, stderr, fmt.Sprintf("Saving state into : Local File %s", stateFile), "Expected saving log")
+	assert.Contains(t, stderr, fmt.Sprintf("Saving state into local File %s", stateFile), "Expected saving log")
 
 	expectedOutput := "Group/team-a: NotChanged\n"
 	assert.Equalf(t, expectedOutput, stdout, "Expected stdout to be '%s', got: %s", expectedOutput, stdout)
@@ -446,9 +447,9 @@ func Test_Apply_With_State_Via_Env_Var(t *testing.T) {
 	stdout, stderr, err := runConsoleCommand("apply", "-v", "-f", filePath)
 
 	assert.NoErrorf(t, err, "Command failed: %v\nStderr: %s", err, stderr)
-	assert.Contains(t, stderr, fmt.Sprintf("Loading state from : Local File %s", stateFile), "Expected loading log")
+	assert.Contains(t, stderr, fmt.Sprintf("Loading state from local File %s", stateFile), "Expected loading log")
 	assert.Contains(t, stderr, "State file does not exist, creating a new one", "Expected new empty state log")
-	assert.Contains(t, stderr, fmt.Sprintf("Saving state into : Local File %s", stateFile), "Expected saving log")
+	assert.Contains(t, stderr, fmt.Sprintf("Saving state into local File %s", stateFile), "Expected saving log")
 
 	expectedOutput := "Group/team-a: Created\n"
 	assert.Equalf(t, expectedOutput, stdout, "Expected stdout to be '%s', got: %s", expectedOutput, stdout)

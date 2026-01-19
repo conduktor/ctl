@@ -7,7 +7,8 @@ import (
 type StorageBackendType string
 
 const (
-	FileBackend StorageBackendType = "file"
+	FileBackend   StorageBackendType = "file"
+	RemoteBackend StorageBackendType = "remote"
 )
 
 type StorageBackend interface {
@@ -15,4 +16,5 @@ type StorageBackend interface {
 	LoadState(debug bool) (*model.State, error)
 	SaveState(state *model.State, debug bool) error
 	DebugString() string
+	Close() error
 }

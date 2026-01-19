@@ -52,7 +52,7 @@ jobs:
 
   docker-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     env:
       IMAGE_NAME: "conduktor-ctl"
       PLATFORMS: "linux/amd64,linux/arm64"
@@ -87,3 +87,5 @@ jobs:
             ldflags=
             hash=${{ github.sha }}
             version=${{ github.ref_name }}
+          cache-to: type=gha,mode=max
+          cache-from: type=gha
