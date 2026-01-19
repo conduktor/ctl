@@ -24,9 +24,9 @@ func NewOpenAPIParser(schema []byte) (*OpenAPIParser, error) {
 	if err != nil {
 		return nil, err
 	}
-	v3Model, errors := doc.BuildV3Model()
-	if len(errors) > 0 {
-		return nil, errors[0]
+	v3Model, err := doc.BuildV3Model()
+	if err != nil {
+		return nil, err
 	}
 
 	return &OpenAPIParser{
@@ -233,9 +233,13 @@ func buildConsoleKindVersion(s *OpenAPIParser, path, kind string, order int, put
 	}
 	schemaJSON, ok := put.RequestBody.Content.Get("application/json")
 	if ok && schemaJSON.Example != nil {
-		data, err := yaml.Marshal(schemaJSON.Example)
-		if err == nil {
-			newKind.ApplyExample = string(data)
+		// Example is a *yaml.Node, we need to decode it first then marshal
+		var example interface{}
+		if err := schemaJSON.Example.Decode(&example); err == nil {
+			data, err := yaml.Marshal(example)
+			if err == nil {
+				newKind.ApplyExample = string(data)
+			}
 		}
 	}
 	if strict {
