@@ -34,8 +34,8 @@ func TestGetKindWithYamlFromGateway(t *testing.T) {
 						ParentPathParam:    []string{},
 						ListQueryParameter: map[string]FlagParameterOption{},
 						GetAvailable:       true,
-						ApplyExample: `kind: VirtualCluster
-apiVersion: gateway/v2
+						ApplyExample: `apiVersion: gateway/v2
+kind: VirtualCluster
 metadata:
     name: vcluster1
 spec:
@@ -74,8 +74,8 @@ spec:
 						},
 						GetAvailable: false,
 						Order:        8,
-						ApplyExample: `kind: AliasTopic
-apiVersion: gateway/v2
+						ApplyExample: `apiVersion: gateway/v2
+kind: AliasTopic
 metadata:
     name: name1
     vCluster: vCluster1
@@ -110,19 +110,19 @@ spec:
 						},
 						GetAvailable: false,
 						Order:        9,
-						ApplyExample: `kind: ConcentrationRule
-apiVersion: gateway/v2
+						ApplyExample: `apiVersion: gateway/v2
+kind: ConcentrationRule
 metadata:
     name: concentrationRule1
     vCluster: vCluster1
 spec:
-    pattern: topic.*
-    physicalTopics:
-        delete: topic
-        compact: compact_topic
-        deleteCompact: compact_delete_topic
     autoManaged: false
     offsetCorrectness: false
+    pattern: topic.*
+    physicalTopics:
+        compact: compact_topic
+        delete: topic
+        deleteCompact: compact_delete_topic
 `,
 					},
 				},
@@ -133,21 +133,21 @@ spec:
 						Name:            "GatewayGroup",
 						ListPath:        "/gateway/v2/group",
 						ParentPathParam: []string{},
-						ApplyExample: `kind: GatewayGroup
-apiVersion: gateway/v2
+						ApplyExample: `apiVersion: gateway/v2
+kind: GatewayGroup
 metadata:
     name: group1
 spec:
-    members:
-        - vCluster: vCluster1
-          name: serviceAccount1
-        - vCluster: vCluster2
-          name: serviceAccount2
-        - vCluster: vCluster3
-          name: serviceAccount3
     externalGroups:
         - GROUP_READER
         - GROUP_WRITER
+    members:
+        - name: serviceAccount1
+          vCluster: vCluster1
+        - name: serviceAccount2
+          vCluster: vCluster2
+        - name: serviceAccount3
+          vCluster: vCluster3
 `,
 						ListQueryParameter: map[string]FlagParameterOption{
 							"showDefaults": {
@@ -191,15 +191,15 @@ spec:
 						},
 						GetAvailable: false,
 						Order:        10,
-						ApplyExample: `kind: GatewayServiceAccount
-apiVersion: gateway/v2
+						ApplyExample: `apiVersion: gateway/v2
+kind: GatewayServiceAccount
 metadata:
     name: user1
     vCluster: vcluster1
 spec:
-    type: EXTERNAL
     externalNames:
         - externalName
+    type: EXTERNAL
 `,
 					},
 				},
@@ -237,19 +237,19 @@ spec:
 								Type:     "string",
 							},
 						},
-						ApplyExample: `kind: Interceptor
-apiVersion: gateway/v2
+						ApplyExample: `apiVersion: gateway/v2
+kind: Interceptor
 metadata:
     name: yellow_cars_filter
     scope:
         vCluster: vCluster1
 spec:
     comment: Filter yellow cars
+    config:
+        statement: SELECT '$.type' as type, '$.price' as price FROM cars WHERE '$.color' = 'yellow'
+        virtualTopic: yellow_cars
     pluginClass: io.conduktor.gateway.interceptor.VirtualSqlTopicPlugin
     priority: 1
-    config:
-        virtualTopic: yellow_cars
-        statement: SELECT '$.type' as type, '$.price' as price FROM cars WHERE '$.color' = 'yellow'
 `,
 						GetAvailable: false,
 						Order:        12,

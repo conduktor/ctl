@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand/v2"
 	"net/http"
 	"os"
 	"os/exec"
@@ -13,8 +14,6 @@ import (
 	"testing"
 	"text/template"
 	"time"
-
-	"golang.org/x/exp/rand"
 
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
@@ -295,13 +294,13 @@ func FixtureRandomGatewayInterceptor(t *testing.T) (string, any) {
 
 	randomSuffix := strconv.FormatInt(time.Now().UnixNano(), 10)
 	name := fmt.Sprintf("interceptor-%s", randomSuffix)
-	min := 1 + rand.Intn(5)
-	max := min + rand.Intn(5)
+	min := 1 + rand.IntN(5)
+	max := min + rand.IntN(5)
 	data := map[string]string{
 		"name":              name,
 		"vCluster":          "passthrough",
 		"username":          "user",
-		"priority":          strconv.Itoa(rand.Intn(100)),
+		"priority":          strconv.Itoa(rand.IntN(100)),
 		"topic":             fmt.Sprintf("topic-%s", randomSuffix),
 		"min_num_partition": strconv.Itoa(min),
 		"max_num_partition": strconv.Itoa(max),
