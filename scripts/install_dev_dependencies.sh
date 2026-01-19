@@ -34,6 +34,5 @@ echo "Installing development dependencies..."
 
 install_dependency "pre-commit"
 install_dependency "golangci-lint"
-install_dependency "detect-secrets"
 
 echo "All development dependencies installed successfully!"

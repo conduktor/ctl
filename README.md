@@ -215,7 +215,7 @@ To install git hooks simply run
 ```bash
 make setup-hooks
 ```
-It will install (if not already in `PATH`) tools like [pre-commit](https://pre-commit.com/#install), [detect-secrets](https://github.com/Yelp/detect-secrets/tree/master), [golangci-lint](https://github.com/golangci/golangci-lint) before installing secrets.
+It will install (if not already in `PATH`) tools like [pre-commit](https://pre-commit.com/#install), [gitleaks](https://github.com/gitleaks/gitleaks), [golangci-lint](https://github.com/golangci/golangci-lint) before installing secrets.
 
 
 ## Contributing
