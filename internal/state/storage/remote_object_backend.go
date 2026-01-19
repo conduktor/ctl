@@ -211,7 +211,7 @@ func (b RemoteFileBackend) SaveState(state *model.State, debug bool) error {
 }
 
 func (b RemoteFileBackend) DebugString() string {
-	return fmt.Sprintf("Remote Storage: URI=%s, object=%s", b.BucketURI, b.ObjectPath)
+	return fmt.Sprintf("remote storage: URI=%s, object=%s", b.BucketURI, b.ObjectPath)
 }
 
 // Close closes the bucket connection.

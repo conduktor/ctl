@@ -87,7 +87,7 @@ func (b LocalFileBackend) SaveState(state *model.State, debug bool) error {
 }
 
 func (b LocalFileBackend) DebugString() string {
-	return fmt.Sprintf("Local File %s", b.FilePath)
+	return fmt.Sprintf("local File %s", b.FilePath)
 }
 
 func (b LocalFileBackend) Close() error {

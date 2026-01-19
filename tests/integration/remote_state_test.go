@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -28,7 +29,7 @@ func Test_Apply_With_Remote_State_MinIO(t *testing.T) {
 	fmt.Println("Test CLI Apply with remote state backend (MinIO)")
 
 	// Generate unique state path for this test
-	statePath := fmt.Sprintf("%s/test-apply-%d.json", testStatePrefix, os.Getpid())
+	statePath := fmt.Sprintf("%s/test-apply-%v.json", testStatePrefix, time.Now().Unix())
 	stateURI := buildMinioURI(statePath)
 
 	// Clean up any existing state file before test
@@ -44,13 +45,13 @@ func Test_Apply_With_Remote_State_MinIO(t *testing.T) {
 	defer os.Remove(tmpFile)
 
 	// Apply with remote state
-	SetCLIConsoleEnv()
-	stdout, stderr, err := RunCommand("apply", "-f", tmpFile, "--enable-state", "--state-remote-uri", stateURI)
+	setS3Env(t)
+	stdout, stderr, err := runConsoleCommand("apply", "-f", tmpFile, "--enable-state", "--state-remote-uri", stateURI)
 
 	assert.NoErrorf(t, err, "Apply command failed: %v\nStderr: %s", err, stderr)
 	assert.Containsf(t, stdout, "User/"+userName, "Expected user to be created")
 	assert.Containsf(t, stdout, "Group/"+groupName, "Expected group to be created")
-	assert.Containsf(t, stderr, "Saving state into : Remote Storage", "Expected state to be saved to remote storage")
+	assert.Containsf(t, stderr, "Saving state into remote storage", "Expected state to be saved to remote storage")
 
 	// Verify state file exists in MinIO
 	stateExists := checkMinioStateExists(t, statePath)
@@ -62,7 +63,7 @@ func Test_Apply_With_Remote_State_MinIO(t *testing.T) {
 	assert.Containsf(t, stateContent, groupName, "State should contain group name")
 
 	// Cleanup resources
-	stdout, stderr, err = RunCommand("delete", "-f", tmpFile)
+	stdout, stderr, err = runConsoleCommand("delete", "-f", tmpFile)
 	assert.NoErrorf(t, err, "Cleanup command failed: %v\nStderr: %s", err, stderr)
 }
 
@@ -71,7 +72,7 @@ func Test_Delete_With_Remote_State_MinIO(t *testing.T) {
 	fmt.Println("Test CLI Delete with remote state backend (MinIO)")
 
 	// Generate unique state path for this test
-	statePath := fmt.Sprintf("%s/test-delete-%d.json", testStatePrefix, os.Getpid())
+	statePath := fmt.Sprintf("%s/test-delete-%v.json", testStatePrefix, time.Now().Unix())
 	stateURI := buildMinioURI(statePath)
 
 	// Clean up any existing state file
@@ -86,8 +87,8 @@ func Test_Delete_With_Remote_State_MinIO(t *testing.T) {
 	defer os.Remove(tmpFile)
 
 	// Apply with remote state
-	SetCLIConsoleEnv()
-	stdout, stderr, err := RunCommand("apply", "-f", tmpFile, "--enable-state", "--state-remote-uri", stateURI)
+	setS3Env(t)
+	stdout, stderr, err := runConsoleCommand("apply", "-f", tmpFile, "--enable-state", "--state-remote-uri", stateURI)
 	assert.NoErrorf(t, err, "Apply command failed: %v\nStderr: %s", err, stderr)
 	assert.Containsf(t, stdout, "Group/"+groupName, "Expected group to be created")
 
@@ -95,7 +96,8 @@ func Test_Delete_With_Remote_State_MinIO(t *testing.T) {
 	assert.True(t, checkMinioStateExists(t, statePath), "State file should exist after apply")
 
 	// Delete with remote state
-	stdout, stderr, err = RunCommand("delete", "-f", tmpFile, "--enable-state", "--state-remote-uri", stateURI)
+	setS3Env(t)
+	stdout, stderr, err = runConsoleCommand("delete", "-f", tmpFile, "--enable-state", "--state-remote-uri", stateURI)
 	assert.NoErrorf(t, err, "Delete command failed: %v\nStderr: %s", err, stderr)
 	assert.Containsf(t, stdout, "Group/"+groupName, "Expected group to be deleted")
 
@@ -112,7 +114,7 @@ func Test_Apply_Removed_Resources_With_Remote_State_MinIO(t *testing.T) {
 	fmt.Println("Test CLI Apply with removed resources using remote state (MinIO)")
 
 	// Generate unique state path for this test
-	statePath := fmt.Sprintf("%s/test-removed-%d.json", testStatePrefix, os.Getpid())
+	statePath := fmt.Sprintf("%s/test-removed-%v.json", testStatePrefix, time.Now().Unix())
 	stateURI := buildMinioURI(statePath)
 
 	// Clean up
@@ -127,8 +129,8 @@ func Test_Apply_Removed_Resources_With_Remote_State_MinIO(t *testing.T) {
 	tmpFile1 := writeTempYAMLFile(t, []any{user1YAML, user2YAML})
 	defer os.Remove(tmpFile1)
 
-	SetCLIConsoleEnv()
-	stdout, stderr, err := RunCommand("apply", "-f", tmpFile1, "--enable-state", "--state-remote-uri", stateURI)
+	setS3Env(t)
+	stdout, stderr, err := runConsoleCommand("apply", "-f", tmpFile1, "--enable-state", "--state-remote-uri", stateURI)
 	assert.NoErrorf(t, err, "First apply failed: %v\nStderr: %s", err, stderr)
 	assert.Containsf(t, stdout, "User/"+user1Name, "Expected user1 to be created")
 	assert.Containsf(t, stdout, "User/"+user2Name, "Expected user2 to be created")
@@ -137,11 +139,12 @@ func Test_Apply_Removed_Resources_With_Remote_State_MinIO(t *testing.T) {
 	tmpFile2 := writeTempYAMLFile(t, []any{user1YAML})
 	defer os.Remove(tmpFile2)
 
-	stdout, stderr, err = RunCommand("apply", "-f", tmpFile2, "--enable-state", "--state-remote-uri", stateURI)
+	setS3Env(t)
+	stdout, stderr, err = runConsoleCommand("apply", "-f", tmpFile2, "--enable-state", "--state-remote-uri", stateURI)
 	assert.NoErrorf(t, err, "Second apply failed: %v\nStderr: %s", err, stderr)
 
 	// Should show that user2 was deleted automatically
-	assert.Containsf(t, stderr, "Deleting removed resources", "Expected automatic deletion message")
+	assert.Containsf(t, stderr, "Deleting resources missing from state", "Expected automatic deletion message")
 	assert.Containsf(t, stdout, "User/"+user2Name, "Expected user2 to be auto-deleted")
 
 	// Verify only user1 remains in state
@@ -150,7 +153,7 @@ func Test_Apply_Removed_Resources_With_Remote_State_MinIO(t *testing.T) {
 	assert.NotContainsf(t, stateContent, user2Name, "State should not contain removed user2")
 
 	// Cleanup remaining resource
-	stdout, stderr, err = RunCommand("delete", "-f", tmpFile2)
+	stdout, stderr, err = runConsoleCommand("delete", "-f", tmpFile2)
 	assert.NoErrorf(t, err, "Cleanup command failed: %v\nStderr: %s", err, stderr)
 }
 
@@ -159,7 +162,7 @@ func Test_Apply_With_Custom_State_Filename(t *testing.T) {
 	fmt.Println("Test CLI Apply with custom state filename in URI")
 
 	// Use a custom filename ending in .json
-	statePath := fmt.Sprintf("%s/my-custom-state-%d.json", testStatePrefix, os.Getpid())
+	statePath := fmt.Sprintf("%s/my-custom-state-%v.json", testStatePrefix, time.Now().Unix())
 	stateURI := buildMinioURI(statePath)
 
 	// Clean up
@@ -172,8 +175,8 @@ func Test_Apply_With_Custom_State_Filename(t *testing.T) {
 	defer os.Remove(tmpFile)
 
 	// Apply with custom state filename
-	SetCLIConsoleEnv()
-	stdout, stderr, err := RunCommand("apply", "-f", tmpFile, "--enable-state", "--state-remote-uri", stateURI)
+	setS3Env(t)
+	stdout, stderr, err := runConsoleCommand("apply", "-f", tmpFile, "--enable-state", "--state-remote-uri", stateURI)
 	assert.NoErrorf(t, err, "Apply command failed: %v\nStderr: %s", err, stderr)
 	assert.Containsf(t, stdout, "Group/"+groupName, "Expected group to be created")
 
@@ -181,11 +184,25 @@ func Test_Apply_With_Custom_State_Filename(t *testing.T) {
 	assert.True(t, checkMinioStateExists(t, statePath), "State file should exist with custom name")
 
 	// Cleanup
-	stdout, stderr, err = RunCommand("delete", "-f", tmpFile)
+	stdout, stderr, err = runConsoleCommand("delete", "-f", tmpFile)
 	assert.NoErrorf(t, err, "Cleanup command failed: %v\nStderr: %s", err, stderr)
 }
 
 // Helper functions
+
+func setS3Env(t *testing.T) {
+	err := os.Setenv("AWS_ACCESS_KEY_ID", minioAccessKey)
+	require.NoError(t, err, "Failed to set AWS_ACCESS_KEY_ID")
+	err = os.Setenv("AWS_SECRET_ACCESS_KEY", minioSecretKey)
+	require.NoError(t, err, "Failed to set AWS_SECRET_ACCESS_KEY")
+}
+
+func unsetS3Env(t *testing.T) {
+	err := os.Unsetenv("AWS_ACCESS_KEY_ID")
+	require.NoError(t, err, "Failed to unset AWS_ACCESS_KEY_ID")
+	err = os.Unsetenv("AWS_SECRET_ACCESS_KEY")
+	require.NoError(t, err, "Failed to unset AWS_SECRET_ACCESS_KEY")
+}
 
 func buildMinioURI(statePath string) string {
 	// Build S3-compatible URI for MinIO
@@ -199,10 +216,8 @@ func checkMinioStateExists(t *testing.T, statePath string) bool {
 		minioBucket, minioRegion, minioEndpoint)
 
 	// Set AWS credentials for MinIO
-	os.Setenv("AWS_ACCESS_KEY_ID", minioAccessKey)
-	os.Setenv("AWS_SECRET_ACCESS_KEY", minioSecretKey)
-	defer os.Unsetenv("AWS_ACCESS_KEY_ID")
-	defer os.Unsetenv("AWS_SECRET_ACCESS_KEY")
+	setS3Env(t)
+	defer unsetS3Env(t)
 
 	bucket, err := blob.OpenBucket(ctx, bucketURL)
 	if err != nil {
@@ -226,10 +241,8 @@ func readMinioState(t *testing.T, statePath string) string {
 		minioBucket, minioRegion, minioEndpoint)
 
 	// Set AWS credentials for MinIO
-	os.Setenv("AWS_ACCESS_KEY_ID", minioAccessKey)
-	os.Setenv("AWS_SECRET_ACCESS_KEY", minioSecretKey)
-	defer os.Unsetenv("AWS_ACCESS_KEY_ID")
-	defer os.Unsetenv("AWS_SECRET_ACCESS_KEY")
+	setS3Env(t)
+	defer unsetS3Env(t)
 
 	bucket, err := blob.OpenBucket(ctx, bucketURL)
 	require.NoError(t, err, "Failed to open bucket")
@@ -251,10 +264,8 @@ func cleanupMinioState(t *testing.T, statePath string) {
 		minioBucket, minioRegion, minioEndpoint)
 
 	// Set AWS credentials for MinIO
-	os.Setenv("AWS_ACCESS_KEY_ID", minioAccessKey)
-	os.Setenv("AWS_SECRET_ACCESS_KEY", minioSecretKey)
-	defer os.Unsetenv("AWS_ACCESS_KEY_ID")
-	defer os.Unsetenv("AWS_SECRET_ACCESS_KEY")
+	setS3Env(t)
+	defer unsetS3Env(t)
 
 	bucket, err := blob.OpenBucket(ctx, bucketURL)
 	if err != nil {

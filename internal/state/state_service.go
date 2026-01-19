@@ -74,7 +74,7 @@ func (s *StateService) LoadState(debug bool) (*model.State, error) {
 		return model.NewState(), nil
 	}
 
-	fmt.Fprintln(os.Stderr, "Loading state from :", s.backend.DebugString())
+	fmt.Fprintln(os.Stderr, "Loading state from", s.backend.DebugString())
 	state, err := s.backend.LoadState(debug)
 	if err != nil {
 		return nil, NewStateError("could not load state", err)
@@ -97,7 +97,7 @@ func (s *StateService) SaveState(state *model.State, dryrun, debug bool) error {
 		return nil
 	}
 
-	fmt.Fprintln(os.Stderr, "Saving state into :", s.backend.DebugString())
+	fmt.Fprintln(os.Stderr, "Saving state into", s.backend.DebugString())
 	err := s.backend.SaveState(state, debug)
 	if err != nil {
 		return NewStateError("could not save state", err)
