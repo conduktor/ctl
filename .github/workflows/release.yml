@@ -36,8 +36,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: go mod download
+        run: go mod download # Download dependencies
       - name: run test
-        run: ./test_final_exec.sh
+        run: |
+         echo "Starting integration tests"
+         INTEGRATION_TESTS=true go test ./tests/integration/... -v -timeout 30m
+         echo "Integration tests completed"
+
+         echo "Running final exec script"
+         ./scripts/test_final_exec.sh
 
   build-exec:
     needs: [unit-test, integration-test]
