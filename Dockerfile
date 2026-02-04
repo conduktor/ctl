@@ -10,7 +10,7 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . ./
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="$ldflags -X 'github.com/conduktor/ctl/utils.version=$version' -X 'github.com/conduktor/ctl/utils.hash=$hash'" -o /conduktor . 
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="$ldflags -X 'github.com/conduktor/ctl/internal/utils.version=$version' -X 'github.com/conduktor/ctl/internal/utils.hash=$hash'" -o /conduktor . 
 RUN rm -rf /app
 CMD ["/bin/conduktor"]
 
