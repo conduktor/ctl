@@ -60,13 +60,15 @@ jobs:
         goarch: [amd64, arm64]
     steps:
       - uses: actions/checkout@v4
-      - uses: wangyoucao577/go-release-action@v1.48
+      - uses: wangyoucao577/go-release-action@v1.55
+        env:
+          CGO_ENABLED : 0 # disable cgo for static linking
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           goos: ${{ matrix.goos }}
           goarch: ${{ matrix.goarch }}
           goversion: "${{ env.GO_VERSION }}"
-          ldflags: -s -w -X 'github.com/conduktor/ctl/utils.version=${{ github.event.release.tag_name }}' -X 'github.com/conduktor/ctl/utils.hash=${{ github.sha }}'
+          ldflags: -s -w -X 'github.com/conduktor/ctl/internal/utils.version=${{ github.event.release.tag_name }}' -X 'github.com/conduktor/ctl/internal/utils.hash=${{ github.sha }}'
           project_path: "./"
           binary_name: "conduktor"
 
