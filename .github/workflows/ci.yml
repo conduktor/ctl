@@ -43,6 +43,8 @@ jobs:
       - name: go mod download
         run: go mod download # Download dependencies
       - name: run tests
+        env:
+          CDK_LICENSE: ${{ secrets.LICENSE_V3_CONDUKTOR_DEV }}
         run: |
          INTEGRATION_TESTS=true go test ./tests/integration/... -v -timeout 30m
          echo "Integration tests completed"
