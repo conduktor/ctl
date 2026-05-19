@@ -366,6 +366,27 @@ func (client *Client) GetFromResource(res *resource.Resource) (resource.Resource
 	return resource.Resource{}, fmt.Errorf("could not find any matching resource")
 }
 
+// GetTemplate fetches an admin-curated resource template by name from the new
+// Console template API. The endpoint is /public/console/v2/{kebab-kind}-template/{name}
+// (e.g. /public/console/v2/topic-template/high-partition-topic).
+//
+// Returns 404 when the server doesn't support resource templates yet, which the
+// caller surfaces as a clear error — older Console versions stay supported because
+// the offline template fallback (without a name arg) doesn't go through this path.
+func (client *Client) GetTemplate(kindKebabCase, templateName string) (resource.Resource, error) {
+	var result resource.Resource
+	client.setAuthMethodFromEnvIfNeeded()
+	url := fmt.Sprintf("%s/public/console/v2/%s-template/%s", client.baseURL, kindKebabCase, templateName)
+	resp, err := client.client.R().Get(url)
+	if err != nil {
+		return result, err
+	} else if resp.IsError() {
+		return result, fmt.Errorf("error fetching template %s-template/%s, got status code: %d:\n %s", kindKebabCase, templateName, resp.StatusCode(), string(resp.Body()))
+	}
+	err = json.Unmarshal(resp.Body(), &result)
+	return result, err
+}
+
 func (client *Client) Run(run schema.Run, pathValue []string, queryParams map[string]string, body interface{}) ([]byte, error) {
 	if run.BackendType != schema.CONSOLE {
 		return nil, fmt.Errorf("Only console backend type is supported by console client")

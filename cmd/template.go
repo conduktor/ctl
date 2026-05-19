@@ -6,7 +6,10 @@ import (
 	"os"
 
 	"github.com/conduktor/ctl/internal/cli"
+	"github.com/conduktor/ctl/internal/utils"
+	"github.com/conduktor/ctl/pkg/schema"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 )
 
 var templateCmd = &cobra.Command{
@@ -32,10 +35,10 @@ func initTemplate(rootContext cli.RootContext) {
 	// Add all kinds to the 'template' command
 	for name, kind := range rootContext.Catalog.Kind {
 		kindCmd := &cobra.Command{
-			Use:     name,
+			Use:     name + " [template-name]",
 			Short:   "Get a yaml example for resource of kind " + name,
-			Args:    cobra.NoArgs,
-			Long:    `If name not provided it will list all resource`,
+			Args:    cobra.MaximumNArgs(1),
+			Long:    `Without a name, returns a built-in example. With a name, fetches the matching server-side template (requires a Conduktor Console that supports resource templates).`,
 			Aliases: buildAlias(name),
 			PreRun: func(cmd *cobra.Command, args []string) {
 				if edit != nil && *edit && (file == nil || *file == "") {
@@ -48,14 +51,24 @@ func initTemplate(rootContext cli.RootContext) {
 				}
 			},
 			Run: func(cmd *cobra.Command, args []string) {
-				example := kind.GetLatestKindVersion().GetApplyExample()
+				var example string
+				if len(args) == 1 {
+					var err error
+					example, err = fetchTemplateByName(rootContext, name, args[0])
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "%s\n", err)
+						os.Exit(1)
+					}
+				} else {
+					example = kind.GetLatestKindVersion().GetApplyExample()
+				}
 				if example == "" {
 					fmt.Fprintf(os.Stderr, "No template for kind %s\n", name)
 					os.Exit(1)
 				} else {
 					if file == nil || *file == "" {
 						fmt.Println("---")
-						fmt.Println(kind.GetLatestKindVersion().GetApplyExample())
+						fmt.Println(example)
 					} else {
 						_, err := os.Stat(*file)
 						if err == nil {
@@ -81,7 +94,7 @@ func initTemplate(rootContext cli.RootContext) {
 							fmt.Fprintf(os.Stderr, "Error writing to file %s: %s\n", *file, err)
 							os.Exit(4)
 						}
-						_, err = w.WriteString(kind.GetLatestKindVersion().GetApplyExample())
+						_, err = w.WriteString(example)
 						if err != nil {
 							fmt.Fprintf(os.Stderr, "Error writing to file %s: %s\n", *file, err)
 							os.Exit(4)
@@ -98,6 +111,50 @@ func initTemplate(rootContext cli.RootContext) {
 		}
 		templateCmd.AddCommand(kindCmd)
 	}
+}
+
+// fetchTemplateByName fetches an admin-curated server-side template named
+// `templateName` for the given resource kind (e.g. "Topic") and renders it as a YAML
+// resource of that kind. The template's `spec.defaults` carries the metadata + spec
+// that should be used when instantiating the underlying resource.
+func fetchTemplateByName(rootContext cli.RootContext, kindName, templateName string) (string, error) {
+	baseKind, ok := rootContext.Catalog.Kind[kindName]
+	if !ok {
+		return "", fmt.Errorf("Unknown kind %s", kindName)
+	}
+
+	res, err := consoleAPIClient().GetTemplate(utils.CamelToKebab(kindName), templateName)
+	if err != nil {
+		return "", err
+	}
+
+	return renderTemplateAsKind(res.Spec, &baseKind)
+}
+
+// renderTemplateAsKind takes a template's `spec` (with a `defaults` key holding
+// metadata and spec) and turns it into a YAML resource of the given base kind.
+func renderTemplateAsKind(templateSpec map[string]interface{}, baseKind *schema.Kind) (string, error) {
+	defaults, ok := templateSpec["defaults"].(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("Template response is missing spec.defaults")
+	}
+
+	out := map[string]interface{}{
+		"apiVersion": fmt.Sprintf("v%d", baseKind.MaxVersion()),
+		"kind":       baseKind.GetName(),
+	}
+	if metadata, ok := defaults["metadata"]; ok {
+		out["metadata"] = metadata
+	}
+	if spec, ok := defaults["spec"]; ok {
+		out["spec"] = spec
+	}
+
+	data, err := yaml.Marshal(out)
+	if err != nil {
+		return "", fmt.Errorf("Error marshaling template as YAML: %s", err)
+	}
+	return string(data), nil
 }
 
 func editAndApply(rootContext cli.RootContext, edit *bool, file *string, apply *bool) {
