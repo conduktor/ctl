@@ -189,6 +189,12 @@ You can also fetch a server-side template curated in Console by passing its name
 conduktor template Topic high-partition-topic
 ```
 
+To discover what's available, use `--list` (script-friendly) or `--interactive` (numbered prompt):
+```
+conduktor template Topic --list
+conduktor template Topic --interactive
+```
+
 ### Development
 
 #### How to run:
