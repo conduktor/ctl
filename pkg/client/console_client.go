@@ -366,6 +366,22 @@ func (client *Client) GetFromResource(res *resource.Resource) (resource.Resource
 	return resource.Resource{}, fmt.Errorf("could not find any matching resource")
 }
 
+// ListTemplates fetches all admin-curated resource templates of a given kind
+// from the Console template API. Endpoint: /public/console/v2/{kebab-kind}-template.
+func (client *Client) ListTemplates(kindKebabCase string) ([]resource.Resource, error) {
+	var result []resource.Resource
+	client.setAuthMethodFromEnvIfNeeded()
+	url := fmt.Sprintf("%s/public/console/v2/%s-template", client.baseURL, kindKebabCase)
+	resp, err := client.client.R().Get(url)
+	if err != nil {
+		return result, err
+	} else if resp.IsError() {
+		return result, fmt.Errorf("error listing templates %s-template, got status code: %d:\n %s", kindKebabCase, resp.StatusCode(), string(resp.Body()))
+	}
+	err = json.Unmarshal(resp.Body(), &result)
+	return result, err
+}
+
 // GetTemplate fetches an admin-curated resource template by name from the new
 // Console template API. The endpoint is /public/console/v2/{kebab-kind}-template/{name}
 // (e.g. /public/console/v2/topic-template/high-partition-topic).
