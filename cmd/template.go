@@ -6,10 +6,9 @@ import (
 	"os"
 
 	"github.com/conduktor/ctl/internal/cli"
+	"github.com/conduktor/ctl/internal/printutils"
 	"github.com/conduktor/ctl/internal/utils"
-	"github.com/conduktor/ctl/pkg/schema"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 )
 
 var templateCmd = &cobra.Command{
@@ -140,33 +139,7 @@ func fetchTemplateByName(rootContext cli.RootContext, kindName, templateName str
 		return "", err
 	}
 
-	return renderTemplateAsKind(res.Spec, &baseKind)
-}
-
-// renderTemplateAsKind takes a template's `spec` (with a `defaults` key holding
-// metadata and spec) and turns it into a YAML resource of the given base kind.
-func renderTemplateAsKind(templateSpec map[string]interface{}, baseKind *schema.Kind) (string, error) {
-	defaults, ok := templateSpec["defaults"].(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("Template response is missing spec.defaults")
-	}
-
-	out := map[string]interface{}{
-		"apiVersion": fmt.Sprintf("v%d", baseKind.MaxVersion()),
-		"kind":       baseKind.GetName(),
-	}
-	if metadata, ok := defaults["metadata"]; ok {
-		out["metadata"] = metadata
-	}
-	if spec, ok := defaults["spec"]; ok {
-		out["spec"] = spec
-	}
-
-	data, err := yaml.Marshal(out)
-	if err != nil {
-		return "", fmt.Errorf("Error marshaling template as YAML: %s", err)
-	}
-	return string(data), nil
+	return printutils.RenderTemplateAsKind(res.Spec, baseKind.GetName(), baseKind.MaxVersion())
 }
 
 func editAndApply(rootContext cli.RootContext, edit *bool, file *string, apply *bool) {

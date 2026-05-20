@@ -1,17 +1,8 @@
-package cmd
+package printutils
 
-import (
-	"testing"
-
-	"github.com/conduktor/ctl/pkg/schema"
-)
+import "testing"
 
 func TestRenderTemplateAsKindBuildsResourceFromDefaults(t *testing.T) {
-	topic := schema.NewKind(2, &schema.ConsoleKindVersion{
-		Name:     "Topic",
-		ListPath: "/public/kafka/v2/cluster/{cluster}/topic",
-	})
-
 	templateSpec := map[string]interface{}{
 		"displayName": "High Partition Topic",
 		"description": "Optimised for high throughput",
@@ -28,7 +19,7 @@ func TestRenderTemplateAsKindBuildsResourceFromDefaults(t *testing.T) {
 		},
 	}
 
-	got, err := renderTemplateAsKind(templateSpec, &topic)
+	got, err := RenderTemplateAsKind(templateSpec, "Topic", 2)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
