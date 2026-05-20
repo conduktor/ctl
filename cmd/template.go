@@ -30,10 +30,12 @@ func initTemplate(rootContext cli.RootContext) {
 	var edit *bool
 	var apply *bool
 	var interactive *bool
+	var list *bool
 	file = templateCmd.PersistentFlags().StringP("output", "o", "", "Write example to file")
 	edit = templateCmd.PersistentFlags().BoolP("edit", "e", false, "Edit the YAML file post-creation; this works only with --output. It will the EDITOR environment variable or nano if not set.")
 	apply = templateCmd.PersistentFlags().BoolP("apply", "a", false, "Apply the YAML file post-editing; this works only with --edit.")
 	interactive = templateCmd.PersistentFlags().BoolP("interactive", "i", false, "List server-side templates for the kind and prompt to pick one. Cannot be combined with a template name.")
+	list = templateCmd.PersistentFlags().BoolP("list", "l", false, "List available server-side template names for the kind, one per line, and exit. Cannot be combined with a template name or --interactive.")
 
 	// Add all kinds to the 'template' command
 	for name, kind := range rootContext.Catalog.Kind {
@@ -56,8 +58,23 @@ func initTemplate(rootContext cli.RootContext) {
 					fmt.Fprintln(os.Stderr, "Cannot use --interactive with a template name")
 					os.Exit(12)
 				}
+				if list != nil && *list && len(args) > 0 {
+					fmt.Fprintln(os.Stderr, "Cannot use --list with a template name")
+					os.Exit(13)
+				}
+				if list != nil && *list && interactive != nil && *interactive {
+					fmt.Fprintln(os.Stderr, "Cannot use --list with --interactive")
+					os.Exit(14)
+				}
 			},
 			Run: func(cmd *cobra.Command, args []string) {
+				if list != nil && *list {
+					if err := listServerTemplates(rootContext, name); err != nil {
+						fmt.Fprintf(os.Stderr, "%s\n", err)
+						os.Exit(1)
+					}
+					return
+				}
 				var example string
 				if len(args) == 1 {
 					var err error
@@ -159,6 +176,22 @@ func fetchTemplateByName(rootContext cli.RootContext, kindName, templateName str
 	}
 
 	return printutils.RenderTemplateAsKind(res.Spec, baseKind.GetName(), baseKind.MaxVersion())
+}
+
+// listServerTemplates prints the names of all server-side templates for the
+// given kind to stdout, one per line.
+func listServerTemplates(rootContext cli.RootContext, kindName string) error {
+	if !kindsSupportingTemplates[kindName] {
+		return fmt.Errorf("kind %s does not support resource templates (supported kinds: Topic, Connector)", kindName)
+	}
+	templates, err := consoleAPIClient().ListTemplates(utils.CamelToKebab(kindName))
+	if err != nil {
+		return err
+	}
+	for _, t := range templates {
+		fmt.Println(t.Name)
+	}
+	return nil
 }
 
 // pickServerTemplate fetches the list of server-side templates for the given
