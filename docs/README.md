@@ -134,9 +134,11 @@ conduktor edit consumergroup my-group
 #### `template`
 Generate YAML templates for resources.
 
+Without a name, returns a built-in example for the kind. With a name, fetches a server-side resource template curated in Console — currently supported for `Topic` and `Connector` only.
+
 **Usage:**
 ```bash
-conduktor template <resource-kind>
+conduktor template <resource-kind> [template-name]
 ```
 
 **Flags:**
@@ -154,6 +156,9 @@ conduktor template topic -o topic-template.yaml
 
 # Create, edit, and apply template
 conduktor template topic -o topic.yaml -e -a
+
+# Fetch a server-side template by name (Topic or Connector only)
+conduktor template Topic high-partition-topic
 ```
 
 ### Utility Commands

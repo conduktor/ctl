@@ -184,6 +184,11 @@ vim definition.yml # (or any other text editor you like)
 conduktor apply -f
 ```
 
+You can also fetch a server-side template curated in Console by passing its name as a second argument. This is currently supported for `Topic` and `Connector` kinds only:
+```
+conduktor template Topic high-partition-topic
+```
+
 ### Development
 
 #### How to run:
