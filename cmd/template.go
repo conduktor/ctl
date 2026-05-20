@@ -4,8 +4,12 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/conduktor/ctl/internal/cli"
+	"github.com/conduktor/ctl/internal/printutils"
+	"github.com/conduktor/ctl/internal/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -25,17 +29,21 @@ func initTemplate(rootContext cli.RootContext) {
 	var file *string
 	var edit *bool
 	var apply *bool
+	var interactive *bool
+	var list *bool
 	file = templateCmd.PersistentFlags().StringP("output", "o", "", "Write example to file")
 	edit = templateCmd.PersistentFlags().BoolP("edit", "e", false, "Edit the YAML file post-creation; this works only with --output. It will the EDITOR environment variable or nano if not set.")
 	apply = templateCmd.PersistentFlags().BoolP("apply", "a", false, "Apply the YAML file post-editing; this works only with --edit.")
+	interactive = templateCmd.PersistentFlags().BoolP("interactive", "i", false, "List server-side templates for the kind and prompt to pick one. Cannot be combined with a template name.")
+	list = templateCmd.PersistentFlags().BoolP("list", "l", false, "List available server-side template names for the kind, one per line, and exit. Cannot be combined with a template name or --interactive.")
 
 	// Add all kinds to the 'template' command
 	for name, kind := range rootContext.Catalog.Kind {
 		kindCmd := &cobra.Command{
-			Use:     name,
+			Use:     name + " [template-name]",
 			Short:   "Get a yaml example for resource of kind " + name,
-			Args:    cobra.NoArgs,
-			Long:    `If name not provided it will list all resource`,
+			Args:    cobra.MaximumNArgs(1),
+			Long:    `Without a name, returns a built-in example. With a name, fetches the matching server-side template (requires a Conduktor Console that supports resource templates).`,
 			Aliases: buildAlias(name),
 			PreRun: func(cmd *cobra.Command, args []string) {
 				if edit != nil && *edit && (file == nil || *file == "") {
@@ -46,16 +54,56 @@ func initTemplate(rootContext cli.RootContext) {
 					fmt.Fprintln(os.Stderr, "Cannot use --apply without --edit")
 					os.Exit(11)
 				}
+				if interactive != nil && *interactive && len(args) > 0 {
+					fmt.Fprintln(os.Stderr, "Cannot use --interactive with a template name")
+					os.Exit(12)
+				}
+				if list != nil && *list && len(args) > 0 {
+					fmt.Fprintln(os.Stderr, "Cannot use --list with a template name")
+					os.Exit(13)
+				}
+				if list != nil && *list && interactive != nil && *interactive {
+					fmt.Fprintln(os.Stderr, "Cannot use --list with --interactive")
+					os.Exit(14)
+				}
 			},
 			Run: func(cmd *cobra.Command, args []string) {
-				example := kind.GetLatestKindVersion().GetApplyExample()
+				if list != nil && *list {
+					if err := listServerTemplates(rootContext, name); err != nil {
+						fmt.Fprintf(os.Stderr, "%s\n", err)
+						os.Exit(1)
+					}
+					return
+				}
+				var example string
+				if len(args) == 1 {
+					var err error
+					example, err = fetchTemplateByName(rootContext, name, args[0])
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "%s\n", err)
+						os.Exit(1)
+					}
+				} else if interactive != nil && *interactive {
+					picked, err := pickServerTemplate(rootContext, name)
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "%s\n", err)
+						os.Exit(1)
+					}
+					example, err = fetchTemplateByName(rootContext, name, picked)
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "%s\n", err)
+						os.Exit(1)
+					}
+				} else {
+					example = kind.GetLatestKindVersion().GetApplyExample()
+				}
 				if example == "" {
 					fmt.Fprintf(os.Stderr, "No template for kind %s\n", name)
 					os.Exit(1)
 				} else {
 					if file == nil || *file == "" {
 						fmt.Println("---")
-						fmt.Println(kind.GetLatestKindVersion().GetApplyExample())
+						fmt.Println(example)
 					} else {
 						_, err := os.Stat(*file)
 						if err == nil {
@@ -81,7 +129,7 @@ func initTemplate(rootContext cli.RootContext) {
 							fmt.Fprintf(os.Stderr, "Error writing to file %s: %s\n", *file, err)
 							os.Exit(4)
 						}
-						_, err = w.WriteString(kind.GetLatestKindVersion().GetApplyExample())
+						_, err = w.WriteString(example)
 						if err != nil {
 							fmt.Fprintf(os.Stderr, "Error writing to file %s: %s\n", *file, err)
 							os.Exit(4)
@@ -98,6 +146,84 @@ func initTemplate(rootContext cli.RootContext) {
 		}
 		templateCmd.AddCommand(kindCmd)
 	}
+}
+
+// kindsSupportingTemplates lists the resource kinds Console exposes through the
+// server-side template API. Other kinds don't have a `*-template` endpoint, so
+// we fail fast instead of hitting the API and producing a confusing parse error.
+var kindsSupportingTemplates = map[string]bool{
+	"Topic":     true,
+	"Connector": true,
+}
+
+// fetchTemplateByName fetches an admin-curated server-side template named
+// `templateName` for the given resource kind (e.g. "Topic") and renders it as a YAML
+// resource of that kind. The template's `spec.defaults` carries the metadata + spec
+// that should be used when instantiating the underlying resource.
+func fetchTemplateByName(rootContext cli.RootContext, kindName, templateName string) (string, error) {
+	baseKind, ok := rootContext.Catalog.Kind[kindName]
+	if !ok {
+		return "", fmt.Errorf("Unknown kind %s", kindName)
+	}
+
+	if !kindsSupportingTemplates[kindName] {
+		return "", fmt.Errorf("kind %s does not support resource templates (supported kinds: Topic, Connector)", kindName)
+	}
+
+	res, err := consoleAPIClient().GetTemplate(utils.CamelToKebab(kindName), templateName)
+	if err != nil {
+		return "", err
+	}
+
+	return printutils.RenderTemplateAsKind(res.Spec, baseKind.GetName(), baseKind.MaxVersion())
+}
+
+// listServerTemplates prints the names of all server-side templates for the
+// given kind to stdout, one per line.
+func listServerTemplates(rootContext cli.RootContext, kindName string) error {
+	if !kindsSupportingTemplates[kindName] {
+		return fmt.Errorf("kind %s does not support resource templates (supported kinds: Topic, Connector)", kindName)
+	}
+	templates, err := consoleAPIClient().ListTemplates(utils.CamelToKebab(kindName))
+	if err != nil {
+		return err
+	}
+	for _, t := range templates {
+		fmt.Println(t.Name)
+	}
+	return nil
+}
+
+// pickServerTemplate fetches the list of server-side templates for the given
+// kind and prompts the user to pick one by index.
+func pickServerTemplate(rootContext cli.RootContext, kindName string) (string, error) {
+	if !kindsSupportingTemplates[kindName] {
+		return "", fmt.Errorf("kind %s does not support resource templates (supported kinds: Topic, Connector)", kindName)
+	}
+	templates, err := consoleAPIClient().ListTemplates(utils.CamelToKebab(kindName))
+	if err != nil {
+		return "", err
+	}
+	if len(templates) == 0 {
+		return "", fmt.Errorf("no %s templates available", kindName)
+	}
+
+	fmt.Fprintf(os.Stderr, "%d templates fetched for %s templates\n", len(templates), kindName)
+	for i, t := range templates {
+		fmt.Fprintf(os.Stderr, "%d. %s\n", i+1, t.Name)
+	}
+	fmt.Fprintf(os.Stderr, "Please enter a choice from (1-%d): ", len(templates))
+
+	reader := bufio.NewReader(os.Stdin)
+	line, err := reader.ReadString('\n')
+	if err != nil {
+		return "", fmt.Errorf("could not read choice: %s", err)
+	}
+	choice, err := strconv.Atoi(strings.TrimSpace(line))
+	if err != nil || choice < 1 || choice > len(templates) {
+		return "", fmt.Errorf("invalid choice: %s", strings.TrimSpace(line))
+	}
+	return templates[choice-1].Name, nil
 }
 
 func editAndApply(rootContext cli.RootContext, edit *bool, file *string, apply *bool) {

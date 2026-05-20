@@ -454,6 +454,126 @@ func TestDescribeShouldFailIfNo2xx(t *testing.T) {
 	}
 }
 
+func TestGetTemplateShouldWork(t *testing.T) {
+	defer httpmock.Reset()
+	baseURL := "http://baseUrl"
+	apiKey := "aToken"
+	client, err := Make(APIParameter{
+		APIKey:  apiKey,
+		BaseURL: baseURL,
+	})
+	if err != nil {
+		panic(err)
+	}
+	httpmock.ActivateNonDefault(
+		client.client.GetClient(),
+	)
+	templateResource := resource.Resource{
+		Json: []byte(`{"apiVersion":"v2","kind":"TopicTemplate","metadata":{"name":"high-partition-topic"},"spec":{"displayName":"High Partition Topic","defaults":{"metadata":{"name":"my-topic-${dept}"},"spec":{"partitions":24}}}}`),
+	}
+	responder, err := httpmock.NewJsonResponder(200, templateResource)
+	if err != nil {
+		panic(err)
+	}
+	httpmock.RegisterMatcherResponderWithQuery(
+		"GET",
+		"http://baseUrl/api/public/console/v2/topic-template/high-partition-topic",
+		nil,
+		httpmock.HeaderIs("Authorization", "Bearer "+apiKey),
+		responder,
+	)
+
+	result, err := client.GetTemplate("topic", "high-partition-topic")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defaults, ok := result.Spec["defaults"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected spec.defaults to be a map, got %T", result.Spec["defaults"])
+	}
+	specMap, ok := defaults["spec"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected spec.defaults.spec to be a map, got %T", defaults["spec"])
+	}
+	if specMap["partitions"] != float64(24) {
+		t.Errorf("expected partitions=24, got %v", specMap["partitions"])
+	}
+}
+
+func TestGetTemplateShouldFailIfNo2xx(t *testing.T) {
+	defer httpmock.Reset()
+	baseURL := "http://baseUrl"
+	apiKey := "aToken"
+	client, err := Make(APIParameter{
+		APIKey:  apiKey,
+		BaseURL: baseURL,
+	})
+	if err != nil {
+		panic(err)
+	}
+	httpmock.ActivateNonDefault(
+		client.client.GetClient(),
+	)
+	responder := httpmock.NewStringResponder(404, "not found")
+	httpmock.RegisterMatcherResponderWithQuery(
+		"GET",
+		"http://baseUrl/api/public/console/v2/topic-template/missing",
+		nil,
+		httpmock.HeaderIs("Authorization", "Bearer "+apiKey),
+		responder,
+	)
+
+	_, err = client.GetTemplate("topic", "missing")
+	if err == nil {
+		t.Error("expected an error for 404 response, got nil")
+	}
+}
+
+func TestListTemplatesShouldWork(t *testing.T) {
+	defer httpmock.Reset()
+	baseURL := "http://baseUrl"
+	apiKey := "aToken"
+	client, err := Make(APIParameter{
+		APIKey:  apiKey,
+		BaseURL: baseURL,
+	})
+	if err != nil {
+		panic(err)
+	}
+	httpmock.ActivateNonDefault(
+		client.client.GetClient(),
+	)
+	templates := []resource.Resource{
+		{Json: []byte(`{"apiVersion":"v2","kind":"TopicTemplate","metadata":{"name":"high-throughput-topic"},"spec":{"defaults":{"metadata":{"name":"t"},"spec":{"partitions":24}}}}`)},
+		{Json: []byte(`{"apiVersion":"v2","kind":"TopicTemplate","metadata":{"name":"staging"},"spec":{"defaults":{"metadata":{"name":"t"},"spec":{"partitions":3}}}}`)},
+	}
+	responder, err := httpmock.NewJsonResponder(200, templates)
+	if err != nil {
+		panic(err)
+	}
+	httpmock.RegisterMatcherResponderWithQuery(
+		"GET",
+		"http://baseUrl/api/public/console/v2/topic-template",
+		nil,
+		httpmock.HeaderIs("Authorization", "Bearer "+apiKey),
+		responder,
+	)
+
+	result, err := client.ListTemplates("topic")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result) != 2 {
+		t.Fatalf("expected 2 templates, got %d", len(result))
+	}
+	if result[0].Name != "high-throughput-topic" {
+		t.Errorf("expected first template name=high-throughput-topic, got %q", result[0].Name)
+	}
+	if result[1].Name != "staging" {
+		t.Errorf("expected second template name=staging, got %q", result[1].Name)
+	}
+}
+
 func TestDeleteShouldWork(t *testing.T) {
 	defer httpmock.Reset()
 	baseURL := "http://baseUrl"
