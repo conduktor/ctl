@@ -113,6 +113,14 @@ func initTemplate(rootContext cli.RootContext) {
 	}
 }
 
+// kindsSupportingTemplates lists the resource kinds Console exposes through the
+// server-side template API. Other kinds don't have a `*-template` endpoint, so
+// we fail fast instead of hitting the API and producing a confusing parse error.
+var kindsSupportingTemplates = map[string]bool{
+	"Topic":     true,
+	"Connector": true,
+}
+
 // fetchTemplateByName fetches an admin-curated server-side template named
 // `templateName` for the given resource kind (e.g. "Topic") and renders it as a YAML
 // resource of that kind. The template's `spec.defaults` carries the metadata + spec
@@ -121,6 +129,10 @@ func fetchTemplateByName(rootContext cli.RootContext, kindName, templateName str
 	baseKind, ok := rootContext.Catalog.Kind[kindName]
 	if !ok {
 		return "", fmt.Errorf("Unknown kind %s", kindName)
+	}
+
+	if !kindsSupportingTemplates[kindName] {
+		return "", fmt.Errorf("kind %s does not support resource templates (supported kinds: Topic, Connector)", kindName)
 	}
 
 	res, err := consoleAPIClient().GetTemplate(utils.CamelToKebab(kindName), templateName)
