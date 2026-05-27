@@ -517,6 +517,19 @@
       "BodyFields": {},
       "Method": "GET"
     },
+    "connectorPause": {
+      "Path": "/public/kafka/v2/cluster/{cluster}/connect/{connectCluster}/connector/{connector-name}/pause",
+      "Name": "connectorPause",
+      "Doc": "Pause a connector",
+      "QueryParameter": {},
+      "PathParameter": [
+        "cluster",
+        "connectCluster",
+        "connector-name"
+      ],
+      "BodyFields": {},
+      "Method": "PUT"
+    },
     "connectorResetOffsets": {
       "Path": "/public/kafka/v2/cluster/{cluster}/connect/{connectCluster}/connector/{connector-name}/offsets",
       "Name": "connectorResetOffsets",
@@ -529,6 +542,32 @@
       ],
       "BodyFields": {},
       "Method": "DELETE"
+    },
+    "connectorRestart": {
+      "Path": "/public/kafka/v2/cluster/{cluster}/connect/{connectCluster}/connector/{connector-name}/restart",
+      "Name": "connectorRestart",
+      "Doc": "Restart a connector",
+      "QueryParameter": {},
+      "PathParameter": [
+        "cluster",
+        "connectCluster",
+        "connector-name"
+      ],
+      "BodyFields": {},
+      "Method": "PUT"
+    },
+    "connectorResume": {
+      "Path": "/public/kafka/v2/cluster/{cluster}/connect/{connectCluster}/connector/{connector-name}/resume",
+      "Name": "connectorResume",
+      "Doc": "Resume a paused connector",
+      "QueryParameter": {},
+      "PathParameter": [
+        "cluster",
+        "connectCluster",
+        "connector-name"
+      ],
+      "BodyFields": {},
+      "Method": "PUT"
     },
     "connectorStop": {
       "Path": "/public/kafka/v2/cluster/{cluster}/connect/{connectCluster}/connector/{connector-name}/stop",

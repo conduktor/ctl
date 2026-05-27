@@ -34,31 +34,43 @@ var connectorOffsetsRun = schema.Run{
 	Method: "PATCH",
 }
 
-func connectorStopRun() schema.Run {
-	return schema.Run{
-		BackendType:   schema.CONSOLE,
-		Name:          "connectorStop",
-		Path:          "/public/kafka/v2/cluster/{cluster}/connect/{connectCluster}/connector/{connector-name}/stop",
-		PathParameter: []string{"cluster", "connectCluster", "connector-name"},
-		Method:        "PUT",
+// connectorStop / pause / resume / restart are all empty-body PUTs that differ
+// only by the trailing path segment.
+func TestRunConnectorPutVerbs(t *testing.T) {
+	verbs := []struct {
+		name    string
+		segment string
+	}{
+		{"connectorStop", "stop"},
+		{"connectorPause", "pause"},
+		{"connectorResume", "resume"},
+		{"connectorRestart", "restart"},
 	}
-}
+	for _, verb := range verbs {
+		t.Run(verb.name, func(t *testing.T) {
+			defer httpmock.Reset()
+			client := makeMockedClient(t)
 
-func TestRunConnectorStop(t *testing.T) {
-	defer httpmock.Reset()
-	client := makeMockedClient(t)
+			run := schema.Run{
+				BackendType:   schema.CONSOLE,
+				Name:          verb.name,
+				Path:          "/public/kafka/v2/cluster/{cluster}/connect/{connectCluster}/connector/{connector-name}/" + verb.segment,
+				PathParameter: []string{"cluster", "connectCluster", "connector-name"},
+				Method:        "PUT",
+			}
+			httpmock.RegisterMatcherResponderWithQuery(
+				"PUT",
+				"http://baseUrl/api/public/kafka/v2/cluster/my-cluster/connect/my-connect/connector/my-connector/"+verb.segment,
+				nil,
+				httpmock.HeaderIs("Authorization", "Bearer aToken"),
+				httpmock.NewStringResponder(204, ""),
+			)
 
-	httpmock.RegisterMatcherResponderWithQuery(
-		"PUT",
-		"http://baseUrl/api/public/kafka/v2/cluster/my-cluster/connect/my-connect/connector/my-connector/stop",
-		nil,
-		httpmock.HeaderIs("Authorization", "Bearer aToken"),
-		httpmock.NewStringResponder(204, ""),
-	)
-
-	_, err := client.Run(connectorStopRun(), []string{"my-cluster", "my-connect", "my-connector"}, map[string]string{}, nil)
-	if err != nil {
-		t.Errorf("expected no error, got: %s", err)
+			_, err := client.Run(run, []string{"my-cluster", "my-connect", "my-connector"}, map[string]string{}, nil)
+			if err != nil {
+				t.Errorf("expected no error, got: %s", err)
+			}
+		})
 	}
 }
 

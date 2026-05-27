@@ -33,6 +33,96 @@ paths:
       x-cdk-run-version: '1'
       x-cdk-run-name: connectorStop
       x-cdk-run-doc: Stop a connector
+  /public/kafka/v2/cluster/{cluster}/connect/{connectCluster}/connector/{connector-name}/pause:
+    put:
+      tags:
+        - connector
+      description: Pause a connector
+      operationId: pause-connector
+      parameters:
+        - name: cluster
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: connectCluster
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: connector-name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: ''
+      security:
+        - httpAuth: []
+      x-cdk-run-version: '1'
+      x-cdk-run-name: connectorPause
+      x-cdk-run-doc: Pause a connector
+  /public/kafka/v2/cluster/{cluster}/connect/{connectCluster}/connector/{connector-name}/resume:
+    put:
+      tags:
+        - connector
+      description: Resume a paused connector
+      operationId: resume-connector
+      parameters:
+        - name: cluster
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: connectCluster
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: connector-name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: ''
+      security:
+        - httpAuth: []
+      x-cdk-run-version: '1'
+      x-cdk-run-name: connectorResume
+      x-cdk-run-doc: Resume a paused connector
+  /public/kafka/v2/cluster/{cluster}/connect/{connectCluster}/connector/{connector-name}/restart:
+    put:
+      tags:
+        - connector
+      description: Restart a connector
+      operationId: restart-connector
+      parameters:
+        - name: cluster
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: connectCluster
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: connector-name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: ''
+      security:
+        - httpAuth: []
+      x-cdk-run-version: '1'
+      x-cdk-run-name: connectorRestart
+      x-cdk-run-doc: Restart a connector
   /public/kafka/v2/cluster/{cluster}/connect/{connectCluster}/connector/{connector-name}/offsets:
     get:
       tags:
