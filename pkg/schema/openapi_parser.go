@@ -84,6 +84,10 @@ func (s *OpenAPIParser) getRuns(backendType BackendType) (RunCatalog, error) {
 		if err != nil {
 			return nil, err
 		}
+		err = handleExecuteOperation(backendType, path.Key(), path.Value().Patch, resty.MethodPatch, result)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return result, nil
 }
@@ -147,9 +151,14 @@ func computeBodyFields(body *v3high.RequestBody) map[string]FlagParameterOption 
 		for propertiesPair := bodySchema.Properties.First(); propertiesPair != nil; propertiesPair = propertiesPair.Next() {
 			key := propertiesPair.Key()
 			value := propertiesPair.Value()
-			if value != nil && value.Schema() != nil {
+			if value != nil && value.Schema() != nil && len(value.Schema().Type) > 0 {
 				valueType := value.Schema().Type[0]
-				if valueType == "string" || valueType == "boolean" || valueType == "integer" {
+				// Scalars map to a typed flag; arrays/objects are passed as a
+				// JSON-encoded string flag that we decode back into the body.
+				if valueType == "array" || valueType == "object" {
+					valueType = "json"
+				}
+				if valueType == "string" || valueType == "boolean" || valueType == "integer" || valueType == "json" {
 					result[key] = FlagParameterOption{
 						FlagName: computeFlagName(key),
 						Type:     valueType,

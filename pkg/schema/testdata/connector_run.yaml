@@ -1,0 +1,152 @@
+openapi: 3.0.3
+info:
+  title: Conduktor Public API
+  version: 0.0.1-SNAPSHOT
+paths:
+  /public/kafka/v2/cluster/{cluster}/connect/{connectCluster}/connector/{connector-name}/stop:
+    put:
+      tags:
+        - connector
+      description: Stop a connector (Kafka Connect 3.5.0+, KIP-875)
+      operationId: stop-connector
+      parameters:
+        - name: cluster
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: connectCluster
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: connector-name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: ''
+      security:
+        - httpAuth: []
+      x-cdk-run-version: '1'
+      x-cdk-run-name: connectorStop
+      x-cdk-run-doc: Stop a connector
+  /public/kafka/v2/cluster/{cluster}/connect/{connectCluster}/connector/{connector-name}/offsets:
+    get:
+      tags:
+        - connector
+      description: Get the source or sink offsets of a connector
+      operationId: get-connector-offsets
+      parameters:
+        - name: cluster
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: connectCluster
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: connector-name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectorOffsets'
+      security:
+        - httpAuth: []
+      x-cdk-run-version: '1'
+      x-cdk-run-name: connectorGetOffsets
+      x-cdk-run-doc: Get the offsets of a connector
+    delete:
+      tags:
+        - connector
+      description: Reset all offsets of a connector. The connector must be in STOPPED state
+      operationId: reset-connector-offsets
+      parameters:
+        - name: cluster
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: connectCluster
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: connector-name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      security:
+        - httpAuth: []
+      x-cdk-run-version: '1'
+      x-cdk-run-name: connectorResetOffsets
+      x-cdk-run-doc: Reset all offsets of a stopped connector
+    patch:
+      tags:
+        - connector
+      description: Alter the offsets of a connector. The connector must be in STOPPED state
+      operationId: alter-connector-offsets
+      parameters:
+        - name: cluster
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: connectCluster
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: connector-name
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectorOffsets'
+        required: true
+      responses:
+        '200':
+          description: ''
+      security:
+        - httpAuth: []
+      x-cdk-run-version: '1'
+      x-cdk-run-name: connectorAlterOffsets
+      x-cdk-run-doc: Alter the offsets of a stopped connector
+components:
+  schemas:
+    ConnectorOffsetEntry:
+      title: ConnectorOffsetEntry
+      type: object
+      required:
+        - partition
+        - offset
+      properties:
+        partition: {}
+        offset: {}
+    ConnectorOffsets:
+      title: ConnectorOffsets
+      type: object
+      properties:
+        offsets:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConnectorOffsetEntry'

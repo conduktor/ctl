@@ -68,6 +68,9 @@ func TestExtractFlagValueForBodyParam(t *testing.T) {
 		"intParam":       {FlagName: "intParam", Type: "integer"},
 		"notSetInt":      {FlagName: "notSetInt", Type: "integer"},
 		"zeroParam":      {FlagName: "zeroParam", Type: "integer"},
+		"jsonArray":      {FlagName: "jsonArray", Type: "json"},
+		"jsonObject":     {FlagName: "jsonObject", Type: "json"},
+		"notSetJson":     {FlagName: "notSetJson", Type: "json"},
 	})
 	multipleFlags.result = map[string]interface{}{
 		"stringParam":    func() *string { s := "test"; return &s }(),
@@ -79,6 +82,9 @@ func TestExtractFlagValueForBodyParam(t *testing.T) {
 		"intParam":       func() *int { i := 123; return &i }(),
 		"notSetInt":      func() *int { i := 0; return &i }(),
 		"zeroParam":      func() *int { i := 0; return &i }(),
+		"jsonArray":      func() *string { s := `[{"partition":1,"offset":42}]`; return &s }(),
+		"jsonObject":     func() *string { s := `{"key":"value"}`; return &s }(),
+		"notSetJson":     func() *string { s := ""; return &s }(),
 	}
 
 	expected := map[string]interface{}{
@@ -88,6 +94,8 @@ func TestExtractFlagValueForBodyParam(t *testing.T) {
 		"boolParamFalse": func() *bool { b := false; return &b }(),
 		"intParam":       func() *int { i := 123; return &i }(),
 		"zeroParam":      func() *int { i := 0; return &i }(),
+		"jsonArray":      []interface{}{map[string]interface{}{"partition": float64(1), "offset": float64(42)}},
+		"jsonObject":     map[string]interface{}{"key": "value"},
 	}
 
 	command.Flags().Lookup("stringParam").Changed = true
@@ -96,9 +104,30 @@ func TestExtractFlagValueForBodyParam(t *testing.T) {
 	command.Flags().Lookup("intParam").Changed = true
 	command.Flags().Lookup("zeroParam").Changed = true
 	command.Flags().Lookup("emptyString").Changed = true
-	result := multipleFlags.ExtractFlagValueForBodyParam()
+	command.Flags().Lookup("jsonArray").Changed = true
+	command.Flags().Lookup("jsonObject").Changed = true
+	result, err := multipleFlags.ExtractFlagValueForBodyParam()
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
 
 	if !reflect.DeepEqual(result, expected) {
 		t.Error(spew.Printf("got %v, want %v", result, expected))
+	}
+}
+
+func TestExtractFlagValueForBodyParamInvalidJSON(t *testing.T) {
+	command := &cobra.Command{}
+	multipleFlags := NewMultipleFlags(command, map[string]schema.FlagParameterOption{
+		"jsonParam": {FlagName: "jsonParam", Type: "json"},
+	})
+	multipleFlags.result = map[string]interface{}{
+		"jsonParam": func() *string { s := "not-json"; return &s }(),
+	}
+	command.Flags().Lookup("jsonParam").Changed = true
+
+	_, err := multipleFlags.ExtractFlagValueForBodyParam()
+	if err == nil {
+		t.Error("expected an error for invalid JSON, got nil")
 	}
 }

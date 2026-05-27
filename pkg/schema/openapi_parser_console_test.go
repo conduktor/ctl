@@ -460,3 +460,76 @@ func TestGetExecutes(t *testing.T) {
 		}
 	})
 }
+
+func TestGetConnectorRuns(t *testing.T) {
+	t.Run("parses connector stop / offsets runs, including the PATCH with a JSON array body", func(t *testing.T) {
+		schemaContent, err := os.ReadFile("testdata/connector_run.yaml")
+		if err != nil {
+			t.Fatalf("failed reading file: %s", err)
+		}
+
+		schema, err := NewOpenAPIParser(schemaContent)
+		if err != nil {
+			t.Fatalf("failed creating new schema: %s", err)
+		}
+
+		result, err := schema.getRuns(CONSOLE)
+		if err != nil {
+			t.Fatalf("failed getting runs: %s", err)
+		}
+
+		offsetsPath := "/public/kafka/v2/cluster/{cluster}/connect/{connectCluster}/connector/{connector-name}/offsets"
+		connectorPathParams := []string{"cluster", "connectCluster", "connector-name"}
+		expected := RunCatalog{
+			"connectorStop": Run{
+				Path:           "/public/kafka/v2/cluster/{cluster}/connect/{connectCluster}/connector/{connector-name}/stop",
+				Name:           "connectorStop",
+				Doc:            "Stop a connector",
+				QueryParameter: map[string]FlagParameterOption{},
+				PathParameter:  connectorPathParams,
+				BodyFields:     map[string]FlagParameterOption{},
+				Method:         "PUT",
+				BackendType:    CONSOLE,
+			},
+			"connectorGetOffsets": Run{
+				Path:           offsetsPath,
+				Name:           "connectorGetOffsets",
+				Doc:            "Get the offsets of a connector",
+				QueryParameter: map[string]FlagParameterOption{},
+				PathParameter:  connectorPathParams,
+				BodyFields:     map[string]FlagParameterOption{},
+				Method:         "GET",
+				BackendType:    CONSOLE,
+			},
+			"connectorResetOffsets": Run{
+				Path:           offsetsPath,
+				Name:           "connectorResetOffsets",
+				Doc:            "Reset all offsets of a stopped connector",
+				QueryParameter: map[string]FlagParameterOption{},
+				PathParameter:  connectorPathParams,
+				BodyFields:     map[string]FlagParameterOption{},
+				Method:         "DELETE",
+				BackendType:    CONSOLE,
+			},
+			"connectorAlterOffsets": Run{
+				Path:           offsetsPath,
+				Name:           "connectorAlterOffsets",
+				Doc:            "Alter the offsets of a stopped connector",
+				QueryParameter: map[string]FlagParameterOption{},
+				PathParameter:  connectorPathParams,
+				BodyFields: map[string]FlagParameterOption{
+					"offsets": {
+						FlagName: "offsets",
+						Required: false,
+						Type:     "json",
+					},
+				},
+				Method:      "PATCH",
+				BackendType: CONSOLE,
+			},
+		}
+		if !reflect.DeepEqual(result, expected) {
+			t.Error(spew.Printf("got %v, want %v", result, expected))
+		}
+	})
+}

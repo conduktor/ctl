@@ -78,6 +78,52 @@ func TestApplyShouldWork(t *testing.T) {
 	}
 }
 
+// initialState lives in the Connector spec and is sent through unchanged when
+// applying a connector resource: the CLI needs no special handling for it.
+func TestApplyConnectorForwardsInitialState(t *testing.T) {
+	defer httpmock.Reset()
+	baseURL := "http://baseUrl"
+	apiKey := "aToken"
+	client, err := Make(APIParameter{
+		APIKey:  apiKey,
+		BaseURL: baseURL,
+	})
+	if err != nil {
+		panic(err)
+	}
+	client.setAuthMethodFromEnvIfNeeded()
+	httpmock.ActivateNonDefault(client.client.GetClient())
+	responder := httpmock.NewStringResponder(200, `{"upsertResult": "Created"}`)
+
+	connectorJSON := []byte(`{"apiVersion":"v2","kind":"Connector","metadata":{"name":"my-connector","cluster":"local","connectCluster":"my-connect"},"spec":{"config":{},"initialState":"STOPPED"}}`)
+	connector := resource.Resource{
+		Json:    connectorJSON,
+		Kind:    "Connector",
+		Name:    "my-connector",
+		Version: "v2",
+		Metadata: map[string]interface{}{
+			"cluster":        "local",
+			"connectCluster": "my-connect",
+		},
+	}
+
+	httpmock.RegisterMatcherResponderWithQuery(
+		"PUT",
+		"http://baseUrl/api/public/kafka/v2/cluster/local/connect/my-connect/connector",
+		nil,
+		httpmock.BodyContainsString(`"initialState":"STOPPED"`),
+		responder,
+	)
+
+	body, err := client.Apply(&connector, false, false)
+	if err != nil {
+		t.Error(err)
+	}
+	if body.UpsertResult != "Created" {
+		t.Errorf("Bad result expected Created got: %s", body)
+	}
+}
+
 func TestApplyShouldWorkWithExternalAuthMode(t *testing.T) {
 	defer httpmock.Reset()
 	baseURL := "http://baseUrl"
