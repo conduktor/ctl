@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"encoding/json"
+	"fmt"
 	"strconv"
 
 	"github.com/conduktor/ctl/internal/utils"
@@ -31,6 +33,10 @@ func NewMultipleFlags(command *cobra.Command, flagParams map[string]schema.FlagP
 			isFlagSet = true
 			defaultValue := 0
 			result[key] = command.Flags().Int(flag.FlagName, defaultValue, usage)
+		} else if flag.Type == "json" {
+			isFlagSet = true
+			defaultValue := ""
+			result[key] = command.Flags().String(flag.FlagName, defaultValue, "JSON value")
 		} else if utils.CdkDebug() {
 			println("Unknown flag type: " + flag.Type)
 		}
@@ -46,14 +52,26 @@ func NewMultipleFlags(command *cobra.Command, flagParams map[string]schema.FlagP
 	}
 }
 
-func (m *MultipleFlags) ExtractFlagValueForBodyParam() map[string]interface{} {
+func (m *MultipleFlags) ExtractFlagValueForBodyParam() (map[string]interface{}, error) {
 	bodyParams := make(map[string]interface{})
 	for key, value := range m.result {
 		if value != nil && m.flagSetByUser(key) {
-			bodyParams[key] = value
+			if m.flagParams[key].Type == "json" {
+				str, ok := value.(*string)
+				if !ok {
+					panic("Expected json flag " + key + " to be a *string")
+				}
+				var decoded interface{}
+				if err := json.Unmarshal([]byte(*str), &decoded); err != nil {
+					return nil, fmt.Errorf("invalid JSON for flag --%s: %w", m.flagParams[key].FlagName, err)
+				}
+				bodyParams[key] = decoded
+			} else {
+				bodyParams[key] = value
+			}
 		}
 	}
-	return bodyParams
+	return bodyParams, nil
 }
 
 func (m *MultipleFlags) ExtractFlagValueForQueryParam() map[string]string {

@@ -62,12 +62,14 @@ func initRun(runs schema.RunCatalog) {
 			Run: func(cmd *cobra.Command, args []string) {
 				pathValues := make([]string, len(pathFlagValues))
 				queryParams := multipleFlagsForQuery.ExtractFlagValueForQueryParam()
-				body := multipleFlagsForBody.ExtractFlagValueForBodyParam()
+				body, err := multipleFlagsForBody.ExtractFlagValueForBodyParam()
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "%s\n", err)
+					return
+				}
 				for i, v := range pathFlagValues {
 					pathValues[i] = *v
 				}
-
-				var err error
 
 				if len(bodyFlags) == 0 {
 					body = nil
