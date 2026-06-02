@@ -98,7 +98,13 @@ func handleExecuteOperation(backendType BackendType, path string, operation *v3h
 		return nil
 	}
 
-	nameYaml, present := operation.Extensions.Get("x-cdk-run-name")
+	// New endpoints are annotated with x-cdk-run-name-v2 so that older CLIs,
+	// which only know x-cdk-run-name, skip them instead of failing. The current
+	// CLI must therefore accept both keys, preferring the v2 one when present.
+	nameYaml, present := operation.Extensions.Get("x-cdk-run-name-v2")
+	if !present {
+		nameYaml, present = operation.Extensions.Get("x-cdk-run-name")
+	}
 	if !present {
 		return nil
 	}
@@ -151,19 +157,28 @@ func computeBodyFields(body *v3high.RequestBody) map[string]FlagParameterOption 
 		for propertiesPair := bodySchema.Properties.First(); propertiesPair != nil; propertiesPair = propertiesPair.Next() {
 			key := propertiesPair.Key()
 			value := propertiesPair.Value()
-			if value != nil && value.Schema() != nil && len(value.Schema().Type) > 0 {
-				valueType := value.Schema().Type[0]
+			if value == nil || value.Schema() == nil {
+				continue
+			}
+			propSchema := value.Schema()
+			var valueType string
+			if len(propSchema.Type) > 0 {
+				valueType = propSchema.Type[0]
 				// Scalars map to a typed flag; arrays/objects are passed as a
 				// JSON-encoded string flag that we decode back into the body.
 				if valueType == "array" || valueType == "object" {
 					valueType = "json"
 				}
-				if valueType == "string" || valueType == "boolean" || valueType == "integer" || valueType == "json" {
-					result[key] = FlagParameterOption{
-						FlagName: computeFlagName(key),
-						Type:     valueType,
-						Required: slices.Contains(bodySchema.Required, key),
-					}
+			} else if len(propSchema.OneOf) > 0 || len(propSchema.AnyOf) > 0 || len(propSchema.AllOf) > 0 {
+				// Polymorphic properties (oneOf/anyOf/allOf) carry no scalar type;
+				// expose them as a JSON-encoded string flag, like arrays/objects.
+				valueType = "json"
+			}
+			if valueType == "string" || valueType == "boolean" || valueType == "integer" || valueType == "json" {
+				result[key] = FlagParameterOption{
+					FlagName: computeFlagName(key),
+					Type:     valueType,
+					Required: slices.Contains(bodySchema.Required, key),
 				}
 			}
 		}

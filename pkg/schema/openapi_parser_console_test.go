@@ -562,4 +562,139 @@ func TestGetConnectorRuns(t *testing.T) {
 			t.Error(spew.Printf("got %v, want %v", result, expected))
 		}
 	})
+
+	t.Run("reads x-cdk-run-name-v2 and prefers it over x-cdk-run-name", func(t *testing.T) {
+		// New endpoints are annotated with x-cdk-run-name-v2 only, so old CLIs
+		// (which look only for x-cdk-run-name) skip them. The current CLI must
+		// expose both the v2-only endpoints and the legacy x-cdk-run-name ones,
+		// preferring the v2 name when an endpoint carries both keys.
+		spec := []byte(`openapi: 3.0.0
+info:
+  title: run-version
+  version: "1.0"
+paths:
+  /v2only:
+    get:
+      x-cdk-run-name-v2: newOnlyRun
+      x-cdk-run-doc: A run only the new CLI can see
+      responses:
+        "200":
+          description: ok
+  /both:
+    get:
+      x-cdk-run-name: legacyName
+      x-cdk-run-name-v2: preferredName
+      responses:
+        "200":
+          description: ok
+  /legacyonly:
+    get:
+      x-cdk-run-name: legacyOnlyRun
+      responses:
+        "200":
+          description: ok
+`)
+
+		schema, err := NewOpenAPIParser(spec)
+		if err != nil {
+			t.Fatalf("failed creating new schema: %s", err)
+		}
+
+		result, err := schema.getRuns(CONSOLE)
+		if err != nil {
+			t.Fatalf("failed getting runs: %s", err)
+		}
+
+		if _, ok := result["newOnlyRun"]; !ok {
+			t.Errorf("expected v2-only endpoint to be exposed as %q, got %v", "newOnlyRun", result)
+		}
+		if _, ok := result["preferredName"]; !ok {
+			t.Errorf("expected v2 name to take precedence (%q), got %v", "preferredName", result)
+		}
+		if _, ok := result["legacyName"]; ok {
+			t.Errorf("legacy name should be shadowed by the v2 name when both are present, got %v", result)
+		}
+		if _, ok := result["legacyOnlyRun"]; !ok {
+			t.Errorf("expected legacy-only endpoint to still be exposed, got %v", result)
+		}
+	})
+
+	t.Run("exposes polymorphic (oneOf) body properties as json flags", func(t *testing.T) {
+		// A body property that is a oneOf/anyOf/allOf carries no scalar type;
+		// it must still surface as a json-encoded string flag (like the
+		// consumerGroupResetOffsets reset payload) rather than being dropped.
+		spec := []byte(`openapi: 3.0.0
+info:
+  title: run-version
+  version: "1.0"
+paths:
+  /reset:
+    post:
+      x-cdk-run-name: resetRun
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetRequest'
+      responses:
+        "200":
+          description: ok
+components:
+  schemas:
+    ResetRequest:
+      type: object
+      required:
+      - selection
+      properties:
+        selection:
+          $ref: '#/components/schemas/Selection'
+        note:
+          type: string
+    Selection:
+      oneOf:
+      - $ref: '#/components/schemas/AllTopics'
+      - $ref: '#/components/schemas/OneTopic'
+    AllTopics:
+      type: object
+      properties:
+        type:
+          type: string
+    OneTopic:
+      type: object
+      properties:
+        type:
+          type: string
+        topic:
+          type: string
+`)
+
+		schema, err := NewOpenAPIParser(spec)
+		if err != nil {
+			t.Fatalf("failed creating new schema: %s", err)
+		}
+
+		result, err := schema.getRuns(CONSOLE)
+		if err != nil {
+			t.Fatalf("failed getting runs: %s", err)
+		}
+
+		run, ok := result["resetRun"]
+		if !ok {
+			t.Fatalf("expected resetRun to be present, got %v", result)
+		}
+		selection, ok := run.BodyFields["selection"]
+		if !ok {
+			t.Fatalf("expected oneOf property 'selection' to be exposed as a body field, got %v", run.BodyFields)
+		}
+		if selection.Type != "json" {
+			t.Errorf("expected oneOf property to be a json flag, got %q", selection.Type)
+		}
+		if !selection.Required {
+			t.Errorf("expected 'selection' to be required")
+		}
+		if note, ok := run.BodyFields["note"]; !ok || note.Type != "string" {
+			t.Errorf("expected scalar sibling 'note' to remain a string flag, got %v", run.BodyFields)
+		}
+	})
 }
