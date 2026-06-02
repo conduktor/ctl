@@ -15533,6 +15533,18 @@ components:
       properties:
         name:
           type: string
+        # oneOf composite property has no scalar `type`; must be skipped, not panic (see computeBodyFields).
+        spec:
+          $ref: '#/components/schemas/CreateTokenSpec'
+        scopes:
+          type: array
+          items:
+            type: string
+    CreateTokenSpec:
+      title: CreateTokenSpec
+      oneOf:
+      - $ref: '#/components/schemas/Credentials'
+      - $ref: '#/components/schemas/CreateTokenRequest'
     Credentials:
       title: Credentials
       type: object

@@ -147,7 +147,7 @@ func computeBodyFields(body *v3high.RequestBody) map[string]FlagParameterOption 
 		for propertiesPair := bodySchema.Properties.First(); propertiesPair != nil; propertiesPair = propertiesPair.Next() {
 			key := propertiesPair.Key()
 			value := propertiesPair.Value()
-			if value != nil && value.Schema() != nil {
+			if value != nil && value.Schema() != nil && len(value.Schema().Type) == 1 {
 				valueType := value.Schema().Type[0]
 				if valueType == "string" || valueType == "boolean" || valueType == "integer" {
 					result[key] = FlagParameterOption{
