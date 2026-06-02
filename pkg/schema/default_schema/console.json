@@ -146,7 +146,7 @@
               "Type": "string"
             }
           },
-          "ApplyExample": "apiVersion: v1\nkind: ApplicationInstance\nmetadata:\n    application: my-app\n    labels:\n        env: prod\n        team: my-team\n    name: my-app-instance-prod\nspec:\n    cluster: prod-cluster\n    defaultCatalogVisibility: PUBLIC\n    policyRef:\n        - my-policy\n    resources:\n        - name: my-topic\n          patternType: LITERAL\n          type: TOPIC\n        - name: my-consumer-group\n          patternType: LITERAL\n          type: CONSUMER_GROUP\n    serviceAccount: my-service-account\n    topicPolicyRef:\n        - my-topic-policy\n",
+          "ApplyExample": "apiVersion: v1\nkind: ApplicationInstance\nmetadata:\n    application: my-app\n    labels:\n        env: prod\n        team: my-team\n    name: my-app-instance-prod\nspec:\n    cluster: prod-cluster\n    defaultCatalogVisibility: PUBLIC\n    managedServiceAccountNamespace: my-app-.*\n    policyRef:\n        - my-policy\n    resources:\n        - name: my-topic\n          patternType: LITERAL\n          type: TOPIC\n        - name: my-consumer-group\n          patternType: LITERAL\n          type: CONSUMER_GROUP\n    serviceAccount: my-service-account\n    topicPolicyRef:\n        - my-topic-policy\n",
           "Order": 8
         }
       }
@@ -204,7 +204,7 @@
           "ParentPathParam": [],
           "ParentQueryParam": null,
           "ListQueryParameter": {},
-          "ApplyExample": "apiVersion: v2\nkind: ConnectorTemplate\nmetadata:\n    labels:\n        category: sink\n    name: s3-sink-standard\nspec:\n    defaults:\n        metadata:\n            labels:\n                category: sink\n            name: s3-sink-${dept}\n        spec:\n            class: io.confluent.connect.s3.S3SinkConnector\n            config:\n                flush.size: \"10000\"\n                format.class: io.confluent.connect.s3.format.avro.AvroFormat\n                rotate.interval.ms: \"60000\"\n                storage.class: io.confluent.connect.s3.storage.S3Storage\n                tasks.max: \"2\"\n    description: Standard S3 sink connector with flush every 10,000 records or 60 seconds.\n    displayName: S3 Sink (Standard)\n",
+          "ApplyExample": "apiVersion: v2\nkind: ConnectorTemplate\nmetadata:\n    labels:\n        category: sink\n    name: s3-sink-standard\nspec:\n    defaults:\n        metadata:\n            labels:\n                category: sink\n            name: s3-sink-{{dept}}\n        spec:\n            class: io.confluent.connect.s3.S3SinkConnector\n            config:\n                flush.size: \"10000\"\n                format.class: io.confluent.connect.s3.format.avro.AvroFormat\n                rotate.interval.ms: \"60000\"\n                storage.class: io.confluent.connect.s3.storage.S3Storage\n                tasks.max: \"2\"\n    description: Standard S3 sink connector with flush every 10,000 records or 60 seconds.\n    displayName: S3 Sink (Standard)\n",
           "Order": 23
         }
       }
@@ -465,7 +465,7 @@
           "ParentPathParam": [],
           "ParentQueryParam": null,
           "ListQueryParameter": {},
-          "ApplyExample": "apiVersion: v2\nkind: TopicTemplate\nmetadata:\n    labels:\n        category: template\n    name: high-partition-topic\nspec:\n    defaults:\n        metadata:\n            labels:\n                throughput: high\n            name: my-topic-${department}\n        spec:\n            configs:\n                cleanup.policy: delete\n                min.insync.replicas: \"2\"\n                retention.ms: \"604800000\"\n            partitions: 24\n            replicationFactor: 3\n    description: Optimised for high-throughput workloads. 24 partitions, 3× replication, 7-day retention.\n    displayName: High Partition Topic\n",
+          "ApplyExample": "apiVersion: v2\nkind: TopicTemplate\nmetadata:\n    labels:\n        category: template\n    name: high-partition-topic\nspec:\n    defaults:\n        metadata:\n            labels:\n                throughput: high\n            name: my-topic-{{department}}\n        spec:\n            configs:\n                cleanup.policy: delete\n                min.insync.replicas: \"2\"\n                retention.ms: \"604800000\"\n            partitions: 24\n            replicationFactor: 3\n    description: Optimised for high-throughput workloads. 24 partitions, 3× replication, 7-day retention.\n    displayName: High Partition Topic\n",
           "Order": 22
         }
       }
@@ -581,6 +581,126 @@
       ],
       "BodyFields": {},
       "Method": "PUT"
+    },
+    "consumerGroupDelete": {
+      "Path": "/public/v1/clusters/{clusterName}/consumergroups/{consumerGroup}",
+      "Name": "consumerGroupDelete",
+      "Doc": "Delete a consumer group",
+      "QueryParameter": {},
+      "PathParameter": [
+        "clusterName",
+        "consumerGroup"
+      ],
+      "BodyFields": {},
+      "Method": "DELETE"
+    },
+    "consumerGroupDescribe": {
+      "Path": "/public/v1/clusters/{clusterName}/consumergroups/{consumerGroup}",
+      "Name": "consumerGroupDescribe",
+      "Doc": "Describe a consumer group",
+      "QueryParameter": {},
+      "PathParameter": [
+        "clusterName",
+        "consumerGroup"
+      ],
+      "BodyFields": {},
+      "Method": "GET"
+    },
+    "consumerGroupListMembers": {
+      "Path": "/public/v1/clusters/{clusterName}/consumergroups/{consumerGroup}/members",
+      "Name": "consumerGroupListMembers",
+      "Doc": "List the members of a consumer group",
+      "QueryParameter": {},
+      "PathParameter": [
+        "clusterName",
+        "consumerGroup"
+      ],
+      "BodyFields": {},
+      "Method": "GET"
+    },
+    "consumerGroupListTopics": {
+      "Path": "/public/v1/clusters/{clusterName}/consumergroups/{consumerGroup}/topics",
+      "Name": "consumerGroupListTopics",
+      "Doc": "List the topics consumed by a consumer group",
+      "QueryParameter": {},
+      "PathParameter": [
+        "clusterName",
+        "consumerGroup"
+      ],
+      "BodyFields": {},
+      "Method": "GET"
+    },
+    "consumerGroupMemberDetail": {
+      "Path": "/public/v1/clusters/{clusterName}/consumergroups/{consumerGroup}/members/{memberId}",
+      "Name": "consumerGroupMemberDetail",
+      "Doc": "Describe a member of a consumer group",
+      "QueryParameter": {},
+      "PathParameter": [
+        "clusterName",
+        "consumerGroup",
+        "memberId"
+      ],
+      "BodyFields": {},
+      "Method": "GET"
+    },
+    "consumerGroupResetOffsets": {
+      "Path": "/public/v1/clusters/{clusterName}/consumergroups/{consumerGroup}/offset-reset",
+      "Name": "consumerGroupResetOffsets",
+      "Doc": "Reset a consumer group's offsets",
+      "QueryParameter": {},
+      "PathParameter": [
+        "clusterName",
+        "consumerGroup"
+      ],
+      "BodyFields": {
+        "resetSpecification": {
+          "FlagName": "reset-specification",
+          "Required": true,
+          "Type": "json"
+        },
+        "topicPartitionSelection": {
+          "FlagName": "topic-partition-selection",
+          "Required": true,
+          "Type": "json"
+        }
+      },
+      "Method": "POST"
+    },
+    "consumerGroupResetOffsetsPreview": {
+      "Path": "/public/v1/clusters/{clusterName}/consumergroups/{consumerGroup}/offset-reset-preview",
+      "Name": "consumerGroupResetOffsetsPreview",
+      "Doc": "Preview the result of resetting a consumer group's offsets",
+      "QueryParameter": {},
+      "PathParameter": [
+        "clusterName",
+        "consumerGroup"
+      ],
+      "BodyFields": {
+        "resetSpecification": {
+          "FlagName": "reset-specification",
+          "Required": true,
+          "Type": "json"
+        },
+        "topicPartitionSelection": {
+          "FlagName": "topic-partition-selection",
+          "Required": true,
+          "Type": "json"
+        }
+      },
+      "Method": "POST"
+    },
+    "consumerGroupTopicDetail": {
+      "Path": "/public/v1/clusters/{clusterName}/consumergroups/{consumerGroup}/topics/{topicName}",
+      "Name": "consumerGroupTopicDetail",
+      "Doc": "Describe a topic consumed by a consumer group",
+      "QueryParameter": {},
+      "PathParameter": [
+        "clusterName",
+        "consumerGroup",
+        "topicName"
+      ],
+      "BodyFields": {},
+      "Method": "GET"
     },
     "partnerZoneGenerateCredentials": {
       "Path": "/public/partner-zone/v2/{partner-zone-name}/generate-credentials",
