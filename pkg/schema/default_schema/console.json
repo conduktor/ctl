@@ -713,6 +713,60 @@
       "BodyFields": {},
       "Method": "POST"
     },
+    "topicAddPartitions": {
+      "Path": "/public/kafka/v2/cluster/{cluster}/topic/{topic-name}/partitions",
+      "Name": "topicAddPartitions",
+      "Doc": "Increase the number of partitions of a topic",
+      "QueryParameter": {},
+      "PathParameter": [
+        "cluster",
+        "topic-name"
+      ],
+      "BodyFields": {
+        "partitionCount": {
+          "FlagName": "partition-count",
+          "Required": true,
+          "Type": "integer"
+        }
+      },
+      "Method": "PUT"
+    },
+    "topicEmpty": {
+      "Path": "/public/kafka/v2/cluster/{cluster}/topic/{topic-name}/empty",
+      "Name": "topicEmpty",
+      "Doc": "Empty a topic, or a single partition of it",
+      "QueryParameter": {
+        "partition": {
+          "FlagName": "partition",
+          "Required": false,
+          "Type": "integer"
+        }
+      },
+      "PathParameter": [
+        "cluster",
+        "topic-name"
+      ],
+      "BodyFields": {},
+      "Method": "PUT"
+    },
+    "topicSetLowWatermark": {
+      "Path": "/public/kafka/v2/cluster/{cluster}/topic/{topic-name}/low-watermark",
+      "Name": "topicSetLowWatermark",
+      "Doc": "Set a topic's low watermark to an arbitrary offset per partition",
+      "QueryParameter": {},
+      "PathParameter": [
+        "cluster",
+        "topic-name"
+      ],
+      "BodyFields": {
+        "offsets": {
+          "FlagName": "offsets",
+          "Required": true,
+          "Type": "json"
+        }
+      },
+      "Method": "PUT"
+    },
     "whoami": {
       "Path": "/token/v1/whoami",
       "Name": "whoami",
