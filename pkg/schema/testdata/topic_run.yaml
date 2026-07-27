@@ -1,0 +1,124 @@
+openapi: 3.0.3
+info:
+  title: Conduktor Public API
+  version: 0.0.1-SNAPSHOT
+paths:
+  /public/kafka/v2/cluster/{cluster}/topic/{topic-name}/partitions:
+    put:
+      description: Increase the number of partitions of a topic
+      operationId: increase-topic-partition-count
+      parameters:
+        - name: cluster
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: topic-name
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncreasePartitionCountRequest'
+            example:
+              partitionCount: 3
+        required: true
+      responses:
+        '200':
+          description: ''
+      security:
+        - httpAuth: []
+      x-cdk-run-version: '1'
+      x-cdk-run-name-v2: topicAddPartitions
+      x-cdk-run-doc: Increase the number of partitions of a topic
+  /public/kafka/v2/cluster/{cluster}/topic/{topic-name}/empty:
+    put:
+      description: Empty a topic, or a single partition of it, by deleting all its records
+      operationId: empty-topic
+      parameters:
+        - name: cluster
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: topic-name
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: partition
+          in: query
+          description: Optional partition to be emptied
+          required: false
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: ''
+      security:
+        - httpAuth: []
+      x-cdk-run-version: '1'
+      x-cdk-run-name-v2: topicEmpty
+      x-cdk-run-doc: Empty a topic, or a single partition of it
+  /public/kafka/v2/cluster/{cluster}/topic/{topic-name}/low-watermark:
+    put:
+      description: Set the low watermark of a topic to an arbitrary offset per partition, deleting all older records
+      operationId: set-topic-low-watermark
+      parameters:
+        - name: cluster
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: topic-name
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetLowWatermarkRequest'
+            example:
+              offsets:
+                '0': 42
+                '1': 1337
+        required: true
+      responses:
+        '200':
+          description: ''
+      security:
+        - httpAuth: []
+      x-cdk-run-version: '1'
+      x-cdk-run-name-v2: topicSetLowWatermark
+      x-cdk-run-doc: Set a topic's low watermark to an arbitrary offset per partition
+components:
+  schemas:
+    IncreasePartitionCountRequest:
+      title: IncreasePartitionCountRequest
+      type: object
+      required:
+        - partitionCount
+      properties:
+        partitionCount:
+          type: integer
+          format: int32
+    SetLowWatermarkOffsets:
+      title: SetLowWatermarkOffsets
+      type: object
+      additionalProperties:
+        type: integer
+        format: int64
+    SetLowWatermarkRequest:
+      title: SetLowWatermarkRequest
+      type: object
+      required:
+        - offsets
+      properties:
+        offsets:
+          $ref: '#/components/schemas/SetLowWatermarkOffsets'

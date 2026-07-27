@@ -619,6 +619,83 @@ paths:
 		}
 	})
 
+	t.Run("parses the topic add-partitions / empty / low-watermark runs", func(t *testing.T) {
+		schemaContent, err := os.ReadFile("testdata/topic_run.yaml")
+		if err != nil {
+			t.Fatalf("failed reading file: %s", err)
+		}
+
+		schema, err := NewOpenAPIParser(schemaContent)
+		if err != nil {
+			t.Fatalf("failed creating new schema: %s", err)
+		}
+
+		result, err := schema.getRuns(CONSOLE)
+		if err != nil {
+			t.Fatalf("failed getting runs: %s", err)
+		}
+
+		topicPathParams := []string{"cluster", "topic-name"}
+		expected := RunCatalog{
+			// The partition count is a scalar (int) property of an object body,
+			// so it surfaces as a typed --partition-count flag.
+			"topicAddPartitions": Run{
+				Path:           "/public/kafka/v2/cluster/{cluster}/topic/{topic-name}/partitions",
+				Name:           "topicAddPartitions",
+				Doc:            "Increase the number of partitions of a topic",
+				QueryParameter: map[string]FlagParameterOption{},
+				PathParameter:  topicPathParams,
+				BodyFields: map[string]FlagParameterOption{
+					"partitionCount": {
+						FlagName: "partition-count",
+						Required: true,
+						Type:     "integer",
+					},
+				},
+				Method:      "PUT",
+				BackendType: CONSOLE,
+			},
+			// The partition to empty is an optional query parameter, not a body.
+			"topicEmpty": Run{
+				Path: "/public/kafka/v2/cluster/{cluster}/topic/{topic-name}/empty",
+				Name: "topicEmpty",
+				Doc:  "Empty a topic, or a single partition of it",
+				QueryParameter: map[string]FlagParameterOption{
+					"partition": {
+						FlagName: "partition",
+						Required: false,
+						Type:     "integer",
+					},
+				},
+				PathParameter: topicPathParams,
+				BodyFields:    map[string]FlagParameterOption{},
+				Method:        "PUT",
+				BackendType:   CONSOLE,
+			},
+			// offsets is a map (object) property, so it is passed as a
+			// JSON-encoded string flag we decode back into the body.
+			"topicSetLowWatermark": Run{
+				Path:           "/public/kafka/v2/cluster/{cluster}/topic/{topic-name}/low-watermark",
+				Name:           "topicSetLowWatermark",
+				Doc:            "Set a topic's low watermark to an arbitrary offset per partition",
+				QueryParameter: map[string]FlagParameterOption{},
+				PathParameter:  topicPathParams,
+				BodyFields: map[string]FlagParameterOption{
+					"offsets": {
+						FlagName: "offsets",
+						Required: true,
+						Type:     "json",
+					},
+				},
+				Method:      "PUT",
+				BackendType: CONSOLE,
+			},
+		}
+		if !reflect.DeepEqual(result, expected) {
+			t.Error(spew.Printf("got %v, want %v", result, expected))
+		}
+	})
+
 	t.Run("exposes polymorphic (oneOf) body properties as json flags", func(t *testing.T) {
 		// A body property that is a oneOf/anyOf/allOf carries no scalar type;
 		// it must still surface as a json-encoded string flag (like the
