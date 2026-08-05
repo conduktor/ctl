@@ -1,5 +1,5 @@
 # Use native platform for build stage
-FROM --platform=$BUILDPLATFORM golang:1.25.7 AS build
+FROM --platform=$BUILDPLATFORM golang:1.25.12 AS build
 ARG version=unknown
 ARG hash=unknown
 ARG ldflags=
