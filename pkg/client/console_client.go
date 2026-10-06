@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"regexp"
@@ -248,6 +249,9 @@ func (client *Client) ActivateDebug() {
 	client.client.SetDebug(true)
 }
 
+// ErrResourceNotFound is what GetFromResource returns when the server has no resource of that name.
+var ErrResourceNotFound = errors.New("could not find any matching resource")
+
 func (client *Client) Apply(resource *resource.Resource, dryMode bool, diffMode bool) (Result, error) {
 	var result = Result{}
 
@@ -271,8 +275,9 @@ func (client *Client) Apply(resource *resource.Resource, dryMode bool, diffMode 
 	}
 
 	if diffMode {
+		// A resource the Console does not have yet is diffed against nothing.
 		currentRes, err := client.GetFromResource(resource)
-		if err != nil {
+		if err != nil && !errors.Is(err, ErrResourceNotFound) {
 			return result, err
 		}
 		diff, err := utils.DiffResources(&currentRes, resource)
@@ -363,7 +368,7 @@ func (client *Client) GetFromResource(res *resource.Resource) (resource.Resource
 			return element, nil
 		}
 	}
-	return resource.Resource{}, fmt.Errorf("could not find any matching resource")
+	return resource.Resource{}, ErrResourceNotFound
 }
 
 // ListTemplates fetches all admin-curated resource templates of a given kind
