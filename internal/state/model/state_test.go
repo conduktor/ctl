@@ -229,3 +229,40 @@ func TestState_ResourceOperationsWithComplexMetadata(t *testing.T) {
 	// Should still be considered managed (labels are ignored)
 	assert.True(t, state.IsResourceManaged(resourceWithDifferentLabels))
 }
+
+// A resource is the same one whatever its description or labels: changing them must not make the state delete it.
+func TestState_IdentifiesResourcesByKindNameAndParents(t *testing.T) {
+	state := NewState()
+	state.IdentifyBy(func(kind string) []string { return []string{"name", "cluster"} })
+
+	applied := resource.Resource{
+		Kind:     "Topic",
+		Version:  "v2",
+		Name:     "orders",
+		Metadata: map[string]any{"name": "orders", "cluster": "c"},
+	}
+	state.AddManagedResource(applied)
+
+	edited := resource.Resource{
+		Kind:     "Topic",
+		Version:  "v2",
+		Name:     "orders",
+		Metadata: map[string]any{"name": "orders", "cluster": "c", "description": "now described", "labels": map[string]any{"team": "data"}},
+	}
+	assert.Empty(t, state.GetRemovedResources([]resource.Resource{edited}))
+
+	state.AddManagedResource(edited)
+	assert.Len(t, state.Resources, 1)
+	assert.Equal(t, "now described", (*state.Resources[0].Metadata)["description"])
+
+	elsewhere := resource.Resource{
+		Kind:     "Topic",
+		Version:  "v2",
+		Name:     "orders",
+		Metadata: map[string]any{"name": "orders", "cluster": "other"},
+	}
+	assert.Len(t, state.GetRemovedResources([]resource.Resource{elsewhere}), 1, "another cluster is another topic")
+
+	state.RemoveManagedResource(edited)
+	assert.Empty(t, state.Resources)
+}

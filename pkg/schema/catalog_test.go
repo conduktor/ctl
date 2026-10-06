@@ -3,6 +3,8 @@ package schema
 import (
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // TODO: test for colision.
@@ -41,4 +43,14 @@ func TestMerge(t *testing.T) {
 	if !reflect.DeepEqual(mergedCatalog, expected) {
 		t.Errorf("expected %v, got %v", expected, mergedCatalog)
 	}
+}
+
+func TestStateIdentityIsNameAndParents(t *testing.T) {
+	console := ConsoleDefaultCatalog()
+	assert.Equal(t, []string{"name", "cluster"}, console.StateIdentity("Topic"))
+	assert.Equal(t, []string{"name", "cluster", "connectCluster"}, console.StateIdentity("Connector"))
+	assert.Nil(t, console.StateIdentity("NoSuchKind"))
+	gateway := GatewayDefaultCatalog()
+	assert.Equal(t, []string{"name", "vCluster"}, gateway.StateIdentity("AliasTopic"))
+	assert.Equal(t, []string{"name", "scope"}, gateway.StateIdentity("Interceptor"))
 }
