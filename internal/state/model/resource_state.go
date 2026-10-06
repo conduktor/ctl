@@ -42,6 +42,19 @@ func (r *ResourceState) Equal(other *ResourceState) bool {
 	return true
 }
 
+// SameIdentity compares only the kind and the given metadata keys: the same resource, whatever else has changed.
+func (r *ResourceState) SameIdentity(other *ResourceState, keys []string) bool {
+	if r.Kind != other.Kind || r.Metadata == nil || other.Metadata == nil {
+		return false
+	}
+	for _, key := range keys {
+		if !reflect.DeepEqual((*r.Metadata)[key], (*other.Metadata)[key]) {
+			return false
+		}
+	}
+	return true
+}
+
 func (r *ResourceState) ToResource() resource.Resource {
 	name, _ := (*r.Metadata)["name"].(string)
 	return resource.Resource{

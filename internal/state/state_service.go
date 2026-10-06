@@ -18,7 +18,14 @@ type StateService struct {
 // loads the state, executes the provided function with the state reference,
 // and saves the state back if not a dry run.
 // function f should accept a pointer to model.State and return an error and NEVER panic or Exit itself (except for fail fast strategy).
-func RunWithState(stateCfg storage.StorageConfig, dryrun, debug bool, f func(stateRef *model.State) error) error {
+// RunWithState loads the state, runs f with it and saves it. identity (schema.Catalog.StateIdentity) tells managed
+// resources apart by their kind, name and parents.
+func RunWithState(
+	stateCfg storage.StorageConfig,
+	dryrun, debug bool,
+	identity func(kind string) []string,
+	f func(stateRef *model.State) error,
+) error {
 	stateSvc := NewStateService(stateCfg, debug)
 
 	// Load the state
@@ -26,6 +33,9 @@ func RunWithState(stateCfg storage.StorageConfig, dryrun, debug bool, f func(sta
 	if err != nil {
 		// fail fast if state cannot be loaded
 		return err
+	}
+	if stateRef != nil {
+		stateRef.IdentifyBy(identity)
 	}
 
 	// Execute the provided function with the loaded state

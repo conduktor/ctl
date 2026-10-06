@@ -13,6 +13,24 @@ type State struct {
 	Version     string          `json:"version"`
 	LastUpdated string          `json:"lastUpdated"`
 	Resources   []ResourceState `json:"resources"`
+	identity    func(kind string) []string
+}
+
+// IdentifyBy tells resources apart by the given metadata keys of their kind (see schema.Catalog.StateIdentity)
+// instead of by all their metadata, so changing a description or labels does not make a resource look removed.
+func (s *State) IdentifyBy(identity func(kind string) []string) {
+	s.identity = identity
+}
+
+func (s *State) same(stored, other *ResourceState) bool {
+	if s.identity == nil {
+		return stored.Equal(other)
+	}
+	keys := s.identity(stored.Kind)
+	if keys == nil {
+		return stored.Equal(other)
+	}
+	return stored.SameIdentity(other, keys)
 }
 
 func NewState() *State {
@@ -24,10 +42,17 @@ func NewState() *State {
 }
 
 func (s *State) AddManagedResource(res resource.Resource) {
-	if !s.IsResourceManaged(res) {
-		s.Resources = append(s.Resources, NewResourceState(res))
-		s.LastUpdated = time.Now().UTC().Format(time.RFC3339)
+	asResState := NewResourceState(res)
+	for i := range s.Resources {
+		if s.same(&s.Resources[i], &asResState) {
+			// The same resource, applied again: keep what it is now.
+			s.Resources[i] = asResState
+			s.LastUpdated = time.Now().UTC().Format(time.RFC3339)
+			return
+		}
 	}
+	s.Resources = append(s.Resources, asResState)
+	s.LastUpdated = time.Now().UTC().Format(time.RFC3339)
 }
 
 func (s *State) RemoveManagedResource(res resource.Resource) {
@@ -52,7 +77,7 @@ func (s *State) RemoveManagedResourceKindName(kind schema.Kind, name string) {
 func (s *State) RemoveManagedResourceVKM(apiVersion, kind string, metadata *map[string]any) {
 	searchResState := ResourceState{APIVersion: apiVersion, Kind: kind, Metadata: metadata}
 	for i, res := range s.Resources {
-		if res.Equal(&searchResState) {
+		if s.same(&res, &searchResState) {
 			// Remove the resource from the slice keeping order
 			s.Resources = append(s.Resources[:i], s.Resources[i+1:]...)
 			s.LastUpdated = time.Now().UTC().Format(time.RFC3339)
@@ -67,7 +92,7 @@ func (s *State) GetRemovedResources(activeResources []resource.Resource) []resou
 		found := false
 		for _, currRes := range activeResources {
 			currResState := NewResourceState(currRes)
-			if stateRes.Equal(&currResState) {
+			if s.same(&stateRes, &currResState) {
 				found = true
 				break
 			}
@@ -82,7 +107,7 @@ func (s *State) GetRemovedResources(activeResources []resource.Resource) []resou
 func (s *State) IsResourceManaged(ressource resource.Resource) bool {
 	asResState := NewResourceState(ressource)
 	for _, res := range s.Resources {
-		if res.Equal(&asResState) {
+		if s.same(&res, &asResState) {
 			return true
 		}
 	}

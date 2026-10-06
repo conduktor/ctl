@@ -29,7 +29,7 @@ func initApply(rootContext cli.RootContext) {
 		SilenceUsage: true, // do not print usage on run error
 		RunE: func(cmd *cobra.Command, args []string) error {
 			stateCfg := storage.NewStorageConfig(stateEnabled, stateFile, stateRemoteURI)
-			return state.RunWithState(stateCfg, *dryRun, *rootContext.Debug, func(stateRef *model.State) error {
+			return state.RunWithState(stateCfg, *dryRun, *rootContext.Debug, rootContext.Catalog.StateIdentity, func(stateRef *model.State) error {
 
 				cmdCtx := cli.ApplyHandlerContext{
 					FilePaths:       *filePath,
