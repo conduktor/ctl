@@ -2,6 +2,7 @@ package client
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/conduktor/ctl/pkg/resource"
@@ -761,5 +762,39 @@ func TestDeleteShouldFailOnNot2XX(t *testing.T) {
 	err = client.Delete(&app, []string{}, []string{}, "yo", false)
 	if err == nil {
 		t.Fail()
+	}
+}
+
+// A plan with --print-diff includes resources the Console does not have yet: their diff is against nothing.
+func TestApplyWithDiffForAResourceNotThereYet(t *testing.T) {
+	defer httpmock.Reset()
+	client, err := Make(APIParameter{APIKey: "aToken", BaseURL: "http://baseUrl"})
+	if err != nil {
+		panic(err)
+	}
+	client.setAuthMethodFromEnvIfNeeded()
+	httpmock.ActivateNonDefault(client.client.GetClient())
+
+	topic := resource.Resource{
+		Json:     []byte(`{"apiVersion":"v2","kind":"Topic","metadata":{"name":"new-one","cluster":"local"},"spec":{"partitions":1}}`),
+		Kind:     "Topic",
+		Name:     "new-one",
+		Version:  "v2",
+		Metadata: map[string]interface{}{"name": "new-one", "cluster": "local"},
+	}
+	httpmock.RegisterResponder("GET", "http://baseUrl/api/public/kafka/v2/cluster/local/topic",
+		httpmock.NewStringResponder(200, `[]`))
+	httpmock.RegisterResponder("PUT", "http://baseUrl/api/public/kafka/v2/cluster/local/topic",
+		httpmock.NewStringResponder(200, `{"upsertResult": "Created"}`))
+
+	result, err := client.Apply(&topic, true, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.UpsertResult != "Created" {
+		t.Errorf("expected Created, got %s", result.UpsertResult)
+	}
+	if !strings.Contains(result.Diff, "new-one") {
+		t.Errorf("expected a diff against nothing, got %q", result.Diff)
 	}
 }
