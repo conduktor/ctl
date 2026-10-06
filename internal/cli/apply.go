@@ -48,7 +48,9 @@ func (h *ApplyHandler) Handle(cmdCtx ApplyHandlerContext) ([]ApplyResult, error)
 		return nil, err
 	}
 
-	if len(resources) == 0 {
+	// With state, an empty folder still has work: everything the state manages was removed from it.
+	stateful := cmdCtx.StateEnabled && stateRef != nil
+	if len(resources) == 0 && !stateful {
 		fmt.Fprintln(os.Stderr, "No resources found to apply")
 		return []ApplyResult{}, nil
 	}
@@ -56,7 +58,7 @@ func (h *ApplyHandler) Handle(cmdCtx ApplyHandlerContext) ([]ApplyResult, error)
 	// Sort resources for proper apply order
 	schema.SortResourcesForApply(h.rootCtx.Catalog.Kind, resources, debug)
 
-	if cmdCtx.StateEnabled && stateRef != nil {
+	if stateful {
 		// Delete missing managed resources
 		removedResources := stateRef.GetRemovedResources(resources)
 		schema.SortResourcesForDelete(h.rootCtx.Catalog.Kind, removedResources, debug)
@@ -81,6 +83,11 @@ func (h *ApplyHandler) Handle(cmdCtx ApplyHandlerContext) ([]ApplyResult, error)
 				return nil, fmt.Errorf("one or more errors occurred while deleting resources missing from state")
 			}
 		}
+	}
+
+	if len(resources) == 0 {
+		fmt.Fprintln(os.Stderr, "No resources found to apply")
+		return []ApplyResult{}, nil
 	}
 
 	fmt.Fprintln(os.Stderr, "Applying resources")
