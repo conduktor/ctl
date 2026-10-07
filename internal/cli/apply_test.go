@@ -2,8 +2,12 @@ package cli
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"sync"
 	"testing"
+
+	"github.com/conduktor/ctl/internal/state/model"
 
 	"github.com/conduktor/ctl/pkg/client"
 	"github.com/conduktor/ctl/pkg/resource"
@@ -131,4 +135,44 @@ func TestApplyHandler_applyResources_Sequential(t *testing.T) {
 	assert.Equal(t, "2", results[1].Resource.Name)
 	assert.Equal(t, "applied-B-2", results[1].UpsertResult.UpsertResult)
 	assert.NoError(t, results[1].Err)
+}
+
+// Removing the last file of a folder is a delete like any other: the state's deletes still run.
+func TestApplyHandler_EmptyFolderStillDeletesWhatTheStateManages(t *testing.T) {
+	debug := false
+	handler := NewApplyHandler(RootContext{Catalog: *schema.ConsoleDefaultCatalog(), Strict: true, Debug: &debug})
+	state := model.NewState()
+	state.AddManagedResource(resource.Resource{
+		Kind:     "Topic",
+		Version:  "v2",
+		Name:     "gone",
+		Metadata: map[string]any{"name": "gone", "cluster": "c"},
+	})
+
+	stdout := captureStdout(t, func() {
+		_, err := handler.Handle(ApplyHandlerContext{
+			FilePaths:       []string{t.TempDir()},
+			RecursiveFolder: true,
+			DryRun:          true,
+			StateEnabled:    true,
+			StateRef:        state,
+		})
+		assert.NoError(t, err)
+	})
+	assert.Contains(t, stdout, "Topic/gone: Deleted (dry-run)")
+}
+
+func captureStdout(t *testing.T, run func()) string {
+	t.Helper()
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	original := os.Stdout
+	os.Stdout = writer
+	run()
+	os.Stdout = original
+	_ = writer.Close()
+	out, _ := io.ReadAll(reader)
+	return string(out)
 }

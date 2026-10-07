@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/conduktor/ctl/internal/cli"
 	"github.com/conduktor/ctl/internal/state"
@@ -96,7 +97,12 @@ func runApply(rootContext cli.RootContext, cmdCtx cli.ApplyHandlerContext) error
 			fmt.Fprintf(os.Stderr, "Could not apply resource %s/%s: %s\n", result.Resource.Kind, result.Resource.Name, result.Err)
 			allSuccess = false
 		} else if result.UpsertResult.UpsertResult != "" {
-			fmt.Printf("%s", result.UpsertResult.Diff)
+			// The result line starts on a line of its own, for whoever reads the output line by line.
+			diff := result.UpsertResult.Diff
+			if diff != "" && !strings.HasSuffix(diff, "\n") {
+				diff += "\n"
+			}
+			fmt.Printf("%s", diff)
 			fmt.Printf("%s/%s: %s\n", result.Resource.Kind, result.Resource.Name, result.UpsertResult.UpsertResult)
 		}
 	}

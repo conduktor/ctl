@@ -3,6 +3,7 @@ package client
 import (
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 
@@ -361,8 +362,9 @@ func (client *GatewayClient) Apply(resource *resource.Resource, dryMode bool, di
 		builder = builder.SetQueryParam("dryMode", "true")
 	}
 	if diffMode {
+		// A resource the Console does not have yet is diffed against nothing.
 		currentRes, err := client.GetFromResource(resource)
-		if err != nil {
+		if err != nil && !errors.Is(err, ErrResourceNotFound) {
 			return result, err
 		}
 		diff, err := utils.DiffResources(&currentRes, resource)
@@ -462,5 +464,5 @@ func (client *GatewayClient) GetFromResource(res *resource.Resource) (resource.R
 			return element, nil
 		}
 	}
-	return resource.Resource{}, fmt.Errorf("could not find any matching resource")
+	return resource.Resource{}, ErrResourceNotFound
 }
