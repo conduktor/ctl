@@ -300,7 +300,7 @@ func FixtureRandomGatewayInterceptor(t *testing.T) (string, any) {
 		"name":              name,
 		"vCluster":          "passthrough",
 		"username":          "user",
-		"priority":          strconv.Itoa(rand.IntN(100)),
+		"priority":          strconv.Itoa(1 + rand.IntN(100)),
 		"topic":             fmt.Sprintf("topic-%s", randomSuffix),
 		"min_num_partition": strconv.Itoa(min),
 		"max_num_partition": strconv.Itoa(max),
