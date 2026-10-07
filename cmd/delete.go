@@ -89,7 +89,7 @@ func initDelete(rootContext cli.RootContext) {
 func runDeleteFromFiles(rootContext cli.RootContext, filePaths []string, recursiveFolder bool, dryRun *bool, stateEnabled *bool, stateFile *string, stateRemoteURI *string) error {
 
 	stateCfg := storage.NewStorageConfig(stateEnabled, stateFile, stateRemoteURI)
-	return state.RunWithState(stateCfg, *dryRun, *rootContext.Debug, func(stateRef *model.State) error {
+	return state.RunWithState(stateCfg, *dryRun, *rootContext.Debug, rootContext.Catalog.StateIdentity, func(stateRef *model.State) error {
 		deleteHandler := cli.NewDeleteHandler(rootContext)
 
 		cmdCtx := cli.DeleteFileHandlerContext{
@@ -170,7 +170,7 @@ func buildDeleteInterceptorsCmd(rootContext cli.RootContext, kind schema.Kind, d
 func runDeleteByVClusterAndName(rootContext cli.RootContext, kind schema.Kind, name string, vCluster string, dryRun *bool, stateEnabled *bool, stateFile *string, stateRemoteURI *string) error {
 
 	stateCfg := storage.NewStorageConfig(stateEnabled, stateFile, stateRemoteURI)
-	return state.RunWithState(stateCfg, *dryRun, *rootContext.Debug, func(stateRef *model.State) error {
+	return state.RunWithState(stateCfg, *dryRun, *rootContext.Debug, rootContext.Catalog.StateIdentity, func(stateRef *model.State) error {
 		deleteHandler := cli.NewDeleteHandler(rootContext)
 
 		cmdCtx := cli.DeleteByVClusterAndNameHandlerContext{
@@ -193,7 +193,7 @@ func runDeleteByVClusterAndName(rootContext cli.RootContext, kind schema.Kind, n
 func runDeleteInterceptor(rootContext cli.RootContext, kind schema.Kind, name string, vCluster string, group string, username string, dryRun *bool, stateEnabled *bool, stateFile *string, stateRemoteURI *string) error {
 
 	stateCfg := storage.NewStorageConfig(stateEnabled, stateFile, stateRemoteURI)
-	return state.RunWithState(stateCfg, *dryRun, *rootContext.Debug, func(stateRef *model.State) error {
+	return state.RunWithState(stateCfg, *dryRun, *rootContext.Debug, rootContext.Catalog.StateIdentity, func(stateRef *model.State) error {
 		deleteHandler := cli.NewDeleteHandler(rootContext)
 
 		cmdCtx := cli.DeleteInterceptorHandlerContext{
@@ -223,7 +223,7 @@ func runDeleteKind(
 	parentQueryFlagValue []*string, dryRun *bool, stateEnabled *bool, stateFile *string, stateRemoteURI *string) error {
 
 	stateCfg := storage.NewStorageConfig(stateEnabled, stateFile, stateRemoteURI)
-	return state.RunWithState(stateCfg, *dryRun, *rootContext.Debug, func(stateRef *model.State) error {
+	return state.RunWithState(stateCfg, *dryRun, *rootContext.Debug, rootContext.Catalog.StateIdentity, func(stateRef *model.State) error {
 		deleteHandler := cli.NewDeleteHandler(rootContext)
 
 		cmdCtx := cli.DeleteKindHandlerContext{
