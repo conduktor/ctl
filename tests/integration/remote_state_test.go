@@ -15,26 +15,27 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// The garage service of the integration stack (testdata/garage), set up with this key and bucket.
 const (
-	minioEndpoint   = "localhost:9000"
-	minioAccessKey  = "minioadmin"
-	minioSecretKey  = "minioadmin"
-	minioBucket     = "conduktor-state"
-	minioRegion     = "us-east-1"
+	s3Endpoint      = "localhost:3900"
+	s3AccessKey     = "GK31c2f218a2e44f485b94239e"
+	s3SecretKey     = "b892c0665f0ada8a4755dae98baa3b133590e11dae3bcc1f9d38d9d4e4b2a1d4" // pragma: allowlist secret
+	s3Bucket        = "conduktor-state"
+	s3Region        = "us-east-1"
 	testStatePrefix = "integration-test"
 )
 
-// Test apply with remote state backend using MinIO
-func Test_Apply_With_Remote_State_MinIO(t *testing.T) {
-	fmt.Println("Test CLI Apply with remote state backend (MinIO)")
+// Test apply with remote state backend using S3-compatible storage
+func Test_Apply_With_Remote_State_S3(t *testing.T) {
+	fmt.Println("Test CLI Apply with remote state backend (S3)")
 
 	// Generate unique state path for this test
 	statePath := fmt.Sprintf("%s/test-apply-%v.json", testStatePrefix, time.Now().Unix())
-	stateURI := buildMinioURI(statePath)
+	stateURI := buildS3URI(statePath)
 
 	// Clean up any existing state file before test
-	defer cleanupMinioState(t, statePath)
-	cleanupMinioState(t, statePath)
+	defer cleanupS3State(t, statePath)
+	cleanupS3State(t, statePath)
 
 	// Create test resources
 	userName, userYAML := FixtureRandomConsoleUser(t)
@@ -53,12 +54,12 @@ func Test_Apply_With_Remote_State_MinIO(t *testing.T) {
 	assert.Containsf(t, stdout, "Group/"+groupName, "Expected group to be created")
 	assert.Containsf(t, stderr, "Saving state into remote storage", "Expected state to be saved to remote storage")
 
-	// Verify state file exists in MinIO
-	stateExists := checkMinioStateExists(t, statePath)
-	assert.True(t, stateExists, "State file should exist in MinIO")
+	// Verify state file exists in the bucket
+	stateExists := checkS3StateExists(t, statePath)
+	assert.True(t, stateExists, "State file should exist in the bucket")
 
-	// Read state file from MinIO and verify it contains our resources
-	stateContent := readMinioState(t, statePath)
+	// Read state file from the bucket and verify it contains our resources
+	stateContent := readS3State(t, statePath)
 	assert.Containsf(t, stateContent, userName, "State should contain user name")
 	assert.Containsf(t, stateContent, groupName, "State should contain group name")
 
@@ -68,16 +69,16 @@ func Test_Apply_With_Remote_State_MinIO(t *testing.T) {
 }
 
 // Test delete with remote state backend
-func Test_Delete_With_Remote_State_MinIO(t *testing.T) {
-	fmt.Println("Test CLI Delete with remote state backend (MinIO)")
+func Test_Delete_With_Remote_State_S3(t *testing.T) {
+	fmt.Println("Test CLI Delete with remote state backend (S3)")
 
 	// Generate unique state path for this test
 	statePath := fmt.Sprintf("%s/test-delete-%v.json", testStatePrefix, time.Now().Unix())
-	stateURI := buildMinioURI(statePath)
+	stateURI := buildS3URI(statePath)
 
 	// Clean up any existing state file
-	defer cleanupMinioState(t, statePath)
-	cleanupMinioState(t, statePath)
+	defer cleanupS3State(t, statePath)
+	cleanupS3State(t, statePath)
 
 	// Create test resources
 	groupName, groupYAML := FixtureRandomConsoleGroup(t)
@@ -93,7 +94,7 @@ func Test_Delete_With_Remote_State_MinIO(t *testing.T) {
 	assert.Containsf(t, stdout, "Group/"+groupName, "Expected group to be created")
 
 	// Verify state file exists
-	assert.True(t, checkMinioStateExists(t, statePath), "State file should exist after apply")
+	assert.True(t, checkS3StateExists(t, statePath), "State file should exist after apply")
 
 	// Delete with remote state
 	setS3Env(t)
@@ -102,24 +103,24 @@ func Test_Delete_With_Remote_State_MinIO(t *testing.T) {
 	assert.Containsf(t, stdout, "Group/"+groupName, "Expected group to be deleted")
 
 	// State file should still exist but should be updated
-	assert.True(t, checkMinioStateExists(t, statePath), "State file should still exist after delete")
+	assert.True(t, checkS3StateExists(t, statePath), "State file should still exist after delete")
 
 	// Read state and verify resource is no longer tracked
-	stateContent := readMinioState(t, statePath)
+	stateContent := readS3State(t, statePath)
 	assert.NotContainsf(t, stateContent, groupName, "State should not contain deleted group name")
 }
 
 // Test automatic cleanup of removed resources with remote state
-func Test_Apply_Removed_Resources_With_Remote_State_MinIO(t *testing.T) {
-	fmt.Println("Test CLI Apply with removed resources using remote state (MinIO)")
+func Test_Apply_Removed_Resources_With_Remote_State_S3(t *testing.T) {
+	fmt.Println("Test CLI Apply with removed resources using remote state (S3)")
 
 	// Generate unique state path for this test
 	statePath := fmt.Sprintf("%s/test-removed-%v.json", testStatePrefix, time.Now().Unix())
-	stateURI := buildMinioURI(statePath)
+	stateURI := buildS3URI(statePath)
 
 	// Clean up
-	defer cleanupMinioState(t, statePath)
-	cleanupMinioState(t, statePath)
+	defer cleanupS3State(t, statePath)
+	cleanupS3State(t, statePath)
 
 	// Create two resources
 	user1Name, user1YAML := FixtureRandomConsoleUser(t)
@@ -148,7 +149,7 @@ func Test_Apply_Removed_Resources_With_Remote_State_MinIO(t *testing.T) {
 	assert.Containsf(t, stdout, "User/"+user2Name, "Expected user2 to be auto-deleted")
 
 	// Verify only user1 remains in state
-	stateContent := readMinioState(t, statePath)
+	stateContent := readS3State(t, statePath)
 	assert.Containsf(t, stateContent, user1Name, "State should still contain user1")
 	assert.NotContainsf(t, stateContent, user2Name, "State should not contain removed user2")
 
@@ -163,11 +164,11 @@ func Test_Apply_With_Custom_State_Filename(t *testing.T) {
 
 	// Use a custom filename ending in .json
 	statePath := fmt.Sprintf("%s/my-custom-state-%v.json", testStatePrefix, time.Now().Unix())
-	stateURI := buildMinioURI(statePath)
+	stateURI := buildS3URI(statePath)
 
 	// Clean up
-	defer cleanupMinioState(t, statePath)
-	cleanupMinioState(t, statePath)
+	defer cleanupS3State(t, statePath)
+	cleanupS3State(t, statePath)
 
 	// Create test resource
 	groupName, groupYAML := FixtureRandomConsoleGroup(t)
@@ -181,7 +182,7 @@ func Test_Apply_With_Custom_State_Filename(t *testing.T) {
 	assert.Containsf(t, stdout, "Group/"+groupName, "Expected group to be created")
 
 	// Verify state file exists with exact custom name
-	assert.True(t, checkMinioStateExists(t, statePath), "State file should exist with custom name")
+	assert.True(t, checkS3StateExists(t, statePath), "State file should exist with custom name")
 
 	// Cleanup
 	stdout, stderr, err = runConsoleCommand("delete", "-f", tmpFile)
@@ -191,9 +192,9 @@ func Test_Apply_With_Custom_State_Filename(t *testing.T) {
 // Helper functions
 
 func setS3Env(t *testing.T) {
-	err := os.Setenv("AWS_ACCESS_KEY_ID", minioAccessKey)
+	err := os.Setenv("AWS_ACCESS_KEY_ID", s3AccessKey)
 	require.NoError(t, err, "Failed to set AWS_ACCESS_KEY_ID")
-	err = os.Setenv("AWS_SECRET_ACCESS_KEY", minioSecretKey)
+	err = os.Setenv("AWS_SECRET_ACCESS_KEY", s3SecretKey)
 	require.NoError(t, err, "Failed to set AWS_SECRET_ACCESS_KEY")
 }
 
@@ -204,18 +205,18 @@ func unsetS3Env(t *testing.T) {
 	require.NoError(t, err, "Failed to unset AWS_SECRET_ACCESS_KEY")
 }
 
-func buildMinioURI(statePath string) string {
-	// Build S3-compatible URI for MinIO
+func buildS3URI(statePath string) string {
+	// Build an S3 URI for the S3-compatible test store
 	return fmt.Sprintf("s3://%s/%s?region=%s&endpoint=http://%s&disable_https=true&s3ForcePathStyle=true",
-		minioBucket, statePath, minioRegion, minioEndpoint)
+		s3Bucket, statePath, s3Region, s3Endpoint)
 }
 
-func checkMinioStateExists(t *testing.T, statePath string) bool {
+func checkS3StateExists(t *testing.T, statePath string) bool {
 	ctx := context.Background()
 	bucketURL := fmt.Sprintf("s3://%s?region=%s&endpoint=http://%s&disable_https=true&s3ForcePathStyle=true",
-		minioBucket, minioRegion, minioEndpoint)
+		s3Bucket, s3Region, s3Endpoint)
 
-	// Set AWS credentials for MinIO
+	// Set AWS credentials for the test store
 	setS3Env(t)
 	defer unsetS3Env(t)
 
@@ -235,12 +236,12 @@ func checkMinioStateExists(t *testing.T, statePath string) bool {
 	return exists
 }
 
-func readMinioState(t *testing.T, statePath string) string {
+func readS3State(t *testing.T, statePath string) string {
 	ctx := context.Background()
 	bucketURL := fmt.Sprintf("s3://%s?region=%s&endpoint=http://%s&disable_https=true&s3ForcePathStyle=true",
-		minioBucket, minioRegion, minioEndpoint)
+		s3Bucket, s3Region, s3Endpoint)
 
-	// Set AWS credentials for MinIO
+	// Set AWS credentials for the test store
 	setS3Env(t)
 	defer unsetS3Env(t)
 
@@ -258,12 +259,12 @@ func readMinioState(t *testing.T, statePath string) string {
 	return string(content)
 }
 
-func cleanupMinioState(t *testing.T, statePath string) {
+func cleanupS3State(t *testing.T, statePath string) {
 	ctx := context.Background()
 	bucketURL := fmt.Sprintf("s3://%s?region=%s&endpoint=http://%s&disable_https=true&s3ForcePathStyle=true",
-		minioBucket, minioRegion, minioEndpoint)
+		s3Bucket, s3Region, s3Endpoint)
 
-	// Set AWS credentials for MinIO
+	// Set AWS credentials for the test store
 	setS3Env(t)
 	defer unsetS3Env(t)
 
