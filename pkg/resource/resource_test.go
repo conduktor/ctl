@@ -254,9 +254,9 @@ spec:
 		Version:  "v1",
 		Kind:     "Topic",
 		Name:     "toto",
-		Metadata: map[string]interface{}{"cluster": "cluster-a", "name": "toto", "labels": map[string]interface{}{"conduktor.io/description": "This topic is awesome"}},
+		Metadata: map[string]interface{}{"cluster": "cluster-a", "name": "toto", "description": "This topic is awesome"},
 		Spec:     map[string]interface{}{"replicationFactor": 2.0, "partition": 3.0},
-		Json:     []byte(`{"apiVersion":"v1","kind":"Topic","metadata":{"cluster":"cluster-a","name":"toto","labels":{"conduktor.io/description":"This topic is awesome"}},"spec":{"replicationFactor":2,"partition":3}}`),
+		Json:     []byte(`{"apiVersion":"v1","kind":"Topic","metadata":{"cluster":"cluster-a","name":"toto","description":"This topic is awesome"},"spec":{"replicationFactor":2,"partition":3}}`),
 	})
 
 	yamlByte2 := []byte(`
@@ -295,6 +295,47 @@ spec:
 		Metadata: map[string]interface{}{"name": "decryption"},
 		Spec:     map[string]interface{}{"priority": 100.0, "pluginClass": "io.conduktor.gateway.interceptor.DecryptPlugin", "config": map[string]interface{}{"topic": ".*", "kmsConfig": map[string]interface{}{"vault": map[string]interface{}{"uri": "http://${VAULT_URI}", "username": "${VAULT_USERNAME}", "password": "${VAULT_PASSWORD}"}}}},
 		Json:     []byte(`{"apiVersion":"gateway/v2","kind":"Interceptor","metadata":{"name":"decryption"},"spec":{"priority":100,"pluginClass":"io.conduktor.gateway.interceptor.DecryptPlugin","config":{"topic":".*","kmsConfig":{"vault":{"uri":"http://${VAULT_URI}","username":"${VAULT_USERNAME}", "password": "${VAULT_PASSWORD}"}}}}}`),
+	})
+}
+
+// The Console keeps a topic's description in metadata.description and refuses a conduktor.io/description label.
+func TestResourceExpansionForTopicKeepsOtherLabels(t *testing.T) {
+	topicDesc, err := os.CreateTemp("/tmp", "topic.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer topicDesc.Close()
+	defer os.Remove(topicDesc.Name())
+	if _, err := topicDesc.Write([]byte(`This topic is awesome`)); err != nil {
+		log.Fatal(err)
+	}
+
+	yamlByte := []byte(`
+apiVersion: v2
+kind: Topic
+metadata:
+  cluster: cluster-a
+  name: toto
+  labels:
+    team: data
+    conduktor.io/descriptionFile: ` + topicDesc.Name() + `
+spec:
+  replicationFactor: 2
+  partitions: 3
+`)
+
+	results, err := FromYamlByte(yamlByte, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	checkResourceWithoutJSONOrder(t, results[0], Resource{
+		Version:  "v2",
+		Kind:     "Topic",
+		Name:     "toto",
+		Metadata: map[string]interface{}{"cluster": "cluster-a", "name": "toto", "labels": map[string]interface{}{"team": "data"}, "description": "This topic is awesome"},
+		Spec:     map[string]interface{}{"replicationFactor": 2.0, "partitions": 3.0},
+		Json:     []byte(`{"apiVersion":"v2","kind":"Topic","metadata":{"cluster":"cluster-a","name":"toto","labels":{"team":"data"},"description":"This topic is awesome"},"spec":{"replicationFactor":2,"partitions":3}}`),
 	})
 }
 
@@ -338,9 +379,9 @@ spec:
 		Version:  "v1",
 		Kind:     "Topic",
 		Name:     "toto",
-		Metadata: map[string]interface{}{"cluster": "cluster-a", "name": "toto", "labels": map[string]interface{}{"conduktor.io/description": "This topic is awesome"}},
+		Metadata: map[string]interface{}{"cluster": "cluster-a", "name": "toto", "description": "This topic is awesome"},
 		Spec:     map[string]interface{}{"replicationFactor": 2.0, "partition": 3.0},
-		Json:     []byte(`{"apiVersion":"v1","kind":"Topic","metadata":{"cluster":"cluster-a","name":"toto","labels":{"conduktor.io/description":"This topic is awesome"}},"spec":{"replicationFactor":2,"partition":3}}`),
+		Json:     []byte(`{"apiVersion":"v1","kind":"Topic","metadata":{"cluster":"cluster-a","name":"toto","description":"This topic is awesome"},"spec":{"replicationFactor":2,"partition":3}}`),
 	})
 }
 

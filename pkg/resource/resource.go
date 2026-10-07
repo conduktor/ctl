@@ -233,9 +233,29 @@ func expendIncludeFiles(r *Resource) error {
 	case "Subject":
 		return loadTextFromFile(r, "spec.schemaFile", "spec.schema")
 	case "Topic":
-		return loadTextFromFile(r, "metadata.labels.conduktor~1io/descriptionFile", "metadata.labels.conduktor~1io/description")
+		return loadTopicDescription(r)
 	}
 	return nil
+}
+
+// The Console keeps a topic's description in metadata.description and refuses a conduktor.io/description label, so the
+// descriptionFile label is read into metadata.description, and labels left empty are dropped.
+func loadTopicDescription(r *Resource) error {
+	if err := loadTextFromFile(r, "metadata.labels.conduktor~1io/descriptionFile", "metadata.description"); err != nil {
+		return err
+	}
+	jsonData, err := gabs.ParseJSON(r.Json)
+	if err != nil {
+		return err
+	}
+	labels, ok := jsonData.Path("metadata.labels").Data().(map[string]interface{})
+	if !ok || len(labels) > 0 {
+		return nil
+	}
+	if err := jsonData.DeleteP("metadata.labels"); err != nil {
+		return err
+	}
+	return r.UnmarshalJSON([]byte(jsonData.String()))
 }
 
 func (r *Resource) PrintPreservingOriginalFieldOrder() error {
