@@ -266,3 +266,26 @@ func TestState_IdentifiesResourcesByKindNameAndParents(t *testing.T) {
 	state.RemoveManagedResource(edited)
 	assert.Empty(t, state.Resources)
 }
+
+// A plan or apply that changes nothing must leave the state file byte for byte as it was.
+func TestState_ReapplyingAnUnchangedResourceKeepsLastUpdated(t *testing.T) {
+	state := NewState()
+	state.IdentifyBy(func(kind string) []string { return []string{"name"} })
+	group := resource.Resource{
+		Kind:     "Group",
+		Version:  "v2",
+		Name:     "team-a",
+		Metadata: map[string]any{"name": "team-a", "labels": map[string]any{"team": "a"}},
+	}
+	state.AddManagedResource(group)
+	state.LastUpdated = "2000-01-01T00:00:00Z"
+
+	state.AddManagedResource(group)
+	assert.Equal(t, "2000-01-01T00:00:00Z", state.LastUpdated)
+
+	relabelled := group
+	relabelled.Metadata = map[string]any{"name": "team-a", "labels": map[string]any{"team": "b"}}
+	state.AddManagedResource(relabelled)
+	assert.NotEqual(t, "2000-01-01T00:00:00Z", state.LastUpdated)
+	assert.Equal(t, map[string]any{"team": "b"}, (*state.Resources[0].Metadata)["labels"])
+}

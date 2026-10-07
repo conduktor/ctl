@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/conduktor/ctl/pkg/schema"
+	"reflect"
 	"time"
 
 	"github.com/conduktor/ctl/pkg/resource"
@@ -45,6 +46,9 @@ func (s *State) AddManagedResource(res resource.Resource) {
 	asResState := NewResourceState(res)
 	for i := range s.Resources {
 		if s.same(&s.Resources[i], &asResState) {
+			if reflect.DeepEqual(s.Resources[i], asResState) {
+				return
+			}
 			// The same resource, applied again: keep what it is now.
 			s.Resources[i] = asResState
 			s.LastUpdated = time.Now().UTC().Format(time.RFC3339)
