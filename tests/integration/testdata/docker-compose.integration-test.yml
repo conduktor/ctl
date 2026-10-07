@@ -114,34 +114,25 @@ services:
       interval: 5s
       retries: 25
 
-  minio:
-    image: minio/minio:latest
-    hostname: minio
+  # S3-compatible storage for the remote state tests.
+  garage:
+    image: dxflrs/garage:v2.4.1
+    hostname: garage
     ports:
-      - "9000:9000"
-      - "9001:9001"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    command: server /data --console-address ":9001"
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      - "3900:3900"
+    volumes:
+      - ./garage/garage.toml:/etc/garage.toml:ro
 
-  minio-setup:
-    image: minio/mc:latest
+  garage-setup:
+    image: alpine:3.20
     depends_on:
-      minio:
-        condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      mc alias set myminio http://minio:9000 minioadmin minioadmin;
-      mc mb myminio/conduktor-state --ignore-existing;
-      echo 'MinIO bucket created successfully';
-      exit 0;
-      "
+      - garage
+    environment:
+      ACCESS_KEY: GK31c2f218a2e44f485b94239e
+      SECRET_KEY: b892c0665f0ada8a4755dae98baa3b133590e11dae3bcc1f9d38d9d4e4b2a1d4 # pragma: allowlist secret
+    volumes:
+      - ./garage/setup.sh:/setup.sh:ro
+    entrypoint: ["/bin/sh", "/setup.sh"]
 
 volumes:
   pg_data: {}
