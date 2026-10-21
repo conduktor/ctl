@@ -212,11 +212,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
       - name: Install nfpm and reprepro
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y reprepro
-          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.41.3
 
       - name: Import GPG key
         run: |
