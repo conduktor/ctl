@@ -201,3 +201,70 @@ jobs:
           cache-to: type=gha,mode=max
           cache-from: type=gha
 
+  publish-apt:
+    name: Publish to apt repository
+    needs: [build-exec]
+    runs-on: ubuntu-latest
+    env:
+      APP_VERSION: ${{ github.event.release.tag_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install nfpm and reprepro
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y reprepro
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+
+      - name: Import GPG key
+        run: |
+          echo "${{ secrets.APT_GPG_PRIVATE_KEY }}" | gpg --batch --import
+
+      - name: Download Linux release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download ${APP_VERSION} \
+            --pattern "conduktor-${APP_VERSION}-linux-amd64.tar.gz" \
+            --pattern "conduktor-${APP_VERSION}-linux-arm64.tar.gz"
+
+      - name: Build .deb packages
+        run: |
+          export VERSION=${APP_VERSION#v}
+
+          # amd64
+          tar -xzf conduktor-${APP_VERSION}-linux-amd64.tar.gz
+          mv conduktor conduktor-amd64
+          GOARCH=amd64 VERSION=${VERSION} nfpm pkg --packager deb --target conduktor-ctl_${VERSION}_amd64.deb
+          rm conduktor-amd64
+
+          # arm64
+          tar -xzf conduktor-${APP_VERSION}-linux-arm64.tar.gz
+          mv conduktor conduktor-arm64
+          GOARCH=arm64 VERSION=${VERSION} nfpm pkg --packager deb --target conduktor-ctl_${VERSION}_arm64.deb
+          rm conduktor-arm64
+
+      - name: Checkout conduktor/apt
+        uses: actions/checkout@v4
+        with:
+          repository: conduktor/apt
+          ref: main
+          path: apt-repo
+          token: ${{ secrets.CONDUKTORBOT_REPO_WRITE }}
+
+      - name: Add packages to apt repo
+        run: |
+          export VERSION=${APP_VERSION#v}
+          cd apt-repo
+          reprepro includedeb stable ../conduktor-ctl_${VERSION}_amd64.deb
+          reprepro includedeb stable ../conduktor-ctl_${VERSION}_arm64.deb
+
+      - name: Commit and push apt repo
+        run: |
+          export VERSION=${APP_VERSION#v}
+          cd apt-repo
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add -A
+          git commit -m "Bump conduktor-ctl to ${APP_VERSION}"
+          git push origin main
