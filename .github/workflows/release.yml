@@ -205,6 +205,8 @@ jobs:
     name: Publish to apt repository
     needs: [build-exec]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     env:
       APP_VERSION: ${{ github.event.release.tag_name }}
     steps:
