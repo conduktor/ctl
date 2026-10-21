@@ -1,0 +1,13 @@
+name: conduktor-ctl
+arch: ${GOARCH}
+platform: linux
+version: ${VERSION}
+maintainer: Conduktor <support@conduktor.io>
+description: Conduktor command line tool to interact with Conduktor Console.
+homepage: https://conduktor.io
+license: Apache-2.0
+contents:
+  - src: ./conduktor
+    dst: /usr/local/bin/conduktor
+    file_info:
+      mode: 0755
