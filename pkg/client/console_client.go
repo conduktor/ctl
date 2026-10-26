@@ -585,11 +585,19 @@ func (client *Client) ListApplicationInstanceToken(applicationInstanceName strin
 	}
 }
 
-func (client *Client) CreateAdminToken(name string) (CreatedToken, error) {
+func createTokenBody(name, expiresAt string) map[string]string {
+	body := map[string]string{"name": name}
+	if expiresAt != "" {
+		body["expiresAt"] = expiresAt
+	}
+	return body
+}
+
+func (client *Client) CreateAdminToken(name, expiresAt string) (CreatedToken, error) {
 	var result CreatedToken
 	client.setAuthMethodFromEnvIfNeeded()
 	url := client.baseURL + "/token/v1/admin_tokens"
-	resp, err := client.client.R().SetBody(map[string]string{"name": name}).Post(url)
+	resp, err := client.client.R().SetBody(createTokenBody(name, expiresAt)).Post(url)
 	if err != nil {
 		return result, err
 	} else if resp.IsError() {
@@ -630,11 +638,11 @@ func (client *Client) CreateApplicationInstanceToken(applicationInstanceName, na
 	}
 }
 
-func (client *Client) CreateApplicationToken(applicationName, name string) (CreatedToken, error) {
+func (client *Client) CreateApplicationToken(applicationName, name, expiresAt string) (CreatedToken, error) {
 	var result CreatedToken
 	client.setAuthMethodFromEnvIfNeeded()
 	url := client.baseURL + "/token/v1/application_tokens/" + applicationName
-	resp, err := client.client.R().SetBody(map[string]string{"name": name}).Post(url)
+	resp, err := client.client.R().SetBody(createTokenBody(name, expiresAt)).Post(url)
 	if err != nil {
 		return result, err
 	} else if resp.IsError() {
@@ -669,6 +677,18 @@ func (client *Client) DeleteToken(uuid string) error {
 	client.setAuthMethodFromEnvIfNeeded()
 	url := client.baseURL + "/token/v1/" + uuid
 	resp, err := client.client.R().Delete(url)
+	if err != nil {
+		return err
+	} else if resp.IsError() {
+		return fmt.Errorf("%s", extractAPIError(resp))
+	}
+	return nil
+}
+
+func (client *Client) RevokeToken(uuid string) error {
+	client.setAuthMethodFromEnvIfNeeded()
+	url := client.baseURL + "/token/v1/" + uuid + "/revoke"
+	resp, err := client.client.R().Post(url)
 	if err != nil {
 		return err
 	} else if resp.IsError() {

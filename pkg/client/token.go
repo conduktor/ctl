@@ -6,6 +6,8 @@ type Token struct {
 	Name         string `json:"name"`
 	CreatedAt    string `json:"createdAt"`
 	LastTimeUsed string `json:"lastTimeUsed"`
+	ExpiresAt    string `json:"expiresAt,omitempty"`
+	Status       string `json:"status,omitempty"`
 }
 
 //nolint:staticcheck
