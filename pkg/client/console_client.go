@@ -132,9 +132,7 @@ func Make(apiParameter APIParameter) (*Client, error) {
 
 	err := result.initKindFromAPI()
 	if err != nil {
-		if apiParameter.Debug {
-			fmt.Fprintf(os.Stderr, "Cannot access the Conduktor API: %s\nUsing offline defaults.\n", err)
-		}
+		fmt.Fprintf(os.Stderr, "Warning: using the embedded resource catalog because the Console API catalog could not be fetched: %s\n", oneLine(err.Error()))
 		result.schemaCatalog = schema.ConsoleDefaultCatalog()
 	}
 
@@ -527,13 +525,21 @@ func (client *Client) DeleteResource(resource *resource.Resource, ignoreMissing 
 	return err
 }
 
+func oneLine(s string) string {
+	s = strings.Join(strings.Fields(s), " ")
+	if len(s) > 200 {
+		s = s[:200] + "..."
+	}
+	return s
+}
+
 func (client *Client) GetOpenAPI() ([]byte, error) {
 	url := client.baseURL + "/public/docs/docs.yaml"
 	resp, err := client.client.R().Get(url)
 	if err != nil {
 		return nil, err
 	} else if resp.IsError() {
-		return nil, fmt.Errorf("%s", resp.String())
+		return nil, fmt.Errorf("HTTP %s: %s", resp.Status(), resp.String())
 	}
 	return resp.Body(), nil
 }
