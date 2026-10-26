@@ -1,6 +1,8 @@
 package client
 
 import (
+	"io"
+	"net/http"
 	"reflect"
 	"strings"
 	"testing"
@@ -826,7 +828,7 @@ func TestCreateApplicationTokenShouldWork(t *testing.T) {
 		responder,
 	)
 
-	result, err := client.CreateApplicationToken("myapp", "ci-token")
+	result, err := client.CreateApplicationToken("myapp", "ci-token", "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -850,7 +852,7 @@ func TestCreateApplicationTokenShouldFailOnNot2XX(t *testing.T) {
 	httpmock.RegisterResponder("POST", "http://baseUrl/api/token/v1/application_tokens/myapp",
 		httpmock.NewStringResponder(404, `{"title": "Application not found"}`))
 
-	_, err = client.CreateApplicationToken("myapp", "ci-token")
+	_, err = client.CreateApplicationToken("myapp", "ci-token", "")
 	if err == nil {
 		t.Fail()
 	}
@@ -910,6 +912,138 @@ func TestListApplicationTokenShouldFailOnNot2XX(t *testing.T) {
 		httpmock.NewStringResponder(403, `{"title": "Forbidden"}`))
 
 	_, err = client.ListApplicationToken("myapp")
+	if err == nil {
+		t.Fail()
+	}
+}
+
+func TestCreateApplicationTokenWithExpiresAtSendsIt(t *testing.T) {
+	defer httpmock.Reset()
+	client, err := Make(APIParameter{APIKey: "aToken", BaseURL: "http://baseUrl"})
+	if err != nil {
+		panic(err)
+	}
+	client.setAuthMethodFromEnvIfNeeded()
+	httpmock.ActivateNonDefault(client.client.GetClient())
+
+	httpmock.RegisterMatcherResponderWithQuery(
+		"POST",
+		"http://baseUrl/api/token/v1/application_tokens/myapp",
+		nil,
+		httpmock.BodyContainsString(`"expiresAt":"2027-01-01T00:00:00Z"`),
+		httpmock.NewStringResponder(201, `{"id": "token-id", "name": "ci-token", "token": "secret-token-value", "createdAt": "2026-10-26T10:00:00Z"}`),
+	)
+
+	result, err := client.CreateApplicationToken("myapp", "ci-token", "2027-01-01T00:00:00Z")
+	if err != nil {
+		t.Error(err)
+	}
+	if result.Token != "secret-token-value" {
+		t.Errorf("Bad result expected secret-token-value got: %s", result.Token)
+	}
+}
+
+func TestCreateTokenWithoutExpiresAtOmitsIt(t *testing.T) {
+	defer httpmock.Reset()
+	client, err := Make(APIParameter{APIKey: "aToken", BaseURL: "http://baseUrl"})
+	if err != nil {
+		panic(err)
+	}
+	client.setAuthMethodFromEnvIfNeeded()
+	httpmock.ActivateNonDefault(client.client.GetClient())
+
+	httpmock.RegisterResponder("POST", "http://baseUrl/api/token/v1/admin_tokens",
+		func(req *http.Request) (*http.Response, error) {
+			body, err := io.ReadAll(req.Body)
+			if err != nil {
+				return nil, err
+			}
+			if strings.Contains(string(body), "expiresAt") {
+				t.Errorf("expiresAt must not be sent when unset, body was: %s", body)
+			}
+			return httpmock.NewStringResponse(201, `{"id": "token-id", "name": "my-admin", "token": "secret", "createdAt": "2026-10-26T10:00:00Z"}`), nil
+		})
+
+	result, err := client.CreateAdminToken("my-admin", "")
+	if err != nil {
+		t.Error(err)
+	}
+	if result.Token != "secret" {
+		t.Errorf("Bad result expected secret got: %s", result.Token)
+	}
+}
+
+func TestListApplicationTokenParsesExpiryAndStatus(t *testing.T) {
+	defer httpmock.Reset()
+	client, err := Make(APIParameter{APIKey: "aToken", BaseURL: "http://baseUrl"})
+	if err != nil {
+		panic(err)
+	}
+	client.setAuthMethodFromEnvIfNeeded()
+	httpmock.ActivateNonDefault(client.client.GetClient())
+
+	httpmock.RegisterResponder("GET", "http://baseUrl/api/token/v1/application_tokens/myapp",
+		httpmock.NewStringResponder(200, `[{"id": "token-id", "name": "ci-token", "createdAt": "2026-10-26T10:00:00Z", "lastTimeUsed": "2026-10-26T11:00:00Z", "expiresAt": "2027-01-01T00:00:00Z", "status": "Revoked"}]`))
+
+	result, err := client.ListApplicationToken("myapp")
+	if err != nil {
+		t.Error(err)
+	}
+	expected := []Token{{
+		Id:           "token-id",
+		Name:         "ci-token",
+		CreatedAt:    "2026-10-26T10:00:00Z",
+		LastTimeUsed: "2026-10-26T11:00:00Z",
+		ExpiresAt:    "2027-01-01T00:00:00Z",
+		Status:       "Revoked",
+	}}
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("Bad result expected %v got: %v", expected, result)
+	}
+}
+
+func TestRevokeTokenShouldWork(t *testing.T) {
+	defer httpmock.Reset()
+	baseURL := "http://baseUrl"
+	apiKey := "aToken"
+	client, err := Make(APIParameter{
+		APIKey:  apiKey,
+		BaseURL: baseURL,
+	})
+	if err != nil {
+		panic(err)
+	}
+	client.setAuthMethodFromEnvIfNeeded()
+	httpmock.ActivateNonDefault(client.client.GetClient())
+
+	httpmock.RegisterMatcherResponderWithQuery(
+		"POST",
+		"http://baseUrl/api/token/v1/0ee5c6ac-4f67-4a53-a8ce-24e04a7b4a5b/revoke",
+		nil,
+		httpmock.HeaderIs("Authorization", "Bearer "+apiKey).
+			And(httpmock.HeaderIs("X-CDK-CLIENT", "CLI/unknown")),
+		httpmock.NewStringResponder(200, ``),
+	)
+
+	err = client.RevokeToken("0ee5c6ac-4f67-4a53-a8ce-24e04a7b4a5b")
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestRevokeTokenShouldFailOnNot2XX(t *testing.T) {
+	defer httpmock.Reset()
+	client, err := Make(APIParameter{APIKey: "aToken", BaseURL: "http://baseUrl"})
+	if err != nil {
+		panic(err)
+	}
+	client.setAuthMethodFromEnvIfNeeded()
+	httpmock.ActivateNonDefault(client.client.GetClient())
+
+	httpmock.RegisterResponder("POST", "http://baseUrl/api/token/v1/unknown-uuid/revoke",
+		httpmock.NewStringResponder(404, `{"title": "Token not found"}`))
+
+	err = client.RevokeToken("unknown-uuid")
 	if err == nil {
 		t.Fail()
 	}
