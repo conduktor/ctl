@@ -1048,3 +1048,35 @@ func TestRevokeTokenShouldFailOnNot2XX(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func TestGetOpenAPIErrorNamesHTTPStatus(t *testing.T) {
+	defer httpmock.Reset()
+	client, err := Make(APIParameter{APIKey: "aToken", BaseURL: "http://baseUrl"})
+	if err != nil {
+		panic(err)
+	}
+	client.setAuthMethodFromEnvIfNeeded()
+	httpmock.ActivateNonDefault(client.client.GetClient())
+
+	httpmock.RegisterResponder("GET", "http://baseUrl/api/public/docs/docs.yaml",
+		httpmock.NewStringResponder(403, `{"title": "Forbidden"}`))
+
+	_, err = client.GetOpenAPI()
+	if err == nil {
+		t.Fatal("expected an error")
+	}
+	if !strings.Contains(err.Error(), "HTTP 403") {
+		t.Errorf("expected the error to name the HTTP status, got: %s", err)
+	}
+}
+
+func TestOneLineCollapsesAndTruncates(t *testing.T) {
+	collapsed := oneLine("a\nb\n\tc")
+	if collapsed != "a b c" {
+		t.Errorf("expected newlines collapsed, got %q", collapsed)
+	}
+	long := oneLine(strings.Repeat("x", 300))
+	if len(long) != 203 || !strings.HasSuffix(long, "...") {
+		t.Errorf("expected truncation to 200 chars plus ellipsis, got %d chars", len(long))
+	}
+}
