@@ -65,10 +65,10 @@ To use Conduktor CLI, you need to:
 
 **Define 2 environment variables for Console**:
  -   The URL of Conduktor Console
- -   Your API token (either a User Token or Application Token). You can generate an API token on `/settings/public-api-keys` page of your Console instance, or create one through the [CLI](https://docs.conduktor.io/platform/reference/cli-reference/#admin-api-key).
+ -   Your API token (an Admin token, an Application token — scoped to a self-serve Application — or an Application Instance token). You can generate an API token on `/settings/public-api-keys` page of your Console instance, or create one through the [CLI](https://docs.conduktor.io/platform/reference/cli-reference/#admin-api-key).
 ```bash
 CDK_BASE_URL=http://localhost:8080
-CDK_API_KEY=<admin-token>
+CDK_API_KEY=<api-token>
 ```
 
 **Define 3 environment variables for Gateway**:
