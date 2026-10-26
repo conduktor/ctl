@@ -27,7 +27,7 @@ func validateExpiresAt(expiresAt string) {
 
 var tokenCmd = &cobra.Command{
 	Use:   "token",
-	Short: "Manage Admin and Application Instance tokens",
+	Short: "Manage Admin, Application and Application Instance tokens",
 	Run: func(cmd *cobra.Command, args []string) {
 		_ = cmd.Help()
 		os.Exit(1)
@@ -115,7 +115,7 @@ var createAdminTokenCmd = &cobra.Command{
 	Use:   "admin <token-name>",
 	Args:  cobra.ExactArgs(1),
 	Short: "Create an admin token",
-	Long:  "You can use CDK_USER and CDK_PASSWORD environment variables to authenticate instead of CDK_TOKEN, in order to create your first token",
+	Long:  "You can use CDK_USER and CDK_PASSWORD environment variables to authenticate instead of CDK_API_KEY, in order to create your first token",
 	Run: func(cmd *cobra.Command, args []string) {
 		username := os.Getenv("CDK_USER")
 		password := os.Getenv("CDK_PASSWORD")
