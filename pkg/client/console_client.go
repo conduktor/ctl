@@ -600,10 +600,40 @@ func (client *Client) CreateAdminToken(name string) (CreatedToken, error) {
 	}
 }
 
+func (client *Client) ListApplicationToken(applicationName string) ([]Token, error) {
+	result := make([]Token, 0)
+	client.setAuthMethodFromEnvIfNeeded()
+	url := client.baseURL + "/token/v1/application_tokens/" + applicationName
+	resp, err := client.client.R().Get(url)
+	if err != nil {
+		return result, err
+	} else if resp.IsError() {
+		return result, fmt.Errorf("%s", extractAPIError(resp))
+	} else {
+		err = json.Unmarshal(resp.Body(), &result)
+		return result, err
+	}
+}
+
 func (client *Client) CreateApplicationInstanceToken(applicationInstanceName, name string) (CreatedToken, error) {
 	var result CreatedToken
 	client.setAuthMethodFromEnvIfNeeded()
 	url := client.baseURL + "/token/v1/application_instance_tokens/" + applicationInstanceName
+	resp, err := client.client.R().SetBody(map[string]string{"name": name}).Post(url)
+	if err != nil {
+		return result, err
+	} else if resp.IsError() {
+		return result, fmt.Errorf("%s", extractAPIError(resp))
+	} else {
+		err = json.Unmarshal(resp.Body(), &result)
+		return result, err
+	}
+}
+
+func (client *Client) CreateApplicationToken(applicationName, name string) (CreatedToken, error) {
+	var result CreatedToken
+	client.setAuthMethodFromEnvIfNeeded()
+	url := client.baseURL + "/token/v1/application_tokens/" + applicationName
 	resp, err := client.client.R().SetBody(map[string]string{"name": name}).Post(url)
 	if err != nil {
 		return result, err
