@@ -44,6 +44,7 @@ type Client struct {
 	baseURL       string
 	client        *resty.Client
 	schemaCatalog *schema.Catalog
+	graphVersion  *graphVersionTracker
 }
 
 type APIParameter struct {
@@ -100,7 +101,10 @@ func Make(apiParameter APIParameter) (*Client, error) {
 		baseURL:       uniformizeBaseURL(apiParameter.BaseURL),
 		client:        restyClient,
 		schemaCatalog: nil,
+		graphVersion:  &graphVersionTracker{},
 	}
+
+	installGraphVersionEcho(restyClient, result.graphVersion)
 
 	if apiParameter.Insecure {
 		result.IgnoreUntrustedCertificate()
