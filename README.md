@@ -38,7 +38,23 @@ It is strongly inspired by Kubernetes kubectl CLI tool and reuse some of it's co
 
 ### From binaries (Linux, MacOS, Windows)
 
-Look for assets of the last release at https://github.com/conduktor/ctl/releases 
+Look for assets of the last release at https://github.com/conduktor/ctl/releases
+
+### Using Homebrew (macOS / Linux)
+
+```bash
+brew tap conduktor/brew
+brew install conduktor-cli
+```
+
+### Using apt (Debian / Ubuntu)
+
+```bash
+curl -fsSL https://conduktor.github.io/apt/gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/conduktor.gpg
+echo "deb [signed-by=/etc/apt/keyrings/conduktor.gpg] https://conduktor.github.io/apt stable main" | sudo tee /etc/apt/sources.list.d/conduktor.list
+sudo apt update
+sudo apt install conduktor-ctl
+```
 
 ### Using Docker image
 How to get the latest docker image:
