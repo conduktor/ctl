@@ -12,7 +12,6 @@ var applicationInstanceNameForList *string
 var applicationInstanceNameForCreate *string
 var applicationNameForList *string
 var applicationNameForCreate *string
-var expiresAtForCreateAdmin *string
 var expiresAtForCreateApplication *string
 
 func validateExpiresAt(expiresAt string) {
@@ -138,8 +137,7 @@ var createAdminTokenCmd = &cobra.Command{
 			os.Exit(5)
 		}
 
-		validateExpiresAt(*expiresAtForCreateAdmin)
-		result, err := consoleAPIClient().CreateAdminToken(args[0], *expiresAtForCreateAdmin)
+		result, err := consoleAPIClient().CreateAdminToken(args[0])
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Could not create admin token: %s\n", err)
 			os.Exit(4)
@@ -191,8 +189,8 @@ var deleteTokenCmd = &cobra.Command{
 var revokeTokenCmd = &cobra.Command{
 	Use:   "revoke <token-uuid>",
 	Args:  cobra.ExactArgs(1),
-	Short: "Revoke a token",
-	Long:  "Revoke a token so it can no longer be used. Unlike delete, revocation is terminal: the token stays listed with a Revoked status",
+	Short: "Revoke an application token",
+	Long:  "Revoke an application token so it can no longer be used. Unlike delete, revocation is terminal: the token stays listed with a Revoked status. Only application tokens can be revoked; other kinds can only be deleted.",
 	Run: func(cmd *cobra.Command, args []string) {
 		err := consoleAPIClient().RevokeToken(args[0])
 		if err != nil {
@@ -212,7 +210,6 @@ func init() {
 	applicationNameForCreate = createApplicationTokenCmd.PersistentFlags().StringP("application", "a", "", "Application name")
 	_ = listApplicationTokenCmd.MarkPersistentFlagRequired("application")
 	_ = createApplicationTokenCmd.MarkPersistentFlagRequired("application")
-	expiresAtForCreateAdmin = createAdminTokenCmd.PersistentFlags().String("expires-at", "", "Token expiration date (RFC3339, e.g. 2027-01-01T00:00:00Z); never expires if not set")
 	expiresAtForCreateApplication = createApplicationTokenCmd.PersistentFlags().String("expires-at", "", "Token expiration date (RFC3339, e.g. 2027-01-01T00:00:00Z); never expires if not set")
 	listTokenCmd.AddCommand(listApplicationInstanceTokenCmd)
 	listTokenCmd.AddCommand(listApplicationTokenCmd)

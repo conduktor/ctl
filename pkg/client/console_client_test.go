@@ -943,7 +943,7 @@ func TestCreateApplicationTokenWithExpiresAtSendsIt(t *testing.T) {
 	}
 }
 
-func TestCreateTokenWithoutExpiresAtOmitsIt(t *testing.T) {
+func TestCreateAdminTokenNeverSendsExpiresAt(t *testing.T) {
 	defer httpmock.Reset()
 	client, err := Make(APIParameter{APIKey: "aToken", BaseURL: "http://baseUrl"})
 	if err != nil {
@@ -959,12 +959,12 @@ func TestCreateTokenWithoutExpiresAtOmitsIt(t *testing.T) {
 				return nil, err
 			}
 			if strings.Contains(string(body), "expiresAt") {
-				t.Errorf("expiresAt must not be sent when unset, body was: %s", body)
+				t.Errorf("admin tokens never send expiresAt (Console ignores it), body was: %s", body)
 			}
 			return httpmock.NewStringResponse(201, `{"id": "token-id", "name": "my-admin", "token": "secret", "createdAt": "2026-10-26T10:00:00Z"}`), nil
 		})
 
-	result, err := client.CreateAdminToken("my-admin", "")
+	result, err := client.CreateAdminToken("my-admin")
 	if err != nil {
 		t.Error(err)
 	}

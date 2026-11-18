@@ -593,11 +593,13 @@ func createTokenBody(name, expiresAt string) map[string]string {
 	return body
 }
 
-func (client *Client) CreateAdminToken(name, expiresAt string) (CreatedToken, error) {
+// CreateAdminToken does not accept an expiry: Console ignores expiresAt for admin tokens, so
+// exposing it would give a false sense of expiry. Expiry is an application-token feature.
+func (client *Client) CreateAdminToken(name string) (CreatedToken, error) {
 	var result CreatedToken
 	client.setAuthMethodFromEnvIfNeeded()
 	url := client.baseURL + "/token/v1/admin_tokens"
-	resp, err := client.client.R().SetBody(createTokenBody(name, expiresAt)).Post(url)
+	resp, err := client.client.R().SetBody(map[string]string{"name": name}).Post(url)
 	if err != nil {
 		return result, err
 	} else if resp.IsError() {
