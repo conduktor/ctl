@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -11,6 +12,17 @@ var applicationInstanceNameForList *string
 var applicationInstanceNameForCreate *string
 var applicationNameForList *string
 var applicationNameForCreate *string
+var expiresAtForCreateApplication *string
+
+func validateExpiresAt(expiresAt string) {
+	if expiresAt == "" {
+		return
+	}
+	if _, err := time.Parse(time.RFC3339, expiresAt); err != nil {
+		fmt.Fprintf(os.Stderr, "Invalid --expires-at %q: expected RFC3339, e.g. 2027-01-01T00:00:00Z\n", expiresAt)
+		os.Exit(1)
+	}
+}
 
 var tokenCmd = &cobra.Command{
 	Use:   "token",
@@ -78,7 +90,14 @@ var listApplicationTokenCmd = &cobra.Command{
 			fmt.Println("No tokens found")
 		}
 		for _, token := range result {
-			fmt.Printf("%s:\t%s\n", token.Name, token.Id)
+			line := fmt.Sprintf("%s:\t%s", token.Name, token.Id)
+			if token.Status != "" {
+				line += "\t" + token.Status
+			}
+			if token.ExpiresAt != "" {
+				line += "\texpires " + token.ExpiresAt
+			}
+			fmt.Println(line)
 		}
 	},
 }
@@ -144,7 +163,8 @@ var createApplicationTokenCmd = &cobra.Command{
 	Use:  "application --application=myapp <token-name>",
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		result, err := consoleAPIClient().CreateApplicationToken(*applicationNameForCreate, args[0])
+		validateExpiresAt(*expiresAtForCreateApplication)
+		result, err := consoleAPIClient().CreateApplicationToken(*applicationNameForCreate, args[0], *expiresAtForCreateApplication)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Could not create application token: %s\n", err)
 			os.Exit(1)
@@ -166,6 +186,21 @@ var deleteTokenCmd = &cobra.Command{
 	},
 }
 
+var revokeTokenCmd = &cobra.Command{
+	Use:   "revoke <token-uuid>",
+	Args:  cobra.ExactArgs(1),
+	Short: "Revoke an application token",
+	Long:  "Revoke an application token so it can no longer be used. Unlike delete, revocation is terminal: the token stays listed with a Revoked status. Only application tokens can be revoked; other kinds can only be deleted.",
+	Run: func(cmd *cobra.Command, args []string) {
+		err := consoleAPIClient().RevokeToken(args[0])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Could not revoke token: %s\n", err)
+			os.Exit(1)
+		}
+		fmt.Println("Token revoked")
+	},
+}
+
 func init() {
 	applicationInstanceNameForList = listApplicationInstanceTokenCmd.PersistentFlags().StringP("application-instance", "i", "", "Application instance name")
 	applicationInstanceNameForCreate = createApplicationInstanceTokenCmd.PersistentFlags().StringP("application-instance", "i", "", "Application instance name")
@@ -175,11 +210,13 @@ func init() {
 	applicationNameForCreate = createApplicationTokenCmd.PersistentFlags().StringP("application", "a", "", "Application name")
 	_ = listApplicationTokenCmd.MarkPersistentFlagRequired("application")
 	_ = createApplicationTokenCmd.MarkPersistentFlagRequired("application")
+	expiresAtForCreateApplication = createApplicationTokenCmd.PersistentFlags().String("expires-at", "", "Token expiration date (RFC3339, e.g. 2027-01-01T00:00:00Z); never expires if not set")
 	listTokenCmd.AddCommand(listApplicationInstanceTokenCmd)
 	listTokenCmd.AddCommand(listApplicationTokenCmd)
 	listTokenCmd.AddCommand(listAdminCmd)
 	tokenCmd.AddCommand(listTokenCmd)
 	tokenCmd.AddCommand(deleteTokenCmd)
+	tokenCmd.AddCommand(revokeTokenCmd)
 	tokenCmd.AddCommand(createTokenCmd)
 	createTokenCmd.AddCommand(createAdminTokenCmd)
 	createTokenCmd.AddCommand(createApplicationInstanceTokenCmd)
