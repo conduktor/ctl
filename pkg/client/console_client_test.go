@@ -798,3 +798,119 @@ func TestApplyWithDiffForAResourceNotThereYet(t *testing.T) {
 		t.Errorf("expected a diff against nothing, got %q", result.Diff)
 	}
 }
+
+func TestCreateApplicationTokenShouldWork(t *testing.T) {
+	defer httpmock.Reset()
+	baseURL := "http://baseUrl"
+	apiKey := "aToken"
+	client, err := Make(APIParameter{
+		APIKey:  apiKey,
+		BaseURL: baseURL,
+	})
+	if err != nil {
+		panic(err)
+	}
+	client.setAuthMethodFromEnvIfNeeded()
+	httpmock.ActivateNonDefault(
+		client.client.GetClient(),
+	)
+	responder := httpmock.NewStringResponder(201, `{"id": "token-id", "name": "ci-token", "token": "secret-token-value", "createdAt": "2026-10-26T10:00:00Z"}`)
+
+	httpmock.RegisterMatcherResponderWithQuery(
+		"POST",
+		"http://baseUrl/api/token/v1/application_tokens/myapp",
+		nil,
+		httpmock.HeaderIs("Authorization", "Bearer "+apiKey).
+			And(httpmock.HeaderIs("X-CDK-CLIENT", "CLI/unknown")).
+			And(httpmock.BodyContainsString(`"name":"ci-token"`)),
+		responder,
+	)
+
+	result, err := client.CreateApplicationToken("myapp", "ci-token")
+	if err != nil {
+		t.Error(err)
+	}
+	if result.Token != "secret-token-value" {
+		t.Errorf("Bad result expected secret-token-value got: %s", result.Token)
+	}
+	if result.Id != "token-id" {
+		t.Errorf("Bad result expected token-id got: %s", result.Id)
+	}
+}
+
+func TestCreateApplicationTokenShouldFailOnNot2XX(t *testing.T) {
+	defer httpmock.Reset()
+	client, err := Make(APIParameter{APIKey: "aToken", BaseURL: "http://baseUrl"})
+	if err != nil {
+		panic(err)
+	}
+	client.setAuthMethodFromEnvIfNeeded()
+	httpmock.ActivateNonDefault(client.client.GetClient())
+
+	httpmock.RegisterResponder("POST", "http://baseUrl/api/token/v1/application_tokens/myapp",
+		httpmock.NewStringResponder(404, `{"title": "Application not found"}`))
+
+	_, err = client.CreateApplicationToken("myapp", "ci-token")
+	if err == nil {
+		t.Fail()
+	}
+}
+
+func TestListApplicationTokenShouldWork(t *testing.T) {
+	defer httpmock.Reset()
+	baseURL := "http://baseUrl"
+	apiKey := "aToken"
+	client, err := Make(APIParameter{
+		APIKey:  apiKey,
+		BaseURL: baseURL,
+	})
+	if err != nil {
+		panic(err)
+	}
+	client.setAuthMethodFromEnvIfNeeded()
+	httpmock.ActivateNonDefault(
+		client.client.GetClient(),
+	)
+	responder := httpmock.NewStringResponder(200, `[{"id": "token-id", "name": "ci-token", "createdAt": "2026-10-26T10:00:00Z", "lastTimeUsed": "2026-10-26T11:00:00Z"}]`)
+
+	httpmock.RegisterMatcherResponderWithQuery(
+		"GET",
+		"http://baseUrl/api/token/v1/application_tokens/myapp",
+		nil,
+		httpmock.HeaderIs("Authorization", "Bearer "+apiKey).
+			And(httpmock.HeaderIs("X-CDK-CLIENT", "CLI/unknown")),
+		responder,
+	)
+
+	result, err := client.ListApplicationToken("myapp")
+	if err != nil {
+		t.Error(err)
+	}
+	expected := []Token{{
+		Id:           "token-id",
+		Name:         "ci-token",
+		CreatedAt:    "2026-10-26T10:00:00Z",
+		LastTimeUsed: "2026-10-26T11:00:00Z",
+	}}
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("Bad result expected %v got: %v", expected, result)
+	}
+}
+
+func TestListApplicationTokenShouldFailOnNot2XX(t *testing.T) {
+	defer httpmock.Reset()
+	client, err := Make(APIParameter{APIKey: "aToken", BaseURL: "http://baseUrl"})
+	if err != nil {
+		panic(err)
+	}
+	client.setAuthMethodFromEnvIfNeeded()
+	httpmock.ActivateNonDefault(client.client.GetClient())
+
+	httpmock.RegisterResponder("GET", "http://baseUrl/api/token/v1/application_tokens/myapp",
+		httpmock.NewStringResponder(403, `{"title": "Forbidden"}`))
+
+	_, err = client.ListApplicationToken("myapp")
+	if err == nil {
+		t.Fail()
+	}
+}

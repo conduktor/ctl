@@ -9,6 +9,8 @@ import (
 
 var applicationInstanceNameForList *string
 var applicationInstanceNameForCreate *string
+var applicationNameForList *string
+var applicationNameForCreate *string
 
 var tokenCmd = &cobra.Command{
 	Use:   "token",
@@ -52,6 +54,24 @@ var listApplicationInstanceTokenCmd = &cobra.Command{
 		result, err := consoleAPIClient().ListApplicationInstanceToken(*applicationInstanceNameForList)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Could not list application-instance token: %s\n", err)
+			os.Exit(1)
+		}
+		if len(result) == 0 {
+			fmt.Println("No tokens found")
+		}
+		for _, token := range result {
+			fmt.Printf("%s:\t%s\n", token.Name, token.Id)
+		}
+	},
+}
+
+var listApplicationTokenCmd = &cobra.Command{
+	Use:  "application",
+	Args: cobra.NoArgs,
+	Run: func(cmd *cobra.Command, args []string) {
+		result, err := consoleAPIClient().ListApplicationToken(*applicationNameForList)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Could not list application token: %s\n", err)
 			os.Exit(1)
 		}
 		if len(result) == 0 {
@@ -120,6 +140,19 @@ var createApplicationInstanceTokenCmd = &cobra.Command{
 	},
 }
 
+var createApplicationTokenCmd = &cobra.Command{
+	Use:  "application --application=myapp <token-name>",
+	Args: cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		result, err := consoleAPIClient().CreateApplicationToken(*applicationNameForCreate, args[0])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Could not create application token: %s\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("%s\n", result.Token)
+	},
+}
+
 var deleteTokenCmd = &cobra.Command{
 	Use:  "delete <token-uuid>",
 	Args: cobra.ExactArgs(1),
@@ -138,12 +171,18 @@ func init() {
 	applicationInstanceNameForCreate = createApplicationInstanceTokenCmd.PersistentFlags().StringP("application-instance", "i", "", "Application instance name")
 	_ = listApplicationInstanceTokenCmd.MarkPersistentFlagRequired("application-instance")
 	_ = createApplicationInstanceTokenCmd.MarkPersistentFlagRequired("application-instance")
+	applicationNameForList = listApplicationTokenCmd.PersistentFlags().StringP("application", "a", "", "Application name")
+	applicationNameForCreate = createApplicationTokenCmd.PersistentFlags().StringP("application", "a", "", "Application name")
+	_ = listApplicationTokenCmd.MarkPersistentFlagRequired("application")
+	_ = createApplicationTokenCmd.MarkPersistentFlagRequired("application")
 	listTokenCmd.AddCommand(listApplicationInstanceTokenCmd)
+	listTokenCmd.AddCommand(listApplicationTokenCmd)
 	listTokenCmd.AddCommand(listAdminCmd)
 	tokenCmd.AddCommand(listTokenCmd)
 	tokenCmd.AddCommand(deleteTokenCmd)
 	tokenCmd.AddCommand(createTokenCmd)
 	createTokenCmd.AddCommand(createAdminTokenCmd)
 	createTokenCmd.AddCommand(createApplicationInstanceTokenCmd)
+	createTokenCmd.AddCommand(createApplicationTokenCmd)
 	rootCmd.AddCommand(tokenCmd)
 }
