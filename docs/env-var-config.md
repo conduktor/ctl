@@ -11,7 +11,7 @@ These variables are required for managing Console resources (topics, users, grou
 
 #### Authentication (choose one method)
 **Method 1: API Key (Recommended)**
-- **CDK_API_KEY**: API key generated from Console
+- **CDK_API_KEY**: API key generated from Console (an Admin, Application or Application Instance token)
 
 **Method 2: Username/Password**
 - **CDK_USER**: Username for authentication
